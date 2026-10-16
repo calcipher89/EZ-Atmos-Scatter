@@ -1,0 +1,210 @@
+// EZ Atmos Scatter: single-scattering atmosphere for lat-long images.
+//
+// Every pixel of the lat-long input is treated as a view direction from a camera
+// sitting just above the planet surface. The kernel raymarches that view ray through
+// a spherical atmosphere (Rayleigh + Mie, exponential density falloff) and, at every
+// sample, marches a second ray towards the sun to get the light that reaches it.
+// Based on O'Neil, "Accurate Atmospheric Scattering" (GPU Gems 2, ch. 16) and the
+// Nishita model it builds on.
+//
+// All distances are in kilometres. Heights are carried separately from positions so
+// that near-horizon rays stay stable in 32-bit float.
+//
+// Lat-long convention: x = longitude (centre column looks down -Z), y = latitude
+// (bottom row = straight down, top row = straight up), +Y is up.
+//
+// output: 0 = inscatter (Rayleigh + Mie), 1 = Rayleigh only, 2 = Mie only,
+//         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter)
+
+kernel AtmosScatter : ImageComputationKernel<ePixelWise>
+{
+  Image<eRead, eAccessRandom, eEdgeClamped> src;
+  Image<eWrite> dst;
+
+param:
+  int output;
+  float3 sunDirection;
+  float3 sunColor;
+  float sunIntensity;
+  float cameraAltitude;
+  float maxDistance;
+  float longitudeOffset;
+  float rayleighDensity;
+  float mieDensity;
+  float3 rayleighCoefficients;
+  float mieCoefficient;
+  float rayleighScaleHeight;
+  float mieScaleHeight;
+  float mieG;
+  float planetRadius;
+  float atmosphereThickness;
+  int viewSamples;
+  int lightSamples;
+
+local:
+  float pi;
+  float3 sunDir;
+  float atmosphereRadius;
+  float3 betaR;
+  float betaMScatter;
+  float betaMExtinction;
+
+  void define()
+  {
+    defineParam(output, "output", 0);
+    defineParam(sunDirection, "sun_direction", float3(0.0f, 0.5f, -1.0f));
+    defineParam(sunColor, "sun_color", float3(1.0f, 1.0f, 1.0f));
+    defineParam(sunIntensity, "sun_intensity", 20.0f);
+    defineParam(cameraAltitude, "camera_altitude_km", 0.001f);
+    defineParam(maxDistance, "max_distance_km", 0.0f);
+    defineParam(longitudeOffset, "longitude_offset_deg", 0.0f);
+    defineParam(rayleighDensity, "rayleigh_density", 1.0f);
+    defineParam(mieDensity, "mie_density", 1.0f);
+    defineParam(rayleighCoefficients, "rayleigh_coefficients", float3(0.0052f, 0.0121f, 0.0296f));
+    defineParam(mieCoefficient, "mie_coefficient", 0.021f);
+    defineParam(rayleighScaleHeight, "rayleigh_scale_height_km", 8.5f);
+    defineParam(mieScaleHeight, "mie_scale_height_km", 1.2f);
+    defineParam(mieG, "mie_g", 0.76f);
+    defineParam(planetRadius, "planet_radius_km", 6360.0f);
+    defineParam(atmosphereThickness, "atmosphere_thickness_km", 60.0f);
+    defineParam(viewSamples, "view_samples", 16);
+    defineParam(lightSamples, "light_samples", 8);
+  }
+
+  void init()
+  {
+    pi = 3.14159265358979f;
+    sunDir = normalize(sunDirection);
+    atmosphereRadius = planetRadius + atmosphereThickness;
+    betaR = rayleighCoefficients * rayleighDensity;
+    betaMScatter = mieCoefficient * mieDensity;
+    betaMExtinction = betaMScatter / 0.9f;
+  }
+
+  float3 exp3(float3 v)
+  {
+    return float3(exp(v.x), exp(v.y), exp(v.z));
+  }
+
+  // Far intersection of a ray starting inside a sphere of radius r.
+  // c = |o|^2 - r^2 is passed in precomputed so callers can build it from heights.
+  float exitDistance(float b, float c)
+  {
+    float disc = b * b - c;
+    return -b + sqrt(max(disc, 0.0f));
+  }
+
+  // Distance to the ground along the ray, or -1 if the ray misses the planet.
+  float groundDistance(float b, float c)
+  {
+    if (b > 0.0f)
+      return -1.0f;
+    float disc = b * b - c;
+    if (disc < 0.0f)
+      return -1.0f;
+    return -b - sqrt(disc);
+  }
+
+  float phaseRayleigh(float mu)
+  {
+    return 3.0f / (16.0f * pi) * (1.0f + mu * mu);
+  }
+
+  // Cornette-Shanks approximation of the Mie phase function.
+  float phaseMie(float mu)
+  {
+    float g2 = mieG * mieG;
+    float denom = pow(max(1.0f + g2 - 2.0f * mieG * mu, 1e-6f), 1.5f);
+    return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);
+  }
+
+  // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun.
+  // Returns -1 in x if the planet blocks the sun.
+  float2 sunOpticalDepth(float3 p, float h)
+  {
+    float r = h + planetRadius;
+    float b = dot(p, sunDir);
+    float cGround = h * (r + planetRadius);
+    if (groundDistance(b, cGround) > 0.0f)
+      return float2(-1.0f, 0.0f);
+
+    float cAtmos = (r - atmosphereRadius) * (r + atmosphereRadius);
+    float segment = exitDistance(b, cAtmos) / lightSamples;
+    float odR = 0.0f;
+    float odM = 0.0f;
+    for (int i = 0; i < lightSamples; i++) {
+      float3 q = p + sunDir * (segment * (i + 0.5f));
+      float hq = length(q) - planetRadius;
+      odR += exp(-hq / rayleighScaleHeight) * segment;
+      odM += exp(-hq / mieScaleHeight) * segment;
+    }
+    return float2(odR, odM);
+  }
+
+  void process(int2 pos)
+  {
+    float width = src.bounds.width();
+    float height = src.bounds.height();
+    float u = (pos.x - src.bounds.x1 + 0.5f) / width;
+    float v = (pos.y - src.bounds.y1 + 0.5f) / height;
+    float lon = (u - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;
+    float lat = (v - 0.5f) * pi;
+    float3 dir = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));
+
+    float h0 = max(cameraAltitude, 0.0f);
+    float r0 = planetRadius + h0;
+    float3 origin = float3(0.0f, r0, 0.0f);
+    float b = dot(origin, dir);
+
+    // March to the top of the atmosphere, or to the ground for downward rays.
+    float tMax = exitDistance(b, (r0 - atmosphereRadius) * (r0 + atmosphereRadius));
+    float tGround = groundDistance(b, h0 * (r0 + planetRadius));
+    if (tGround > 0.0f)
+      tMax = tGround;
+    if (maxDistance > 0.0f)
+      tMax = min(tMax, maxDistance);
+
+    float segment = tMax / viewSamples;
+    float odR = 0.0f;
+    float odM = 0.0f;
+    float3 sumR = float3(0.0f);
+    float3 sumM = float3(0.0f);
+    for (int i = 0; i < viewSamples; i++) {
+      float3 p = origin + dir * (segment * (i + 0.5f));
+      float h = length(p) - planetRadius;
+      float densR = exp(-h / rayleighScaleHeight) * segment;
+      float densM = exp(-h / mieScaleHeight) * segment;
+      odR += densR;
+      odM += densM;
+
+      float2 sunOd = sunOpticalDepth(p, h);
+      if (sunOd.x >= 0.0f) {
+        float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y);
+        float3 attenuation = exp3(-tau);
+        sumR += attenuation * densR;
+        sumM += attenuation * densM;
+      }
+    }
+
+    float mu = dot(dir, sunDir);
+    float3 sun = sunColor * sunIntensity;
+    float3 rayleigh = sun * sumR * betaR * phaseRayleigh(mu);
+    float3 mie = sun * sumM * betaMScatter * phaseMie(mu);
+    float3 transmittance = exp3(-(betaR * odR + betaMExtinction * odM));
+
+    float3 result = rayleigh + mie;
+    float alpha = 1.0f;
+    if (output == 1) {
+      result = rayleigh;
+    } else if (output == 2) {
+      result = mie;
+    } else if (output == 3) {
+      result = transmittance;
+    } else if (output == 4) {
+      float4 s = src(pos.x, pos.y);
+      result = float3(s.x, s.y, s.z) * transmittance + rayleigh + mie;
+      alpha = s.w;
+    }
+    dst() = float4(result.x, result.y, result.z, alpha);
+  }
+};
