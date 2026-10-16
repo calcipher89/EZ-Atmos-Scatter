@@ -1,0 +1,3 @@
+docs/previews/*
+!docs/previews/contact_sheet.png
+__pycache__/
