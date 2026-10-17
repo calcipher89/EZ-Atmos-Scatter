@@ -1,0 +1,143 @@
+// EzAtmosLight: measures the light in a lat-long HDRI for AtmosScatter.blink.
+//
+// Feed it a small copy of the HDRI (`env`, 512x256 is plenty) and a 4x1 image (`ref`)
+// that sets the output size. It writes four pixels:
+//   0: rgb = direction towards the sun (world, +Y up), a = sun peak luminance
+//   1: rgb = sun irradiance (sum of radiance x solid angle over the sun),
+//      a = 1 when the sun looks clipped (peak not far above the sky), else 0
+//   2: rgb = average sky radiance over the upper hemisphere outside the sun cone
+//   3: unused
+// Every output pixel repeats the same search; the input is small so that is cheap.
+// Uses the same lat-long convention as AtmosScatter.blink.
+
+kernel EzAtmosLight : ImageComputationKernel<ePixelWise>
+{
+  Image<eRead, eAccessPoint, eEdgeClamped> ref;
+  Image<eRead, eAccessRandom, eEdgeClamped> env;
+  Image<eWrite> dst;
+
+param:
+  float longitudeOffset;
+  float sunConeDeg;
+  float clipRatio;
+
+local:
+  float pi;
+
+  void define()
+  {
+    defineParam(longitudeOffset, "longitude_offset_deg", 0.0f);
+    defineParam(sunConeDeg, "sun_cone_deg", 6.0f);
+    defineParam(clipRatio, "clip_ratio", 20.0f);
+  }
+
+  void init()
+  {
+    pi = 3.14159265358979f;
+  }
+
+  float luminance(float4 c)
+  {
+    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;
+  }
+
+  float3 direction(int x, int y, float w, float h)
+  {
+    float lon = ((x + 0.5f) / w - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;
+    float lat = ((y + 0.5f) / h - 0.5f) * pi;
+    return float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));
+  }
+
+  void process(int2 pos)
+  {
+    int index = pos.x - ref.bounds.x1;
+    int x1 = env.bounds.x1;
+    int y1 = env.bounds.y1;
+    int w = env.bounds.width();
+    int h = env.bounds.height();
+    float fw = w;
+    float fh = h;
+    // Solid angle of one pixel at the equator; scaled by cos(latitude) per row.
+    float pixelSolidAngle = (2.0f * pi / fw) * (pi / fh);
+    int yHorizon = h / 2;
+
+    // Pass 1: brightest spot above the horizon. A 3x3 average keeps single hot pixels
+    // (glints, specular highlights) from beating the sun.
+    float bestLum = -1.0f;
+    int bestX = 0;
+    int bestY = h - 1;
+    float peak = 0.0f;
+    for (int y = yHorizon; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        float sum = 0.0f;
+        for (int j = -1; j <= 1; j++) {
+          for (int i = -1; i <= 1; i++) {
+            int xi = x + i;
+            if (xi < 0) xi += w;
+            if (xi >= w) xi -= w;
+            sum += luminance(env(x1 + xi, y1 + min(max(y + j, 0), h - 1)));
+          }
+        }
+        if (sum > bestLum) {
+          bestLum = sum;
+          bestX = x;
+          bestY = y;
+        }
+      }
+    }
+    for (int j = -1; j <= 1; j++) {
+      for (int i = -1; i <= 1; i++) {
+        int xi = bestX + i;
+        if (xi < 0) xi += w;
+        if (xi >= w) xi -= w;
+        peak = max(peak, luminance(env(x1 + xi, y1 + min(max(bestY + j, 0), h - 1))));
+      }
+    }
+    float3 peakDir = direction(bestX, bestY, fw, fh);
+
+    // Pass 2: everything inside a small cone around the peak is the sun; its direction is the
+    // centroid of the pixels brighter than half the peak. Everything else above the horizon
+    // is sky.
+    float cosCone = cos(sunConeDeg * pi / 180.0f);
+    float threshold = 0.5f * peak;
+    float3 sunDirSum = float3(0.0f);
+    float3 sunIrradiance = float3(0.0f);
+    float3 skySum = float3(0.0f);
+    float skyWeight = 0.0f;
+    for (int y = yHorizon; y < h; y++) {
+      float lat = ((y + 0.5f) / fh - 0.5f) * pi;
+      float dOmega = pixelSolidAngle * cos(lat);
+      for (int x = 0; x < w; x++) {
+        float4 c = env(x1 + x, y1 + y);
+        float3 rgb = float3(c.x, c.y, c.z);
+        float lum = luminance(c);
+        float3 d = direction(x, y, fw, fh);
+        if (dot(d, peakDir) > cosCone) {
+          // The whole cone counts towards the sun's energy so the glow a downsized or
+          // filtered sun spreads around itself is not mistaken for sky.
+          sunIrradiance += rgb * dOmega;
+          if (lum > threshold)
+            sunDirSum += d * ((lum - threshold) * dOmega);
+        } else {
+          skySum += rgb * dOmega;
+          skyWeight += dOmega;
+        }
+      }
+    }
+    float3 sunDir = peakDir;
+    if (length(sunDirSum) > 0.0f)
+      sunDir = normalize(sunDirSum);
+    float3 sky = skyWeight > 0.0f ? skySum / skyWeight : float3(0.0f);
+    float skyLum = 0.2126f * sky.x + 0.7152f * sky.y + 0.0722f * sky.z;
+    float clipped = peak < clipRatio * skyLum ? 1.0f : 0.0f;
+
+    float4 result = float4(0.0f);
+    if (index == 0)
+      result = float4(sunDir.x, sunDir.y, sunDir.z, peak);
+    else if (index == 1)
+      result = float4(sunIrradiance.x, sunIrradiance.y, sunIrradiance.z, clipped);
+    else if (index == 2)
+      result = float4(sky.x, sky.y, sky.z, 0.0f);
+    dst() = result;
+  }
+};

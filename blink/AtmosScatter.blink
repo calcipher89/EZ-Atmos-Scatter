@@ -7,25 +7,40 @@
 // Based on O'Neil, "Accurate Atmospheric Scattering" (GPU Gems 2, ch. 16) and the
 // Nishita model it builds on.
 //
+// Lighting can come from the HDRI itself: the `light` input is the 4x1 image written by
+// EzAtmosLight.blink (sun direction, sun irradiance, average sky radiance). The sun the
+// HDRI shows has already been dimmed by the atmosphere, so its irradiance is divided by
+// the sun's transmittance at the camera to get the light arriving at the top of the
+// atmosphere. Sky light adds an isotropic ambient term that stands in for multiple
+// scattering.
+//
 // All distances are in kilometres. Heights are carried separately from positions so
 // that near-horizon rays stay stable in 32-bit float.
 //
 // Lat-long convention: x = longitude (centre column looks down -Z), y = latitude
 // (bottom row = straight down, top row = straight up), +Y is up.
 //
-// output: 0 = inscatter (Rayleigh + Mie), 1 = Rayleigh only, 2 = Mie only,
-//         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter)
+// output: 0 = inscatter (Rayleigh + Mie + ambient), 1 = Rayleigh only, 2 = Mie only,
+//         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter),
+//         5 = ambient (sky light) only
 
 kernel AtmosScatter : ImageComputationKernel<ePixelWise>
 {
   Image<eRead, eAccessRandom, eEdgeClamped> src;
+  Image<eRead, eAccessRandom, eEdgeClamped> light;
   Image<eWrite> dst;
 
 param:
   int output;
+  int sunFromHdri;
+  int lightFromHdri;
   float3 sunDirection;
   float3 sunColor;
   float sunIntensity;
+  float sunStrength;
+  float sunBoost;
+  float skyLight;
+  float clearSkyRatio;
   float cameraAltitude;
   float maxDistance;
   float longitudeOffset;
@@ -43,7 +58,7 @@ param:
 
 local:
   float pi;
-  float3 sunDir;
+  float3 manualSunDir;
   float atmosphereRadius;
   float3 betaR;
   float betaMScatter;
@@ -52,9 +67,15 @@ local:
   void define()
   {
     defineParam(output, "output", 0);
+    defineParam(sunFromHdri, "sun_from_hdri", 0);
+    defineParam(lightFromHdri, "light_from_hdri", 0);
     defineParam(sunDirection, "sun_direction", float3(0.0f, 0.5f, -1.0f));
     defineParam(sunColor, "sun_color", float3(1.0f, 1.0f, 1.0f));
     defineParam(sunIntensity, "sun_intensity", 20.0f);
+    defineParam(sunStrength, "sun_strength", 1.0f);
+    defineParam(sunBoost, "sun_boost", 1.0f);
+    defineParam(skyLight, "sky_light", 0.0f);
+    defineParam(clearSkyRatio, "clear_sky_ratio", 55.0f);
     defineParam(cameraAltitude, "camera_altitude_km", 0.001f);
     defineParam(maxDistance, "max_distance_km", 0.0f);
     defineParam(longitudeOffset, "longitude_offset_deg", 0.0f);
@@ -74,7 +95,7 @@ local:
   void init()
   {
     pi = 3.14159265358979f;
-    sunDir = normalize(sunDirection);
+    manualSunDir = length(sunDirection) > 0.0f ? normalize(sunDirection) : float3(0.0f, 1.0f, 0.0f);
     atmosphereRadius = planetRadius + atmosphereThickness;
     betaR = rayleighCoefficients * rayleighDensity;
     betaMScatter = mieCoefficient * mieDensity;
@@ -84,6 +105,11 @@ local:
   float3 exp3(float3 v)
   {
     return float3(exp(v.x), exp(v.y), exp(v.z));
+  }
+
+  float luminance(float3 c)
+  {
+    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;
   }
 
   // Far intersection of a ray starting inside a sphere of radius r.
@@ -120,7 +146,7 @@ local:
 
   // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun.
   // Returns -1 in x if the planet blocks the sun.
-  float2 sunOpticalDepth(float3 p, float h)
+  float2 sunOpticalDepth(float3 p, float h, float3 sunDir)
   {
     float r = h + planetRadius;
     float b = dot(p, sunDir);
@@ -141,8 +167,47 @@ local:
     return float2(odR, odM);
   }
 
+  float4 lightPixel(int i)
+  {
+    return light(light.bounds.x1 + i, light.bounds.y1);
+  }
+
   void process(int2 pos)
   {
+    float h0 = max(cameraAltitude, 0.0f);
+    float r0 = planetRadius + h0;
+    float3 origin = float3(0.0f, r0, 0.0f);
+
+    // Light measured from the HDRI (see EzAtmosLight.blink).
+    float4 hdriSun = lightPixel(0);
+    float4 hdriSunIrradiance = lightPixel(1);
+    float4 hdriSky = lightPixel(2);
+    float3 skyAverage = float3(hdriSky.x, hdriSky.y, hdriSky.z);
+
+    float3 sunDir = manualSunDir;
+    float3 measuredDir = float3(hdriSun.x, hdriSun.y, hdriSun.z);
+    if (sunFromHdri != 0 && length(measuredDir) > 0.0f)
+      sunDir = normalize(measuredDir);
+
+    float3 sun = sunColor * sunIntensity * sunStrength;
+    if (lightFromHdri != 0) {
+      if (hdriSunIrradiance.w > 0.5f) {
+        // Clipped sun (LDR or low dynamic range capture): its energy is lost, so size it
+        // from the sky instead. clearSkyRatio is sun irradiance over average sky radiance
+        // for this model at default settings.
+        sun = sunColor * (clearSkyRatio * luminance(skyAverage) * sunBoost * sunStrength);
+      } else {
+        // Undo the atmosphere between the camera and the sun to get top-of-atmosphere light.
+        float2 od = sunOpticalDepth(origin, h0, sunDir);
+        float3 tSun = float3(1.0f);
+        if (od.x >= 0.0f)
+          tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));
+        tSun = float3(max(tSun.x, 0.02f), max(tSun.y, 0.02f), max(tSun.z, 0.02f));
+        float3 measured = float3(hdriSunIrradiance.x, hdriSunIrradiance.y, hdriSunIrradiance.z);
+        sun = sunColor * (measured / tSun) * sunStrength;
+      }
+    }
+
     float width = src.bounds.width();
     float height = src.bounds.height();
     float u = (pos.x - src.bounds.x1 + 0.5f) / width;
@@ -151,9 +216,6 @@ local:
     float lat = (v - 0.5f) * pi;
     float3 dir = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));
 
-    float h0 = max(cameraAltitude, 0.0f);
-    float r0 = planetRadius + h0;
-    float3 origin = float3(0.0f, r0, 0.0f);
     float b = dot(origin, dir);
 
     // March to the top of the atmosphere, or to the ground for downward rays.
@@ -177,7 +239,7 @@ local:
       odR += densR;
       odM += densM;
 
-      float2 sunOd = sunOpticalDepth(p, h);
+      float2 sunOd = sunOpticalDepth(p, h, sunDir);
       if (sunOd.x >= 0.0f) {
         float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y);
         float3 attenuation = exp3(-tau);
@@ -187,12 +249,13 @@ local:
     }
 
     float mu = dot(dir, sunDir);
-    float3 sun = sunColor * sunIntensity;
     float3 rayleigh = sun * sumR * betaR * phaseRayleigh(mu);
     float3 mie = sun * sumM * betaMScatter * phaseMie(mu);
     float3 transmittance = exp3(-(betaR * odR + betaMExtinction * odM));
+    // Sky light scattered into the view ray, treated as isotropic.
+    float3 ambient = skyAverage * skyLight * (float3(1.0f) - transmittance);
 
-    float3 result = rayleigh + mie;
+    float3 result = rayleigh + mie + ambient;
     float alpha = 1.0f;
     if (output == 1) {
       result = rayleigh;
@@ -202,8 +265,10 @@ local:
       result = transmittance;
     } else if (output == 4) {
       float4 s = src(pos.x, pos.y);
-      result = float3(s.x, s.y, s.z) * transmittance + rayleigh + mie;
+      result = float3(s.x, s.y, s.z) * transmittance + rayleigh + mie + ambient;
       alpha = s.w;
+    } else if (output == 5) {
+      result = ambient;
     }
     dst() = float4(result.x, result.y, result.z, alpha);
   }
