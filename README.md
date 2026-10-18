@@ -20,6 +20,7 @@ and brightness from the image, sky light). Depth-aware haze and multiple scatter
 | `gizmos/EzAtmosScatter.gizmo` | The node artists use. Built from the kernels by `python/build_gizmo.py` |
 | `blink/AtmosScatter.blink` | BlinkScript kernel: Rayleigh + Mie single scattering per lat-long pixel |
 | `blink/EzAtmosLight.blink` | BlinkScript kernel: measures the sun and sky light in the HDRI |
+| `blink/EzAtmosTransmittanceLUT.blink` | BlinkScript kernel: precomputes the optical depth towards the sun as a 256x64 table |
 | `python/build_gizmo.py` | Rebuilds the gizmo after a kernel change |
 | `python/ezatmosscatter.py` | Helpers for the gizmo's buttons |
 | `init.py`, `menu.py` | Plugin path and the Nodes menu entry |
@@ -77,6 +78,8 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | camera height (m) | 1 | Camera height above sea level |
 | max distance (km) | 0 (off) | How far the haze reaches. Use it to add haze up to a set distance instead of a full sky |
 | quality | Normal | Samples per ray (Draft is about 4x faster than High) |
+| viewer resolution | Half | Resolution the haze is computed at in the Nuke GUI (Full / Half / Quarter) |
+| render resolution | Full | Resolution the haze is computed at in terminal and farm renders |
 
 The **Advanced** section holds the physical constants (scattering coefficients, scale
 heights, planet size) and the sun detection settings.
@@ -95,6 +98,28 @@ upper hemisphere as the sky.
   *sun boost* scales that estimate.
 
 Lat-long convention: the centre column looks down -Z, the top row is straight up.
+
+### Speed
+
+The haze is smooth, so it is computed at a reduced size and scaled back up, with the sky
+and ground halves scaled separately so the horizon stays sharp. *viewer resolution* is
+used while Nuke's GUI is open and *render resolution* when rendering from a terminal
+(`$gui` decides which). Half and Quarter stay within about 2% of Full.
+
+Measured on a 3044x1522 HDRI in Nuke 15.1 (RTX 3070, warm):
+
+| | CPU | GPU |
+| --- | --- | --- |
+| Full | 3.1 s | 0.2 s |
+| Half | 0.95 s | 0.2 s |
+| Quarter | 0.36 s | 0.2 s |
+
+On the farm:
+
+- Terminal Nuke only uses the GPU when started with `--gpu`
+  (`Nuke15.1.exe --gpu -x script.nk`). Without it BlinkScript runs on the CPU.
+- Each new Nuke process compiles the kernels once before the first frame (about 7 s on
+  the GPU, 30 s on the CPU), so render several frames per task.
 
 ## Rebuilding the gizmo
 

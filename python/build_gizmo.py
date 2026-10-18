@@ -117,6 +117,20 @@ def _add_knobs(group):
     quality = nuke.Enumeration_Knob("quality", "quality", ["Draft", "Normal", "High"])
     quality.setTooltip("Number of samples along each ray. Draft is about 4x faster than High.")
     k.append(quality)
+    for name, label, tip in [
+            ("viewer_resolution", "viewer resolution",
+             "Resolution the haze is computed at while you work in the Nuke GUI. It is smooth, so Half "
+             "or Quarter look almost the same and are 4x or 16x faster. The horizon stays sharp."),
+            ("render_resolution", "render resolution",
+             "Resolution the haze is computed at when rendering from a terminal or on the farm.")]:
+        knob = nuke.Enumeration_Knob(name, label, ["Full", "Half", "Quarter"])
+        knob.setTooltip(tip)
+        k.append(knob)
+    # Scale the passes are computed at: the viewer setting in the GUI, the render setting
+    # in terminal renders ($gui is 0 there).
+    scale = nuke.Double_Knob("scatter_scale", "scatter scale")
+    scale.setFlag(nuke.INVISIBLE)
+    k.append(scale)
 
     k.append(nuke.Tab_Knob("advanced", "Advanced", nuke.TABBEGINCLOSEDGROUP))
     for name, label, tip in [
@@ -148,6 +162,7 @@ def _add_knobs(group):
         "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "sun_strength": 1.0, "sun_boost": 1.0,
         "sky_light": 1.0, "light_from_hdri": True, "sky_amount": 1.0, "haze_amount": 1.0,
         "haze_glow_size": 1.0, "camera_height": 1.0, "max_distance": 0.0, "quality": 1,
+        "viewer_resolution": 1, "render_resolution": 0,
         "rayleigh_coefficients": [0.0052, 0.0121, 0.0296], "mie_coefficient": 0.021,
         "rayleigh_scale_height": 8.5, "mie_scale_height": 1.2, "planet_radius": 6360.0,
         "atmosphere_thickness": 60.0, "manual_sun_brightness": 20.0, "clear_sky_ratio": 55.0,
@@ -155,6 +170,9 @@ def _add_knobs(group):
     }
     for name, value in defaults.items():
         group[name].setValue(value)
+    res = "(%s==0 ? 1 : %s==1 ? 0.5 : 0.25)"
+    group["scatter_scale"].setExpression("$gui ? %s : %s" % (res % ("viewer_resolution", "viewer_resolution"),
+                                                              res % ("render_resolution", "render_resolution")))
 
 
 def _link_scatter(node, output):
@@ -184,7 +202,45 @@ def _link_scatter(node, output):
     _link(node, "planet_radius_km", "parent.planet_radius")
     _link(node, "atmosphere_thickness_km", "parent.atmosphere_thickness")
     _link(node, "view_samples", "parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32")
-    _link(node, "light_samples", "parent.quality==0 ? 4 : parent.quality==1 ? 8 : 12")
+
+
+def _upscale(node, hdri, name):
+    """Scale a pass back to the HDRI size, sky and ground halves apart so the hard
+    horizon line does not get filtered across."""
+    halves = []
+    for half, (lo, hi) in (("sky", ("input.height / 2", "input.height")), ("ground", ("0", "input.height / 2"))):
+        x, y = node.xpos(), node.ypos() + 60
+        # Crop without black edges: outside the box Nuke repeats the edge pixels.
+        cut = nuke.nodes.Crop(name="%s_%s_cut" % (name, half), crop=False)
+        cut.setInput(0, node)
+        cut["box"].setExpression("0", 0)
+        cut["box"].setExpression(lo, 1)
+        cut["box"].setExpression("input.width", 2)
+        cut["box"].setExpression(hi, 3)
+        up = nuke.nodes.Reformat(name="%s_%s_up" % (name, half), type="to box", box_fixed=True,
+                                 resize="distort", filter="Cubic")
+        up.setInput(0, cut)
+        up["box_width"].setExpression("hdri.width")
+        up["box_height"].setExpression("hdri.height")
+        trim = nuke.nodes.Crop(name="%s_%s_trim" % (name, half))
+        trim.setInput(0, up)
+        trim["box"].setExpression("0", 0)
+        trim["box"].setExpression(lo.replace("input", "hdri"), 1)
+        trim["box"].setExpression("hdri.width", 2)
+        trim["box"].setExpression(hi.replace("input", "hdri"), 3)
+        halves.append(trim)
+    joined = nuke.nodes.Merge2(name="%s_full" % name, operation="plus")
+    joined.setInput(0, halves[0])
+    joined.setInput(1, halves[1])
+    # At full resolution skip the round trip altogether.
+    pick = nuke.nodes.Switch(name="%s_resolution" % name)
+    pick.setInput(0, node)
+    pick.setInput(1, joined)
+    pick["which"].setExpression("parent.scatter_scale < 1")
+    for i, n in enumerate([halves[0].input(0).input(0), halves[0].input(0), halves[0],
+                           halves[1].input(0).input(0), halves[1].input(0), halves[1], joined, pick]):
+        n.setXYpos(node.xpos() + (i // 3) * 0, node.ypos() + 40 + 30 * i)
+    return pick
 
 
 def build():
@@ -214,14 +270,34 @@ def build():
     _link(light, "sun_cone_deg", "parent.sun_search_cone")
     _link(light, "clip_ratio", "parent.clip_ratio")
 
+    # Optical depth towards the sun, precomputed once instead of marched at every sample.
+    lut_ref = nuke.nodes.Reformat(name="LUTRef", type="to box", box_width=256, box_height=64,
+                                  box_fixed=True, resize="distort", xpos=450, ypos=-240)
+    lut_ref.setInput(0, hdri)
+    lut = nuke.nodes.BlinkScript(name="TransmittanceLUT", xpos=450, ypos=-180)
+    lut.setInput(0, lut_ref)
+    _load_kernel(lut, "EzAtmosTransmittanceLUT.blink")
+    for param, knob in [("planet_radius_km", "planet_radius"), ("atmosphere_thickness_km", "atmosphere_thickness"),
+                        ("rayleigh_scale_height_km", "rayleigh_scale_height"),
+                        ("mie_scale_height_km", "mie_scale_height")]:
+        _link(lut, param, "parent." + knob)
+
+    # The passes are computed at scatter_scale. Even height keeps the horizon on a row edge.
+    low = nuke.nodes.Reformat(name="ScatterResolution", type="to box", box_fixed=True, resize="distort",
+                              xpos=-300, ypos=-240)
+    low.setInput(0, hdri)
+    low["box_width"].setExpression("max(floor(hdri.width * parent.scatter_scale + 0.5), 4)")
+    low["box_height"].setExpression("max(2 * floor(hdri.height * parent.scatter_scale / 2 + 0.5), 2)")
+
     passes = {}
     for index, (name, output, _) in enumerate(PASSES):
         node = nuke.nodes.BlinkScript(name="Scatter_" + name, xpos=-300 + 150 * index, ypos=-100)
-        node.setInput(0, hdri)
+        node.setInput(0, low)
         node.setInput(1, light)
+        node.setInput(2, lut)
         _load_kernel(node, "AtmosScatter.blink")
         _link_scatter(node, output)
-        passes[name] = node
+        passes[name] = _upscale(node, hdri, name)
 
     sum1 = nuke.nodes.Merge2(name="AddMie", operation="plus", xpos=-300, ypos=0)
     sum1.setInput(0, passes["rayleigh"])

@@ -1,0 +1,72 @@
+// EzAtmosTransmittanceLUT: optical depth from any point in the atmosphere to its top.
+//
+// Precomputes what AtmosScatter.blink would otherwise march towards the sun at every
+// sample of every view ray. Feed it any image of the LUT size (256x64 works well); it
+// writes Rayleigh optical depth in red and Mie optical depth in green, in km of
+// sea-level-density air.
+//
+// Parameterisation from Bruneton, "Precomputed Atmospheric Scattering" (2017 version):
+//   v = rho / H              rho = sqrt(r^2 - Rg^2), H = sqrt(Rt^2 - Rg^2)
+//   u = (d - dMin) / (dMax - dMin)
+// where d is the distance to the top of the atmosphere along the ray. Only rays that do
+// not hit the ground are stored; callers test for the ground themselves.
+// AtmosScatter.blink holds the matching lookup (lutUV); keep the two in step.
+
+kernel EzAtmosTransmittanceLUT : ImageComputationKernel<ePixelWise>
+{
+  Image<eRead, eAccessPoint, eEdgeClamped> ref;
+  Image<eWrite> dst;
+
+param:
+  float planetRadius;
+  float atmosphereThickness;
+  float rayleighScaleHeight;
+  float mieScaleHeight;
+  int samples;
+
+local:
+  float atmosphereRadius;
+  float horizonLength;
+
+  void define()
+  {
+    defineParam(planetRadius, "planet_radius_km", 6360.0f);
+    defineParam(atmosphereThickness, "atmosphere_thickness_km", 60.0f);
+    defineParam(rayleighScaleHeight, "rayleigh_scale_height_km", 8.5f);
+    defineParam(mieScaleHeight, "mie_scale_height_km", 1.2f);
+    defineParam(samples, "samples", 64);
+  }
+
+  void init()
+  {
+    atmosphereRadius = planetRadius + atmosphereThickness;
+    horizonLength = sqrt(atmosphereRadius * atmosphereRadius - planetRadius * planetRadius);
+  }
+
+  void process(int2 pos)
+  {
+    float u = (pos.x - ref.bounds.x1 + 0.5f) / ref.bounds.width();
+    float v = (pos.y - ref.bounds.y1 + 0.5f) / ref.bounds.height();
+
+    float rho = v * horizonLength;
+    float r = sqrt(rho * rho + planetRadius * planetRadius);
+    float dMin = atmosphereRadius - r;
+    float dMax = rho + horizonLength;
+    float d = dMin + u * (dMax - dMin);
+    float mu = d <= 0.0f ? 1.0f : (horizonLength * horizonLength - rho * rho - d * d) / (2.0f * r * d);
+    mu = clamp(mu, -1.0f, 1.0f);
+
+    float3 origin = float3(0.0f, r, 0.0f);
+    float3 dir = float3(sqrt(max(1.0f - mu * mu, 0.0f)), mu, 0.0f);
+    float segment = d / samples;
+    float odR = 0.0f;
+    float odM = 0.0f;
+    for (int i = 0; i < samples; i++) {
+      float3 q = origin + dir * (segment * (i + 0.5f));
+      float h = max(length(q) - planetRadius, 0.0f);
+      odR += exp(-h / rayleighScaleHeight) * segment;
+      odM += exp(-h / mieScaleHeight) * segment;
+    }
+    dst() = float4(odR, odM, 0.0f, 1.0f);
+  }
+};

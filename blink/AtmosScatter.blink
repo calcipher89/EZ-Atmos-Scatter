@@ -14,6 +14,10 @@
 // atmosphere. Sky light adds an isotropic ambient term that stands in for multiple
 // scattering.
 //
+// The optical depth towards the sun comes from the `lut` input, the table written by
+// EzAtmosTransmittanceLUT.blink, instead of a second raymarch at every sample.
+// Transmittance and sky light need no sun at all, so those outputs skip it.
+//
 // All distances are in kilometres. Heights are carried separately from positions so
 // that near-horizon rays stay stable in 32-bit float.
 //
@@ -28,6 +32,7 @@ kernel AtmosScatter : ImageComputationKernel<ePixelWise>
 {
   Image<eRead, eAccessRandom, eEdgeClamped> src;
   Image<eRead, eAccessRandom, eEdgeClamped> light;
+  Image<eRead, eAccessRandom, eEdgeClamped> lut;
   Image<eWrite> dst;
 
 param:
@@ -54,10 +59,10 @@ param:
   float planetRadius;
   float atmosphereThickness;
   int viewSamples;
-  int lightSamples;
 
 local:
   float pi;
+  float horizonLength;
   float3 manualSunDir;
   float atmosphereRadius;
   float3 betaR;
@@ -89,7 +94,6 @@ local:
     defineParam(planetRadius, "planet_radius_km", 6360.0f);
     defineParam(atmosphereThickness, "atmosphere_thickness_km", 60.0f);
     defineParam(viewSamples, "view_samples", 16);
-    defineParam(lightSamples, "light_samples", 8);
   }
 
   void init()
@@ -97,6 +101,7 @@ local:
     pi = 3.14159265358979f;
     manualSunDir = length(sunDirection) > 0.0f ? normalize(sunDirection) : float3(0.0f, 1.0f, 0.0f);
     atmosphereRadius = planetRadius + atmosphereThickness;
+    horizonLength = sqrt(atmosphereRadius * atmosphereRadius - planetRadius * planetRadius);
     betaR = rayleighCoefficients * rayleighDensity;
     betaMScatter = mieCoefficient * mieDensity;
     betaMExtinction = betaMScatter / 0.9f;
@@ -144,27 +149,29 @@ local:
     return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);
   }
 
-  // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun.
-  // Returns -1 in x if the planet blocks the sun.
+  // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun, read from the
+  // table EzAtmosTransmittanceLUT.blink precomputes. Returns -1 in x if the planet
+  // blocks the sun.
   float2 sunOpticalDepth(float3 p, float h, float3 sunDir)
   {
+    h = clamp(h, 0.0f, atmosphereThickness);
     float r = h + planetRadius;
-    float b = dot(p, sunDir);
+    float b = dot(p, sunDir) * r / length(p);
     float cGround = h * (r + planetRadius);
     if (groundDistance(b, cGround) > 0.0f)
       return float2(-1.0f, 0.0f);
 
-    float cAtmos = (r - atmosphereRadius) * (r + atmosphereRadius);
-    float segment = exitDistance(b, cAtmos) / lightSamples;
-    float odR = 0.0f;
-    float odM = 0.0f;
-    for (int i = 0; i < lightSamples; i++) {
-      float3 q = p + sunDir * (segment * (i + 0.5f));
-      float hq = length(q) - planetRadius;
-      odR += exp(-hq / rayleighScaleHeight) * segment;
-      odM += exp(-hq / mieScaleHeight) * segment;
-    }
-    return float2(odR, odM);
+    // Inverse of the mapping in EzAtmosTransmittanceLUT.blink.
+    float rho = sqrt(max(r * r - planetRadius * planetRadius, 0.0f));
+    float d = exitDistance(b, (r - atmosphereRadius) * (r + atmosphereRadius));
+    float dMin = atmosphereRadius - r;
+    float dMax = rho + horizonLength;
+    float u = (d - dMin) / max(dMax - dMin, 1e-6f);
+    float v = rho / horizonLength;
+    float x = lut.bounds.x1 + u * lut.bounds.width() - 0.5f;
+    float y = lut.bounds.y1 + v * lut.bounds.height() - 0.5f;
+    float4 od = bilinear(lut, x, y);
+    return float2(od.x, od.y);
   }
 
   float4 lightPixel(int i)
@@ -189,8 +196,11 @@ local:
     if (sunFromHdri != 0 && length(measuredDir) > 0.0f)
       sunDir = normalize(measuredDir);
 
+    // Transmittance and sky light depend on the view ray alone.
+    bool needSun = output != 3 && output != 5;
+
     float3 sun = sunColor * sunIntensity * sunStrength;
-    if (lightFromHdri != 0) {
+    if (needSun && lightFromHdri != 0) {
       if (hdriSunIrradiance.w > 0.5f) {
         // Clipped sun (LDR or low dynamic range capture): its energy is lost, so size it
         // from the sky instead. clearSkyRatio is sun irradiance over average sky radiance
@@ -239,6 +249,8 @@ local:
       odR += densR;
       odM += densM;
 
+      if (!needSun)
+        continue;
       float2 sunOd = sunOpticalDepth(p, h, sunDir);
       if (sunOd.x >= 0.0f) {
         float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y);
