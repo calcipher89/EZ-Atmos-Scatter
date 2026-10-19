@@ -1,0 +1,962 @@
+version 15.1 v3
+add_layer {atmos_inscatter atmos_inscatter.red atmos_inscatter.green atmos_inscatter.blue}
+add_layer {atmos_rayleigh atmos_rayleigh.red atmos_rayleigh.green atmos_rayleigh.blue}
+add_layer {atmos_mie atmos_mie.red atmos_mie.green atmos_mie.blue}
+add_layer {atmos_ambient atmos_ambient.red atmos_ambient.green atmos_ambient.blue}
+add_layer {atmos_transmittance atmos_transmittance.red atmos_transmittance.green atmos_transmittance.blue}
+Gizmo {
+ name EzAtmosScatter1
+ tile_color 0x4a7fb5ff
+ selected true
+ addUserKnob {20 ezatmos l EzAtmosScatter}
+ addUserKnob {4 view_output l "view output" t "What the main rgba shows. Every pass is also written to its own atmos_* layer." M {"Scatter Preview Comp" Scatter "Sky (Rayleigh)" "Haze (Mie)" "Sky Light (Ambient)" Transmittance}}
+ addUserKnob {26 sun_divider l Sun}
+ addUserKnob {4 sun_from l "sun from" t "Auto finds the sun in the HDRI. Axis points at the Axis node plugged into the 'sun' input (its world position). Manual uses 'sun direction'." M {"Auto (HDRI)" Axis Manual}}
+ addUserKnob {13 sun_direction l "sun direction" t "Direction towards the sun, +Y up. Used when 'sun from' is Manual."}
+ sun_direction {0 0.5 -1}
+ addUserKnob {22 use_detected_sun l "copy detected sun to manual" t "Writes the sun direction found in the HDRI into 'sun direction'." -STARTLINE T "import ezatmosscatter; ezatmosscatter.copy_detected_sun(nuke.thisNode())"}
+ addUserKnob {7 hdri_rotation l "hdri rotation" t "Rotates the lat-long mapping in degrees, if the HDRI's centre column does not look down -Z." R -180 180}
+ addUserKnob {6 light_from_hdri l "light from HDRI" t "Take the sun's colour and brightness from the HDRI. Off: 'sun color' and 'sun strength' set them directly." +STARTLINE}
+ light_from_hdri true
+ addUserKnob {18 sun_color l "sun color" t "Tint on the HDRI's sun, or the sun colour itself when 'light from HDRI' is off."}
+ sun_color 1
+ addUserKnob {7 sun_strength l "sun strength" t "Multiplies the sun's brightness." R 0 4}
+ sun_strength 1
+ addUserKnob {7 sun_boost l "sun boost" t "Only used when the HDRI's sun is clipped (JPEGs, LDR captures). The sun is then sized from the sky brightness; this scales it." R 0 4}
+ sun_boost 1
+ addUserKnob {7 sky_light l "sky light" t "Light from the whole HDRI sky scattered into the haze. Fills in what a single bounce from the sun misses." R 0 2}
+ sky_light 1
+ addUserKnob {26 atmos_divider l Atmosphere}
+ addUserKnob {7 sky_amount l "sky amount" t "Density of the air (Rayleigh). More gives a bluer, brighter sky." R 0 4}
+ sky_amount 1
+ addUserKnob {7 haze_amount l "haze amount" t "Density of the haze (Mie). More gives whiter, thicker air." R 0 10}
+ haze_amount 1
+ addUserKnob {7 haze_glow_size l "haze glow size" t "Size of the glow around the sun. Bigger spreads it wider." R 0 4}
+ haze_glow_size 1
+ addUserKnob {7 camera_height l "camera height (m)" t "Camera height above sea level, in metres." R 0 5000}
+ camera_height 1
+ addUserKnob {7 max_distance l "max distance (km)" t "How far the haze reaches along each ray. 0 = to the top of the atmosphere." R 0 200}
+ addUserKnob {4 fill_below_horizon l "fill below horizon" t "Fills the lower half of the passes (Scatter, Sky, Haze, Sky Light, Transmittance) so they can be used as a full sky dome. Extend Horizon repeats the row just above the horizon, Mirror Sky reflects the sky. The Scatter Preview Comp stays physical." M {Off "Extend Horizon" "Mirror Sky"}}
+ addUserKnob {4 quality t "Number of samples along each ray. Draft is about 4x faster than High." M {Draft Normal High}}
+ quality Normal
+ addUserKnob {4 viewer_resolution l "viewer resolution" t "Resolution the haze is computed at while you work in the Nuke GUI. It is smooth, so Half or Quarter look almost the same and are 4x or 16x faster. The horizon stays sharp." M {Full Half Quarter}}
+ viewer_resolution Half
+ addUserKnob {4 render_resolution l "render resolution" t "Resolution the haze is computed at when rendering from a terminal or on the farm." M {Full Half Quarter}}
+ addUserKnob {7 scatter_scale l "scatter scale" +INVISIBLE}
+ scatter_scale {{"\$gui ? (viewer_resolution==0 ? 1 : viewer_resolution==1 ? 0.5 : 0.25) : (render_resolution==0 ? 1 : render_resolution==1 ? 0.5 : 0.25)"}}
+ addUserKnob {20 advanced l Advanced n 2}
+ addUserKnob {13 rayleigh_coefficients l "rayleigh coefficients" t "Sea-level Rayleigh scattering per km at 680, 550, 440 nm."}
+ rayleigh_coefficients {0.0052 0.0121 0.0296}
+ addUserKnob {7 mie_coefficient l "mie coefficient" t "Sea-level Mie scattering per km. Extinction is this / 0.9."}
+ mie_coefficient 0.021
+ addUserKnob {7 rayleigh_scale_height l "rayleigh scale height (km)" t "Height over which air density falls by e."}
+ rayleigh_scale_height 8.5
+ addUserKnob {7 mie_scale_height l "mie scale height (km)" t "Height over which haze density falls by e."}
+ mie_scale_height 1.2
+ addUserKnob {7 planet_radius l "planet radius (km)"}
+ planet_radius 6360
+ addUserKnob {7 atmosphere_thickness l "atmosphere thickness (km)"}
+ atmosphere_thickness 60
+ addUserKnob {7 manual_sun_brightness l "manual sun brightness" t "Sun brightness when 'light from HDRI' is off, before 'sun strength'."}
+ manual_sun_brightness 20
+ addUserKnob {7 clear_sky_ratio l "clear sky ratio" t "For clipped suns: sun brightness relative to the average sky."}
+ clear_sky_ratio 55
+ addUserKnob {7 sun_search_cone l "sun search cone (deg)" t "Radius around the brightest spot counted as the sun."}
+ sun_search_cone 6
+ addUserKnob {7 clip_ratio l "clip ratio" t "The sun counts as clipped when its peak is under this many times the average sky."}
+ clip_ratio 20
+ addUserKnob {20 advanced_end n -1}
+}
+ Input {
+  inputs 0
+  name sun
+  xpos 600
+  ypos -400
+  number 1
+ }
+ Input {
+  inputs 0
+  name hdri
+  xpos 0
+  ypos -400
+ }
+set N50f80000 [stack 0]
+ Reformat {
+  type "to box"
+  box_width 256
+  box_height 64
+  box_fixed true
+  resize distort
+  name LUTRef
+  xpos 450
+  ypos -240
+ }
+ BlinkScript {
+  recompileCount 2
+  KernelDescription "3 \"EzAtmosTransmittanceLUT\" iterate pixelWise 7b9e665df90b9b69e3888fd3ba97f65f2a96400aabc8ddd21a158f8f110f94bb 2 \"ref\" Read Point \"dst\" Write Point 5 \"planet_radius_km\" Float 1 AMDGRQ== \"atmosphere_thickness_km\" Float 1 AABwQg== \"rayleigh_scale_height_km\" Float 1 AAAIQQ== \"mie_scale_height_km\" Float 1 mpmZPw== \"samples\" Int 1 QAAAAA== 5 \"planetRadius\" 1 1 Default \"atmosphereThickness\" 1 1 Default \"rayleighScaleHeight\" 1 1 Default \"mieScaleHeight\" 1 1 Default \"samples\" 1 1 Default 2 \"atmosphereRadius\" Float 1 1 AAAAAA== \"horizonLength\" Float 1 1 AAAAAA=="
+  kernelSource "// EzAtmosTransmittanceLUT: optical depth from any point in the atmosphere to its top.\n//\n// Precomputes what AtmosScatter.blink would otherwise march towards the sun at every\n// sample of every view ray. Feed it any image of the LUT size (256x64 works well); it\n// writes Rayleigh optical depth in red and Mie optical depth in green, in km of\n// sea-level-density air.\n//\n// Parameterisation from Bruneton, \"Precomputed Atmospheric Scattering\" (2017 version):\n//   v = rho / H              rho = sqrt(r^2 - Rg^2), H = sqrt(Rt^2 - Rg^2)\n//   u = (d - dMin) / (dMax - dMin)\n// where d is the distance to the top of the atmosphere along the ray. Only rays that do\n// not hit the ground are stored; callers test for the ground themselves.\n// AtmosScatter.blink holds the matching lookup (lutUV); keep the two in step.\n\nkernel EzAtmosTransmittanceLUT : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> ref;\n  Image<eWrite> dst;\n\nparam:\n  float planetRadius;\n  float atmosphereThickness;\n  float rayleighScaleHeight;\n  float mieScaleHeight;\n  int samples;\n\nlocal:\n  float atmosphereRadius;\n  float horizonLength;\n\n  void define()\n  \{\n    defineParam(planetRadius, \"planet_radius_km\", 6360.0f);\n    defineParam(atmosphereThickness, \"atmosphere_thickness_km\", 60.0f);\n    defineParam(rayleighScaleHeight, \"rayleigh_scale_height_km\", 8.5f);\n    defineParam(mieScaleHeight, \"mie_scale_height_km\", 1.2f);\n    defineParam(samples, \"samples\", 64);\n  \}\n\n  void init()\n  \{\n    atmosphereRadius = planetRadius + atmosphereThickness;\n    horizonLength = sqrt(atmosphereRadius * atmosphereRadius - planetRadius * planetRadius);\n  \}\n\n  void process(int2 pos)\n  \{\n    float u = (pos.x - ref.bounds.x1 + 0.5f) / ref.bounds.width();\n    float v = (pos.y - ref.bounds.y1 + 0.5f) / ref.bounds.height();\n\n    float rho = v * horizonLength;\n    float r = sqrt(rho * rho + planetRadius * planetRadius);\n    float dMin = atmosphereRadius - r;\n    float dMax = rho + horizonLength;\n    float d = dMin + u * (dMax - dMin);\n    float mu = d <= 0.0f ? 1.0f : (horizonLength * horizonLength - rho * rho - d * d) / (2.0f * r * d);\n    mu = clamp(mu, -1.0f, 1.0f);\n\n    float3 origin = float3(0.0f, r, 0.0f);\n    float3 dir = float3(sqrt(max(1.0f - mu * mu, 0.0f)), mu, 0.0f);\n    float segment = d / samples;\n    float odR = 0.0f;\n    float odM = 0.0f;\n    for (int i = 0; i < samples; i++) \{\n      float3 q = origin + dir * (segment * (i + 0.5f));\n      float h = max(length(q) - planetRadius, 0.0f);\n      odR += exp(-h / rayleighScaleHeight) * segment;\n      odM += exp(-h / mieScaleHeight) * segment;\n    \}\n    dst() = float4(odR, odM, 0.0f, 1.0f);\n  \}\n\};\n"
+  rebuild ""
+  EzAtmosTransmittanceLUT_planet_radius_km {{parent.planet_radius}}
+  EzAtmosTransmittanceLUT_atmosphere_thickness_km {{parent.atmosphere_thickness}}
+  EzAtmosTransmittanceLUT_rayleigh_scale_height_km {{parent.rayleigh_scale_height}}
+  EzAtmosTransmittanceLUT_mie_scale_height_km {{parent.mie_scale_height}}
+  rebuild_finalise ""
+  name TransmittanceLUT
+  xpos 450
+  ypos -180
+ }
+set N50fa8400 [stack 0]
+push $N50f80000
+ Reformat {
+  type "to box"
+  box_width 512
+  box_height 256
+  box_fixed true
+  resize distort
+  filter Mitchell
+  name LightProxy
+  xpos 300
+  ypos -300
+ }
+set N50f80800 [stack 0]
+push $N50f80800
+ Reformat {
+  type "to box"
+  box_width 4
+  box_height 1
+  box_fixed true
+  resize distort
+  name LightRef
+  xpos 300
+  ypos -240
+ }
+ BlinkScript {
+  inputs 2
+  recompileCount 2
+  KernelDescription "3 \"EzAtmosLight\" iterate pixelWise d86d8533eb5194dc00f699366ffd4d718bac911a06cb2d2cc635f4ab8a56a76a 3 \"ref\" Read Point \"env\" Read Random \"dst\" Write Point 3 \"longitude_offset_deg\" Float 1 AAAAAA== \"sun_cone_deg\" Float 1 AADAQA== \"clip_ratio\" Float 1 AACgQQ== 3 \"longitudeOffset\" 1 1 Default \"sunConeDeg\" 1 1 Default \"clipRatio\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
+  kernelSource "// EzAtmosLight: measures the light in a lat-long HDRI for AtmosScatter.blink.\n//\n// Feed it a small copy of the HDRI (`env`, 512x256 is plenty) and a 4x1 image (`ref`)\n// that sets the output size. It writes four pixels:\n//   0: rgb = direction towards the sun (world, +Y up), a = sun peak luminance\n//   1: rgb = sun irradiance (sum of radiance x solid angle over the sun),\n//      a = 1 when the sun looks clipped (peak not far above the sky), else 0\n//   2: rgb = average sky radiance over the upper hemisphere outside the sun cone\n//   3: unused\n// Every output pixel repeats the same search; the input is small so that is cheap.\n// Uses the same lat-long convention as AtmosScatter.blink.\n\nkernel EzAtmosLight : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> ref;\n  Image<eRead, eAccessRandom, eEdgeClamped> env;\n  Image<eWrite> dst;\n\nparam:\n  float longitudeOffset;\n  float sunConeDeg;\n  float clipRatio;\n\nlocal:\n  float pi;\n\n  void define()\n  \{\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(sunConeDeg, \"sun_cone_deg\", 6.0f);\n    defineParam(clipRatio, \"clip_ratio\", 20.0f);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n  \}\n\n  float luminance(float4 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  float3 direction(int x, int y, float w, float h)\n  \{\n    float lon = ((x + 0.5f) / w - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = ((y + 0.5f) / h - 0.5f) * pi;\n    return float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n  \}\n\n  void process(int2 pos)\n  \{\n    int index = pos.x - ref.bounds.x1;\n    int x1 = env.bounds.x1;\n    int y1 = env.bounds.y1;\n    int w = env.bounds.width();\n    int h = env.bounds.height();\n    float fw = w;\n    float fh = h;\n    // Solid angle of one pixel at the equator; scaled by cos(latitude) per row.\n    float pixelSolidAngle = (2.0f * pi / fw) * (pi / fh);\n    int yHorizon = h / 2;\n\n    // Pass 1: brightest spot above the horizon. A 3x3 average keeps single hot pixels\n    // (glints, specular highlights) from beating the sun.\n    float bestLum = -1.0f;\n    int bestX = 0;\n    int bestY = h - 1;\n    float peak = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      for (int x = 0; x < w; x++) \{\n        float sum = 0.0f;\n        for (int j = -1; j <= 1; j++) \{\n          for (int i = -1; i <= 1; i++) \{\n            int xi = x + i;\n            if (xi < 0) xi += w;\n            if (xi >= w) xi -= w;\n            sum += luminance(env(x1 + xi, y1 + min(max(y + j, 0), h - 1)));\n          \}\n        \}\n        if (sum > bestLum) \{\n          bestLum = sum;\n          bestX = x;\n          bestY = y;\n        \}\n      \}\n    \}\n    for (int j = -1; j <= 1; j++) \{\n      for (int i = -1; i <= 1; i++) \{\n        int xi = bestX + i;\n        if (xi < 0) xi += w;\n        if (xi >= w) xi -= w;\n        peak = max(peak, luminance(env(x1 + xi, y1 + min(max(bestY + j, 0), h - 1))));\n      \}\n    \}\n    float3 peakDir = direction(bestX, bestY, fw, fh);\n\n    // Pass 2: everything inside a small cone around the peak is the sun; its direction is the\n    // centroid of the pixels brighter than half the peak. Everything else above the horizon\n    // is sky.\n    float cosCone = cos(sunConeDeg * pi / 180.0f);\n    float threshold = 0.5f * peak;\n    float3 sunDirSum = float3(0.0f);\n    float3 sunIrradiance = float3(0.0f);\n    float3 skySum = float3(0.0f);\n    float skyWeight = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      float lat = ((y + 0.5f) / fh - 0.5f) * pi;\n      float dOmega = pixelSolidAngle * cos(lat);\n      for (int x = 0; x < w; x++) \{\n        float4 c = env(x1 + x, y1 + y);\n        float3 rgb = float3(c.x, c.y, c.z);\n        float lum = luminance(c);\n        float3 d = direction(x, y, fw, fh);\n        if (dot(d, peakDir) > cosCone) \{\n          // The whole cone counts towards the sun's energy so the glow a downsized or\n          // filtered sun spreads around itself is not mistaken for sky.\n          sunIrradiance += rgb * dOmega;\n          if (lum > threshold)\n            sunDirSum += d * ((lum - threshold) * dOmega);\n        \} else \{\n          skySum += rgb * dOmega;\n          skyWeight += dOmega;\n        \}\n      \}\n    \}\n    float3 sunDir = peakDir;\n    if (length(sunDirSum) > 0.0f)\n      sunDir = normalize(sunDirSum);\n    float3 sky = skyWeight > 0.0f ? skySum / skyWeight : float3(0.0f);\n    float skyLum = 0.2126f * sky.x + 0.7152f * sky.y + 0.0722f * sky.z;\n    float clipped = peak < clipRatio * skyLum ? 1.0f : 0.0f;\n\n    float4 result = float4(0.0f);\n    if (index == 0)\n      result = float4(sunDir.x, sunDir.y, sunDir.z, peak);\n    else if (index == 1)\n      result = float4(sunIrradiance.x, sunIrradiance.y, sunIrradiance.z, clipped);\n    else if (index == 2)\n      result = float4(sky.x, sky.y, sky.z, 0.0f);\n    dst() = result;\n  \}\n\};\n"
+  rebuild ""
+  EzAtmosLight_longitude_offset_deg {{parent.hdri_rotation}}
+  EzAtmosLight_sun_cone_deg {{parent.sun_search_cone}}
+  EzAtmosLight_clip_ratio {{parent.clip_ratio}}
+  rebuild_finalise ""
+  name Light
+  xpos 300
+  ypos -180
+ }
+set N50f81800 [stack 0]
+push $N50f80000
+ Reformat {
+  type "to box"
+  box_width {{"max(floor(hdri.width * parent.scatter_scale + 0.5), 4)"}}
+  box_height {{"max(2 * floor(hdri.height * parent.scatter_scale / 2 + 0.5), 2)"}}
+  box_fixed true
+  resize distort
+  name ScatterResolution
+  xpos -300
+  ypos -240
+ }
+set N50fa8800 [stack 0]
+ BlinkScript {
+  inputs 3
+  recompileCount 2
+  KernelDescription "3 \"AtmosScatter\" iterate pixelWise e17ed4a1ee2e270f7b30162c3a99e294adae15cf6f4182136877260553ae480c 4 \"src\" Read Random \"light\" Read Random \"lut\" Read Random \"dst\" Write Point 23 \"output\" Int 1 AAAAAA== \"sun_from_hdri\" Int 1 AAAAAA== \"light_from_hdri\" Int 1 AAAAAA== \"sun_direction\" Float 3 AAAAAAAAAD8AAIC/AAAAAA== \"sun_color\" Float 3 AACAPwAAgD8AAIA/AAAAAA== \"sun_intensity\" Float 1 AACgQQ== \"sun_strength\" Float 1 AACAPw== \"sun_boost\" Float 1 AACAPw== \"sky_light\" Float 1 AAAAAA== \"clear_sky_ratio\" Float 1 AABcQg== \"camera_altitude_km\" Float 1 bxKDOg== \"max_distance_km\" Float 1 AAAAAA== \"longitude_offset_deg\" Float 1 AAAAAA== \"rayleigh_density\" Float 1 AACAPw== \"mie_density\" Float 1 AACAPw== \"rayleigh_coefficients\" Float 3 w2SqOxQ/Rjyze/I8AAAAAA== \"mie_coefficient\" Float 1 MQisPA== \"rayleigh_scale_height_km\" Float 1 AAAIQQ== \"mie_scale_height_km\" Float 1 mpmZPw== \"mie_g\" Float 1 XI9CPw== \"planet_radius_km\" Float 1 AMDGRQ== \"atmosphere_thickness_km\" Float 1 AABwQg== \"view_samples\" Int 1 EAAAAA== 23 \"output\" 1 1 Default \"sunFromHdri\" 1 1 Default \"lightFromHdri\" 1 1 Default \"sunDirection\" 3 1 Default \"sunColor\" 3 1 Default \"sunIntensity\" 1 1 Default \"sunStrength\" 1 1 Default \"sunBoost\" 1 1 Default \"skyLight\" 1 1 Default \"clearSkyRatio\" 1 1 Default \"cameraAltitude\" 1 1 Default \"maxDistance\" 1 1 Default \"longitudeOffset\" 1 1 Default \"rayleighDensity\" 1 1 Default \"mieDensity\" 1 1 Default \"rayleighCoefficients\" 3 1 Default \"mieCoefficient\" 1 1 Default \"rayleighScaleHeight\" 1 1 Default \"mieScaleHeight\" 1 1 Default \"mieG\" 1 1 Default \"planetRadius\" 1 1 Default \"atmosphereThickness\" 1 1 Default \"viewSamples\" 1 1 Default 7 \"pi\" Float 1 1 AAAAAA== \"horizonLength\" Float 1 1 AAAAAA== \"manualSunDir\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"atmosphereRadius\" Float 1 1 AAAAAA== \"betaR\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"betaMScatter\" Float 1 1 AAAAAA== \"betaMExtinction\" Float 1 1 AAAAAA=="
+  kernelSource "// EZ Atmos Scatter: single-scattering atmosphere for lat-long images.\n//\n// Every pixel of the lat-long input is treated as a view direction from a camera\n// sitting just above the planet surface. The kernel raymarches that view ray through\n// a spherical atmosphere (Rayleigh + Mie, exponential density falloff) and, at every\n// sample, marches a second ray towards the sun to get the light that reaches it.\n// Based on O'Neil, \"Accurate Atmospheric Scattering\" (GPU Gems 2, ch. 16) and the\n// Nishita model it builds on.\n//\n// Lighting can come from the HDRI itself: the `light` input is the 4x1 image written by\n// EzAtmosLight.blink (sun direction, sun irradiance, average sky radiance). The sun the\n// HDRI shows has already been dimmed by the atmosphere, so its irradiance is divided by\n// the sun's transmittance at the camera to get the light arriving at the top of the\n// atmosphere. Sky light adds an isotropic ambient term that stands in for multiple\n// scattering.\n//\n// The optical depth towards the sun comes from the `lut` input, the table written by\n// EzAtmosTransmittanceLUT.blink, instead of a second raymarch at every sample.\n// Transmittance and sky light need no sun at all, so those outputs skip it.\n//\n// All distances are in kilometres. Heights are carried separately from positions so\n// that near-horizon rays stay stable in 32-bit float.\n//\n// Lat-long convention: x = longitude (centre column looks down -Z), y = latitude\n// (bottom row = straight down, top row = straight up), +Y is up.\n//\n// output: 0 = inscatter (Rayleigh + Mie + ambient), 1 = Rayleigh only, 2 = Mie only,\n//         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter),\n//         5 = ambient (sky light) only\n\nkernel AtmosScatter : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessRandom, eEdgeClamped> src;\n  Image<eRead, eAccessRandom, eEdgeClamped> light;\n  Image<eRead, eAccessRandom, eEdgeClamped> lut;\n  Image<eWrite> dst;\n\nparam:\n  int output;\n  int sunFromHdri;\n  int lightFromHdri;\n  float3 sunDirection;\n  float3 sunColor;\n  float sunIntensity;\n  float sunStrength;\n  float sunBoost;\n  float skyLight;\n  float clearSkyRatio;\n  float cameraAltitude;\n  float maxDistance;\n  float longitudeOffset;\n  float rayleighDensity;\n  float mieDensity;\n  float3 rayleighCoefficients;\n  float mieCoefficient;\n  float rayleighScaleHeight;\n  float mieScaleHeight;\n  float mieG;\n  float planetRadius;\n  float atmosphereThickness;\n  int viewSamples;\n\nlocal:\n  float pi;\n  float horizonLength;\n  float3 manualSunDir;\n  float atmosphereRadius;\n  float3 betaR;\n  float betaMScatter;\n  float betaMExtinction;\n\n  void define()\n  \{\n    defineParam(output, \"output\", 0);\n    defineParam(sunFromHdri, \"sun_from_hdri\", 0);\n    defineParam(lightFromHdri, \"light_from_hdri\", 0);\n    defineParam(sunDirection, \"sun_direction\", float3(0.0f, 0.5f, -1.0f));\n    defineParam(sunColor, \"sun_color\", float3(1.0f, 1.0f, 1.0f));\n    defineParam(sunIntensity, \"sun_intensity\", 20.0f);\n    defineParam(sunStrength, \"sun_strength\", 1.0f);\n    defineParam(sunBoost, \"sun_boost\", 1.0f);\n    defineParam(skyLight, \"sky_light\", 0.0f);\n    defineParam(clearSkyRatio, \"clear_sky_ratio\", 55.0f);\n    defineParam(cameraAltitude, \"camera_altitude_km\", 0.001f);\n    defineParam(maxDistance, \"max_distance_km\", 0.0f);\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(rayleighDensity, \"rayleigh_density\", 1.0f);\n    defineParam(mieDensity, \"mie_density\", 1.0f);\n    defineParam(rayleighCoefficients, \"rayleigh_coefficients\", float3(0.0052f, 0.0121f, 0.0296f));\n    defineParam(mieCoefficient, \"mie_coefficient\", 0.021f);\n    defineParam(rayleighScaleHeight, \"rayleigh_scale_height_km\", 8.5f);\n    defineParam(mieScaleHeight, \"mie_scale_height_km\", 1.2f);\n    defineParam(mieG, \"mie_g\", 0.76f);\n    defineParam(planetRadius, \"planet_radius_km\", 6360.0f);\n    defineParam(atmosphereThickness, \"atmosphere_thickness_km\", 60.0f);\n    defineParam(viewSamples, \"view_samples\", 16);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n    manualSunDir = length(sunDirection) > 0.0f ? normalize(sunDirection) : float3(0.0f, 1.0f, 0.0f);\n    atmosphereRadius = planetRadius + atmosphereThickness;\n    horizonLength = sqrt(atmosphereRadius * atmosphereRadius - planetRadius * planetRadius);\n    betaR = rayleighCoefficients * rayleighDensity;\n    betaMScatter = mieCoefficient * mieDensity;\n    betaMExtinction = betaMScatter / 0.9f;\n  \}\n\n  float3 exp3(float3 v)\n  \{\n    return float3(exp(v.x), exp(v.y), exp(v.z));\n  \}\n\n  float luminance(float3 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  // Far intersection of a ray starting inside a sphere of radius r.\n  // c = |o|^2 - r^2 is passed in precomputed so callers can build it from heights.\n  float exitDistance(float b, float c)\n  \{\n    float disc = b * b - c;\n    return -b + sqrt(max(disc, 0.0f));\n  \}\n\n  // Distance to the ground along the ray, or -1 if the ray misses the planet.\n  float groundDistance(float b, float c)\n  \{\n    if (b > 0.0f)\n      return -1.0f;\n    float disc = b * b - c;\n    if (disc < 0.0f)\n      return -1.0f;\n    return -b - sqrt(disc);\n  \}\n\n  float phaseRayleigh(float mu)\n  \{\n    return 3.0f / (16.0f * pi) * (1.0f + mu * mu);\n  \}\n\n  // Cornette-Shanks approximation of the Mie phase function.\n  float phaseMie(float mu)\n  \{\n    float g2 = mieG * mieG;\n    float denom = pow(max(1.0f + g2 - 2.0f * mieG * mu, 1e-6f), 1.5f);\n    return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);\n  \}\n\n  // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun, read from the\n  // table EzAtmosTransmittanceLUT.blink precomputes. Returns -1 in x if the planet\n  // blocks the sun.\n  float2 sunOpticalDepth(float3 p, float h, float3 sunDir)\n  \{\n    h = clamp(h, 0.0f, atmosphereThickness);\n    float r = h + planetRadius;\n    float b = dot(p, sunDir) * r / length(p);\n    float cGround = h * (r + planetRadius);\n    if (groundDistance(b, cGround) > 0.0f)\n      return float2(-1.0f, 0.0f);\n\n    // Inverse of the mapping in EzAtmosTransmittanceLUT.blink.\n    float rho = sqrt(max(r * r - planetRadius * planetRadius, 0.0f));\n    float d = exitDistance(b, (r - atmosphereRadius) * (r + atmosphereRadius));\n    float dMin = atmosphereRadius - r;\n    float dMax = rho + horizonLength;\n    float u = (d - dMin) / max(dMax - dMin, 1e-6f);\n    float v = rho / horizonLength;\n    float x = lut.bounds.x1 + u * lut.bounds.width() - 0.5f;\n    float y = lut.bounds.y1 + v * lut.bounds.height() - 0.5f;\n    float4 od = bilinear(lut, x, y);\n    return float2(od.x, od.y);\n  \}\n\n  float4 lightPixel(int i)\n  \{\n    return light(light.bounds.x1 + i, light.bounds.y1);\n  \}\n\n  void process(int2 pos)\n  \{\n    float h0 = max(cameraAltitude, 0.0f);\n    float r0 = planetRadius + h0;\n    float3 origin = float3(0.0f, r0, 0.0f);\n\n    // Light measured from the HDRI (see EzAtmosLight.blink).\n    float4 hdriSun = lightPixel(0);\n    float4 hdriSunIrradiance = lightPixel(1);\n    float4 hdriSky = lightPixel(2);\n    float3 skyAverage = float3(hdriSky.x, hdriSky.y, hdriSky.z);\n\n    float3 sunDir = manualSunDir;\n    float3 measuredDir = float3(hdriSun.x, hdriSun.y, hdriSun.z);\n    if (sunFromHdri != 0 && length(measuredDir) > 0.0f)\n      sunDir = normalize(measuredDir);\n\n    // Transmittance and sky light depend on the view ray alone.\n    bool needSun = output != 3 && output != 5;\n\n    float3 sun = sunColor * sunIntensity * sunStrength;\n    if (needSun && lightFromHdri != 0) \{\n      if (hdriSunIrradiance.w > 0.5f) \{\n        // Clipped sun (LDR or low dynamic range capture): its energy is lost, so size it\n        // from the sky instead. clearSkyRatio is sun irradiance over average sky radiance\n        // for this model at default settings.\n        sun = sunColor * (clearSkyRatio * luminance(skyAverage) * sunBoost * sunStrength);\n      \} else \{\n        // Undo the atmosphere between the camera and the sun to get top-of-atmosphere light.\n        float2 od = sunOpticalDepth(origin, h0, sunDir);\n        float3 tSun = float3(1.0f);\n        if (od.x >= 0.0f)\n          tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));\n        tSun = float3(max(tSun.x, 0.02f), max(tSun.y, 0.02f), max(tSun.z, 0.02f));\n        float3 measured = float3(hdriSunIrradiance.x, hdriSunIrradiance.y, hdriSunIrradiance.z);\n        sun = sunColor * (measured / tSun) * sunStrength;\n      \}\n    \}\n\n    float width = src.bounds.width();\n    float height = src.bounds.height();\n    float u = (pos.x - src.bounds.x1 + 0.5f) / width;\n    float v = (pos.y - src.bounds.y1 + 0.5f) / height;\n    float lon = (u - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = (v - 0.5f) * pi;\n    float3 dir = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n\n    float b = dot(origin, dir);\n\n    // March to the top of the atmosphere, or to the ground for downward rays.\n    float tMax = exitDistance(b, (r0 - atmosphereRadius) * (r0 + atmosphereRadius));\n    float tGround = groundDistance(b, h0 * (r0 + planetRadius));\n    if (tGround > 0.0f)\n      tMax = tGround;\n    if (maxDistance > 0.0f)\n      tMax = min(tMax, maxDistance);\n\n    float segment = tMax / viewSamples;\n    float odR = 0.0f;\n    float odM = 0.0f;\n    float3 sumR = float3(0.0f);\n    float3 sumM = float3(0.0f);\n    for (int i = 0; i < viewSamples; i++) \{\n      float3 p = origin + dir * (segment * (i + 0.5f));\n      float h = length(p) - planetRadius;\n      float densR = exp(-h / rayleighScaleHeight) * segment;\n      float densM = exp(-h / mieScaleHeight) * segment;\n      odR += densR;\n      odM += densM;\n\n      if (!needSun)\n        continue;\n      float2 sunOd = sunOpticalDepth(p, h, sunDir);\n      if (sunOd.x >= 0.0f) \{\n        float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y);\n        float3 attenuation = exp3(-tau);\n        sumR += attenuation * densR;\n        sumM += attenuation * densM;\n      \}\n    \}\n\n    float mu = dot(dir, sunDir);\n    float3 rayleigh = sun * sumR * betaR * phaseRayleigh(mu);\n    float3 mie = sun * sumM * betaMScatter * phaseMie(mu);\n    float3 transmittance = exp3(-(betaR * odR + betaMExtinction * odM));\n    // Sky light scattered into the view ray, treated as isotropic.\n    float3 ambient = skyAverage * skyLight * (float3(1.0f) - transmittance);\n\n    float3 result = rayleigh + mie + ambient;\n    float alpha = 1.0f;\n    if (output == 1) \{\n      result = rayleigh;\n    \} else if (output == 2) \{\n      result = mie;\n    \} else if (output == 3) \{\n      result = transmittance;\n    \} else if (output == 4) \{\n      float4 s = src(pos.x, pos.y);\n      result = float3(s.x, s.y, s.z) * transmittance + rayleigh + mie + ambient;\n      alpha = s.w;\n    \} else if (output == 5) \{\n      result = ambient;\n    \}\n    dst() = float4(result.x, result.y, result.z, alpha);\n  \}\n\};\n"
+  rebuild ""
+  AtmosScatter_output {{3}}
+  AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
+  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
+  AtmosScatter_sun_strength {{parent.sun_strength}}
+  AtmosScatter_sun_boost {{parent.sun_boost}}
+  AtmosScatter_sky_light {{parent.sky_light}}
+  AtmosScatter_clear_sky_ratio {{parent.clear_sky_ratio}}
+  AtmosScatter_camera_altitude_km {{"parent.camera_height / 1000"}}
+  AtmosScatter_max_distance_km {{parent.max_distance}}
+  AtmosScatter_longitude_offset_deg {{parent.hdri_rotation}}
+  AtmosScatter_rayleigh_density {{parent.sky_amount}}
+  AtmosScatter_mie_density {{parent.haze_amount}}
+  AtmosScatter_rayleigh_coefficients {{parent.rayleigh_coefficients.x} {parent.rayleigh_coefficients.y} {parent.rayleigh_coefficients.z}}
+  AtmosScatter_mie_coefficient {{parent.mie_coefficient}}
+  AtmosScatter_rayleigh_scale_height_km {{parent.rayleigh_scale_height}}
+  AtmosScatter_mie_scale_height_km {{parent.mie_scale_height}}
+  AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
+  AtmosScatter_planet_radius_km {{parent.planet_radius}}
+  AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
+  AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
+  rebuild_finalise ""
+  name Scatter_transmittance
+  xpos 0
+  ypos -100
+ }
+set N7d1d2000 [stack 0]
+ Crop {
+  box {{0} {0} {input.width} {"input.height / 2"}}
+  crop false
+  name transmittance_ground_cut
+  xpos 0
+  ypos 30
+ }
+ Reformat {
+  type "to box"
+  box_width {{hdri.width}}
+  box_height {{hdri.height}}
+  box_fixed true
+  resize distort
+  name transmittance_ground_up
+  xpos 0
+  ypos 60
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name transmittance_ground_trim
+  xpos 0
+  ypos 90
+ }
+push $N7d1d2000
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name transmittance_sky_cut
+  xpos 0
+  ypos -60
+ }
+ Reformat {
+  type "to box"
+  box_width {{hdri.width}}
+  box_height {{hdri.height}}
+  box_fixed true
+  resize distort
+  name transmittance_sky_up
+  xpos 0
+  ypos -30
+ }
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name transmittance_sky_trim
+  xpos 0
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name transmittance_full
+  xpos 0
+  ypos 120
+ }
+push $N7d1d2000
+ Switch {
+  inputs 2
+  which {{"parent.scatter_scale < 1"}}
+  name transmittance_resolution
+  xpos 0
+  ypos 150
+ }
+set N50f7af00 [stack 0]
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name transmittance_upper
+  xpos 230
+  ypos 180
+ }
+set N7d331c00 [stack 0]
+ Mirror2 {
+  flip true
+  name transmittance_flip
+  xpos 340
+  ypos 180
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name transmittance_lower
+  xpos 340
+  ypos 210
+ }
+push $N7d331c00
+ Merge2 {
+  inputs 2
+  operation plus
+  name transmittance_mirror
+  xpos 230
+  ypos 240
+ }
+push $N50f7af00
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name transmittance_sky
+  xpos 120
+  ypos 180
+ }
+ AdjBBox {
+  numpixels {{hdri.height}}
+  name transmittance_extend
+  xpos 120
+  ypos 210
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {hdri.height}}
+  name transmittance_extend_trim
+  xpos 120
+  ypos 240
+ }
+push $N50f7af00
+ Switch {
+  inputs 3
+  which {{parent.fill_below_horizon}}
+  name transmittance_fill
+  xpos 120
+  ypos 280
+ }
+set N50f7cd00 [stack 0]
+push $N50fa8400
+push $N50f81800
+push $N50fa8800
+ BlinkScript {
+  inputs 3
+  recompileCount 2
+  KernelDescription "3 \"AtmosScatter\" iterate pixelWise e17ed4a1ee2e270f7b30162c3a99e294adae15cf6f4182136877260553ae480c 4 \"src\" Read Random \"light\" Read Random \"lut\" Read Random \"dst\" Write Point 23 \"output\" Int 1 AAAAAA== \"sun_from_hdri\" Int 1 AAAAAA== \"light_from_hdri\" Int 1 AAAAAA== \"sun_direction\" Float 3 AAAAAAAAAD8AAIC/AAAAAA== \"sun_color\" Float 3 AACAPwAAgD8AAIA/AAAAAA== \"sun_intensity\" Float 1 AACgQQ== \"sun_strength\" Float 1 AACAPw== \"sun_boost\" Float 1 AACAPw== \"sky_light\" Float 1 AAAAAA== \"clear_sky_ratio\" Float 1 AABcQg== \"camera_altitude_km\" Float 1 bxKDOg== \"max_distance_km\" Float 1 AAAAAA== \"longitude_offset_deg\" Float 1 AAAAAA== \"rayleigh_density\" Float 1 AACAPw== \"mie_density\" Float 1 AACAPw== \"rayleigh_coefficients\" Float 3 w2SqOxQ/Rjyze/I8AAAAAA== \"mie_coefficient\" Float 1 MQisPA== \"rayleigh_scale_height_km\" Float 1 AAAIQQ== \"mie_scale_height_km\" Float 1 mpmZPw== \"mie_g\" Float 1 XI9CPw== \"planet_radius_km\" Float 1 AMDGRQ== \"atmosphere_thickness_km\" Float 1 AABwQg== \"view_samples\" Int 1 EAAAAA== 23 \"output\" 1 1 Default \"sunFromHdri\" 1 1 Default \"lightFromHdri\" 1 1 Default \"sunDirection\" 3 1 Default \"sunColor\" 3 1 Default \"sunIntensity\" 1 1 Default \"sunStrength\" 1 1 Default \"sunBoost\" 1 1 Default \"skyLight\" 1 1 Default \"clearSkyRatio\" 1 1 Default \"cameraAltitude\" 1 1 Default \"maxDistance\" 1 1 Default \"longitudeOffset\" 1 1 Default \"rayleighDensity\" 1 1 Default \"mieDensity\" 1 1 Default \"rayleighCoefficients\" 3 1 Default \"mieCoefficient\" 1 1 Default \"rayleighScaleHeight\" 1 1 Default \"mieScaleHeight\" 1 1 Default \"mieG\" 1 1 Default \"planetRadius\" 1 1 Default \"atmosphereThickness\" 1 1 Default \"viewSamples\" 1 1 Default 7 \"pi\" Float 1 1 AAAAAA== \"horizonLength\" Float 1 1 AAAAAA== \"manualSunDir\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"atmosphereRadius\" Float 1 1 AAAAAA== \"betaR\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"betaMScatter\" Float 1 1 AAAAAA== \"betaMExtinction\" Float 1 1 AAAAAA=="
+  kernelSource "// EZ Atmos Scatter: single-scattering atmosphere for lat-long images.\n//\n// Every pixel of the lat-long input is treated as a view direction from a camera\n// sitting just above the planet surface. The kernel raymarches that view ray through\n// a spherical atmosphere (Rayleigh + Mie, exponential density falloff) and, at every\n// sample, marches a second ray towards the sun to get the light that reaches it.\n// Based on O'Neil, \"Accurate Atmospheric Scattering\" (GPU Gems 2, ch. 16) and the\n// Nishita model it builds on.\n//\n// Lighting can come from the HDRI itself: the `light` input is the 4x1 image written by\n// EzAtmosLight.blink (sun direction, sun irradiance, average sky radiance). The sun the\n// HDRI shows has already been dimmed by the atmosphere, so its irradiance is divided by\n// the sun's transmittance at the camera to get the light arriving at the top of the\n// atmosphere. Sky light adds an isotropic ambient term that stands in for multiple\n// scattering.\n//\n// The optical depth towards the sun comes from the `lut` input, the table written by\n// EzAtmosTransmittanceLUT.blink, instead of a second raymarch at every sample.\n// Transmittance and sky light need no sun at all, so those outputs skip it.\n//\n// All distances are in kilometres. Heights are carried separately from positions so\n// that near-horizon rays stay stable in 32-bit float.\n//\n// Lat-long convention: x = longitude (centre column looks down -Z), y = latitude\n// (bottom row = straight down, top row = straight up), +Y is up.\n//\n// output: 0 = inscatter (Rayleigh + Mie + ambient), 1 = Rayleigh only, 2 = Mie only,\n//         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter),\n//         5 = ambient (sky light) only\n\nkernel AtmosScatter : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessRandom, eEdgeClamped> src;\n  Image<eRead, eAccessRandom, eEdgeClamped> light;\n  Image<eRead, eAccessRandom, eEdgeClamped> lut;\n  Image<eWrite> dst;\n\nparam:\n  int output;\n  int sunFromHdri;\n  int lightFromHdri;\n  float3 sunDirection;\n  float3 sunColor;\n  float sunIntensity;\n  float sunStrength;\n  float sunBoost;\n  float skyLight;\n  float clearSkyRatio;\n  float cameraAltitude;\n  float maxDistance;\n  float longitudeOffset;\n  float rayleighDensity;\n  float mieDensity;\n  float3 rayleighCoefficients;\n  float mieCoefficient;\n  float rayleighScaleHeight;\n  float mieScaleHeight;\n  float mieG;\n  float planetRadius;\n  float atmosphereThickness;\n  int viewSamples;\n\nlocal:\n  float pi;\n  float horizonLength;\n  float3 manualSunDir;\n  float atmosphereRadius;\n  float3 betaR;\n  float betaMScatter;\n  float betaMExtinction;\n\n  void define()\n  \{\n    defineParam(output, \"output\", 0);\n    defineParam(sunFromHdri, \"sun_from_hdri\", 0);\n    defineParam(lightFromHdri, \"light_from_hdri\", 0);\n    defineParam(sunDirection, \"sun_direction\", float3(0.0f, 0.5f, -1.0f));\n    defineParam(sunColor, \"sun_color\", float3(1.0f, 1.0f, 1.0f));\n    defineParam(sunIntensity, \"sun_intensity\", 20.0f);\n    defineParam(sunStrength, \"sun_strength\", 1.0f);\n    defineParam(sunBoost, \"sun_boost\", 1.0f);\n    defineParam(skyLight, \"sky_light\", 0.0f);\n    defineParam(clearSkyRatio, \"clear_sky_ratio\", 55.0f);\n    defineParam(cameraAltitude, \"camera_altitude_km\", 0.001f);\n    defineParam(maxDistance, \"max_distance_km\", 0.0f);\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(rayleighDensity, \"rayleigh_density\", 1.0f);\n    defineParam(mieDensity, \"mie_density\", 1.0f);\n    defineParam(rayleighCoefficients, \"rayleigh_coefficients\", float3(0.0052f, 0.0121f, 0.0296f));\n    defineParam(mieCoefficient, \"mie_coefficient\", 0.021f);\n    defineParam(rayleighScaleHeight, \"rayleigh_scale_height_km\", 8.5f);\n    defineParam(mieScaleHeight, \"mie_scale_height_km\", 1.2f);\n    defineParam(mieG, \"mie_g\", 0.76f);\n    defineParam(planetRadius, \"planet_radius_km\", 6360.0f);\n    defineParam(atmosphereThickness, \"atmosphere_thickness_km\", 60.0f);\n    defineParam(viewSamples, \"view_samples\", 16);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n    manualSunDir = length(sunDirection) > 0.0f ? normalize(sunDirection) : float3(0.0f, 1.0f, 0.0f);\n    atmosphereRadius = planetRadius + atmosphereThickness;\n    horizonLength = sqrt(atmosphereRadius * atmosphereRadius - planetRadius * planetRadius);\n    betaR = rayleighCoefficients * rayleighDensity;\n    betaMScatter = mieCoefficient * mieDensity;\n    betaMExtinction = betaMScatter / 0.9f;\n  \}\n\n  float3 exp3(float3 v)\n  \{\n    return float3(exp(v.x), exp(v.y), exp(v.z));\n  \}\n\n  float luminance(float3 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  // Far intersection of a ray starting inside a sphere of radius r.\n  // c = |o|^2 - r^2 is passed in precomputed so callers can build it from heights.\n  float exitDistance(float b, float c)\n  \{\n    float disc = b * b - c;\n    return -b + sqrt(max(disc, 0.0f));\n  \}\n\n  // Distance to the ground along the ray, or -1 if the ray misses the planet.\n  float groundDistance(float b, float c)\n  \{\n    if (b > 0.0f)\n      return -1.0f;\n    float disc = b * b - c;\n    if (disc < 0.0f)\n      return -1.0f;\n    return -b - sqrt(disc);\n  \}\n\n  float phaseRayleigh(float mu)\n  \{\n    return 3.0f / (16.0f * pi) * (1.0f + mu * mu);\n  \}\n\n  // Cornette-Shanks approximation of the Mie phase function.\n  float phaseMie(float mu)\n  \{\n    float g2 = mieG * mieG;\n    float denom = pow(max(1.0f + g2 - 2.0f * mieG * mu, 1e-6f), 1.5f);\n    return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);\n  \}\n\n  // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun, read from the\n  // table EzAtmosTransmittanceLUT.blink precomputes. Returns -1 in x if the planet\n  // blocks the sun.\n  float2 sunOpticalDepth(float3 p, float h, float3 sunDir)\n  \{\n    h = clamp(h, 0.0f, atmosphereThickness);\n    float r = h + planetRadius;\n    float b = dot(p, sunDir) * r / length(p);\n    float cGround = h * (r + planetRadius);\n    if (groundDistance(b, cGround) > 0.0f)\n      return float2(-1.0f, 0.0f);\n\n    // Inverse of the mapping in EzAtmosTransmittanceLUT.blink.\n    float rho = sqrt(max(r * r - planetRadius * planetRadius, 0.0f));\n    float d = exitDistance(b, (r - atmosphereRadius) * (r + atmosphereRadius));\n    float dMin = atmosphereRadius - r;\n    float dMax = rho + horizonLength;\n    float u = (d - dMin) / max(dMax - dMin, 1e-6f);\n    float v = rho / horizonLength;\n    float x = lut.bounds.x1 + u * lut.bounds.width() - 0.5f;\n    float y = lut.bounds.y1 + v * lut.bounds.height() - 0.5f;\n    float4 od = bilinear(lut, x, y);\n    return float2(od.x, od.y);\n  \}\n\n  float4 lightPixel(int i)\n  \{\n    return light(light.bounds.x1 + i, light.bounds.y1);\n  \}\n\n  void process(int2 pos)\n  \{\n    float h0 = max(cameraAltitude, 0.0f);\n    float r0 = planetRadius + h0;\n    float3 origin = float3(0.0f, r0, 0.0f);\n\n    // Light measured from the HDRI (see EzAtmosLight.blink).\n    float4 hdriSun = lightPixel(0);\n    float4 hdriSunIrradiance = lightPixel(1);\n    float4 hdriSky = lightPixel(2);\n    float3 skyAverage = float3(hdriSky.x, hdriSky.y, hdriSky.z);\n\n    float3 sunDir = manualSunDir;\n    float3 measuredDir = float3(hdriSun.x, hdriSun.y, hdriSun.z);\n    if (sunFromHdri != 0 && length(measuredDir) > 0.0f)\n      sunDir = normalize(measuredDir);\n\n    // Transmittance and sky light depend on the view ray alone.\n    bool needSun = output != 3 && output != 5;\n\n    float3 sun = sunColor * sunIntensity * sunStrength;\n    if (needSun && lightFromHdri != 0) \{\n      if (hdriSunIrradiance.w > 0.5f) \{\n        // Clipped sun (LDR or low dynamic range capture): its energy is lost, so size it\n        // from the sky instead. clearSkyRatio is sun irradiance over average sky radiance\n        // for this model at default settings.\n        sun = sunColor * (clearSkyRatio * luminance(skyAverage) * sunBoost * sunStrength);\n      \} else \{\n        // Undo the atmosphere between the camera and the sun to get top-of-atmosphere light.\n        float2 od = sunOpticalDepth(origin, h0, sunDir);\n        float3 tSun = float3(1.0f);\n        if (od.x >= 0.0f)\n          tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));\n        tSun = float3(max(tSun.x, 0.02f), max(tSun.y, 0.02f), max(tSun.z, 0.02f));\n        float3 measured = float3(hdriSunIrradiance.x, hdriSunIrradiance.y, hdriSunIrradiance.z);\n        sun = sunColor * (measured / tSun) * sunStrength;\n      \}\n    \}\n\n    float width = src.bounds.width();\n    float height = src.bounds.height();\n    float u = (pos.x - src.bounds.x1 + 0.5f) / width;\n    float v = (pos.y - src.bounds.y1 + 0.5f) / height;\n    float lon = (u - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = (v - 0.5f) * pi;\n    float3 dir = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n\n    float b = dot(origin, dir);\n\n    // March to the top of the atmosphere, or to the ground for downward rays.\n    float tMax = exitDistance(b, (r0 - atmosphereRadius) * (r0 + atmosphereRadius));\n    float tGround = groundDistance(b, h0 * (r0 + planetRadius));\n    if (tGround > 0.0f)\n      tMax = tGround;\n    if (maxDistance > 0.0f)\n      tMax = min(tMax, maxDistance);\n\n    float segment = tMax / viewSamples;\n    float odR = 0.0f;\n    float odM = 0.0f;\n    float3 sumR = float3(0.0f);\n    float3 sumM = float3(0.0f);\n    for (int i = 0; i < viewSamples; i++) \{\n      float3 p = origin + dir * (segment * (i + 0.5f));\n      float h = length(p) - planetRadius;\n      float densR = exp(-h / rayleighScaleHeight) * segment;\n      float densM = exp(-h / mieScaleHeight) * segment;\n      odR += densR;\n      odM += densM;\n\n      if (!needSun)\n        continue;\n      float2 sunOd = sunOpticalDepth(p, h, sunDir);\n      if (sunOd.x >= 0.0f) \{\n        float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y);\n        float3 attenuation = exp3(-tau);\n        sumR += attenuation * densR;\n        sumM += attenuation * densM;\n      \}\n    \}\n\n    float mu = dot(dir, sunDir);\n    float3 rayleigh = sun * sumR * betaR * phaseRayleigh(mu);\n    float3 mie = sun * sumM * betaMScatter * phaseMie(mu);\n    float3 transmittance = exp3(-(betaR * odR + betaMExtinction * odM));\n    // Sky light scattered into the view ray, treated as isotropic.\n    float3 ambient = skyAverage * skyLight * (float3(1.0f) - transmittance);\n\n    float3 result = rayleigh + mie + ambient;\n    float alpha = 1.0f;\n    if (output == 1) \{\n      result = rayleigh;\n    \} else if (output == 2) \{\n      result = mie;\n    \} else if (output == 3) \{\n      result = transmittance;\n    \} else if (output == 4) \{\n      float4 s = src(pos.x, pos.y);\n      result = float3(s.x, s.y, s.z) * transmittance + rayleigh + mie + ambient;\n      alpha = s.w;\n    \} else if (output == 5) \{\n      result = ambient;\n    \}\n    dst() = float4(result.x, result.y, result.z, alpha);\n  \}\n\};\n"
+  rebuild ""
+  AtmosScatter_output {{5}}
+  AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
+  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
+  AtmosScatter_sun_strength {{parent.sun_strength}}
+  AtmosScatter_sun_boost {{parent.sun_boost}}
+  AtmosScatter_sky_light {{parent.sky_light}}
+  AtmosScatter_clear_sky_ratio {{parent.clear_sky_ratio}}
+  AtmosScatter_camera_altitude_km {{"parent.camera_height / 1000"}}
+  AtmosScatter_max_distance_km {{parent.max_distance}}
+  AtmosScatter_longitude_offset_deg {{parent.hdri_rotation}}
+  AtmosScatter_rayleigh_density {{parent.sky_amount}}
+  AtmosScatter_mie_density {{parent.haze_amount}}
+  AtmosScatter_rayleigh_coefficients {{parent.rayleigh_coefficients.x} {parent.rayleigh_coefficients.y} {parent.rayleigh_coefficients.z}}
+  AtmosScatter_mie_coefficient {{parent.mie_coefficient}}
+  AtmosScatter_rayleigh_scale_height_km {{parent.rayleigh_scale_height}}
+  AtmosScatter_mie_scale_height_km {{parent.mie_scale_height}}
+  AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
+  AtmosScatter_planet_radius_km {{parent.planet_radius}}
+  AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
+  AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
+  rebuild_finalise ""
+  name Scatter_ambient
+  xpos 150
+  ypos -100
+ }
+set N7d202800 [stack 0]
+ Crop {
+  box {{0} {0} {input.width} {"input.height / 2"}}
+  crop false
+  name ambient_ground_cut
+  xpos 150
+  ypos 30
+ }
+ Reformat {
+  type "to box"
+  box_width {{hdri.width}}
+  box_height {{hdri.height}}
+  box_fixed true
+  resize distort
+  name ambient_ground_up
+  xpos 150
+  ypos 60
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name ambient_ground_trim
+  xpos 150
+  ypos 90
+ }
+push $N7d202800
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name ambient_sky_cut
+  xpos 150
+  ypos -60
+ }
+ Reformat {
+  type "to box"
+  box_width {{hdri.width}}
+  box_height {{hdri.height}}
+  box_fixed true
+  resize distort
+  name ambient_sky_up
+  xpos 150
+  ypos -30
+ }
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name ambient_sky_trim
+  xpos 150
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name ambient_full
+  xpos 150
+  ypos 120
+ }
+push $N7d202800
+ Switch {
+  inputs 2
+  which {{"parent.scatter_scale < 1"}}
+  name ambient_resolution
+  xpos 150
+  ypos 150
+ }
+set N50f7b400 [stack 0]
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name ambient_upper
+  xpos 380
+  ypos 180
+ }
+set N7d330000 [stack 0]
+ Mirror2 {
+  flip true
+  name ambient_flip
+  xpos 490
+  ypos 180
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name ambient_lower
+  xpos 490
+  ypos 210
+ }
+push $N7d330000
+ Merge2 {
+  inputs 2
+  operation plus
+  name ambient_mirror
+  xpos 380
+  ypos 240
+ }
+push $N50f7b400
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name ambient_sky
+  xpos 270
+  ypos 180
+ }
+ AdjBBox {
+  numpixels {{hdri.height}}
+  name ambient_extend
+  xpos 270
+  ypos 210
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {hdri.height}}
+  name ambient_extend_trim
+  xpos 270
+  ypos 240
+ }
+push $N50f7b400
+ Switch {
+  inputs 3
+  which {{parent.fill_below_horizon}}
+  name ambient_fill
+  xpos 270
+  ypos 280
+ }
+set N50f7c800 [stack 0]
+push $N50fa8400
+push $N50f81800
+push $N50fa8800
+ BlinkScript {
+  inputs 3
+  recompileCount 2
+  KernelDescription "3 \"AtmosScatter\" iterate pixelWise e17ed4a1ee2e270f7b30162c3a99e294adae15cf6f4182136877260553ae480c 4 \"src\" Read Random \"light\" Read Random \"lut\" Read Random \"dst\" Write Point 23 \"output\" Int 1 AAAAAA== \"sun_from_hdri\" Int 1 AAAAAA== \"light_from_hdri\" Int 1 AAAAAA== \"sun_direction\" Float 3 AAAAAAAAAD8AAIC/AAAAAA== \"sun_color\" Float 3 AACAPwAAgD8AAIA/AAAAAA== \"sun_intensity\" Float 1 AACgQQ== \"sun_strength\" Float 1 AACAPw== \"sun_boost\" Float 1 AACAPw== \"sky_light\" Float 1 AAAAAA== \"clear_sky_ratio\" Float 1 AABcQg== \"camera_altitude_km\" Float 1 bxKDOg== \"max_distance_km\" Float 1 AAAAAA== \"longitude_offset_deg\" Float 1 AAAAAA== \"rayleigh_density\" Float 1 AACAPw== \"mie_density\" Float 1 AACAPw== \"rayleigh_coefficients\" Float 3 w2SqOxQ/Rjyze/I8AAAAAA== \"mie_coefficient\" Float 1 MQisPA== \"rayleigh_scale_height_km\" Float 1 AAAIQQ== \"mie_scale_height_km\" Float 1 mpmZPw== \"mie_g\" Float 1 XI9CPw== \"planet_radius_km\" Float 1 AMDGRQ== \"atmosphere_thickness_km\" Float 1 AABwQg== \"view_samples\" Int 1 EAAAAA== 23 \"output\" 1 1 Default \"sunFromHdri\" 1 1 Default \"lightFromHdri\" 1 1 Default \"sunDirection\" 3 1 Default \"sunColor\" 3 1 Default \"sunIntensity\" 1 1 Default \"sunStrength\" 1 1 Default \"sunBoost\" 1 1 Default \"skyLight\" 1 1 Default \"clearSkyRatio\" 1 1 Default \"cameraAltitude\" 1 1 Default \"maxDistance\" 1 1 Default \"longitudeOffset\" 1 1 Default \"rayleighDensity\" 1 1 Default \"mieDensity\" 1 1 Default \"rayleighCoefficients\" 3 1 Default \"mieCoefficient\" 1 1 Default \"rayleighScaleHeight\" 1 1 Default \"mieScaleHeight\" 1 1 Default \"mieG\" 1 1 Default \"planetRadius\" 1 1 Default \"atmosphereThickness\" 1 1 Default \"viewSamples\" 1 1 Default 7 \"pi\" Float 1 1 AAAAAA== \"horizonLength\" Float 1 1 AAAAAA== \"manualSunDir\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"atmosphereRadius\" Float 1 1 AAAAAA== \"betaR\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"betaMScatter\" Float 1 1 AAAAAA== \"betaMExtinction\" Float 1 1 AAAAAA=="
+  kernelSource "// EZ Atmos Scatter: single-scattering atmosphere for lat-long images.\n//\n// Every pixel of the lat-long input is treated as a view direction from a camera\n// sitting just above the planet surface. The kernel raymarches that view ray through\n// a spherical atmosphere (Rayleigh + Mie, exponential density falloff) and, at every\n// sample, marches a second ray towards the sun to get the light that reaches it.\n// Based on O'Neil, \"Accurate Atmospheric Scattering\" (GPU Gems 2, ch. 16) and the\n// Nishita model it builds on.\n//\n// Lighting can come from the HDRI itself: the `light` input is the 4x1 image written by\n// EzAtmosLight.blink (sun direction, sun irradiance, average sky radiance). The sun the\n// HDRI shows has already been dimmed by the atmosphere, so its irradiance is divided by\n// the sun's transmittance at the camera to get the light arriving at the top of the\n// atmosphere. Sky light adds an isotropic ambient term that stands in for multiple\n// scattering.\n//\n// The optical depth towards the sun comes from the `lut` input, the table written by\n// EzAtmosTransmittanceLUT.blink, instead of a second raymarch at every sample.\n// Transmittance and sky light need no sun at all, so those outputs skip it.\n//\n// All distances are in kilometres. Heights are carried separately from positions so\n// that near-horizon rays stay stable in 32-bit float.\n//\n// Lat-long convention: x = longitude (centre column looks down -Z), y = latitude\n// (bottom row = straight down, top row = straight up), +Y is up.\n//\n// output: 0 = inscatter (Rayleigh + Mie + ambient), 1 = Rayleigh only, 2 = Mie only,\n//         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter),\n//         5 = ambient (sky light) only\n\nkernel AtmosScatter : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessRandom, eEdgeClamped> src;\n  Image<eRead, eAccessRandom, eEdgeClamped> light;\n  Image<eRead, eAccessRandom, eEdgeClamped> lut;\n  Image<eWrite> dst;\n\nparam:\n  int output;\n  int sunFromHdri;\n  int lightFromHdri;\n  float3 sunDirection;\n  float3 sunColor;\n  float sunIntensity;\n  float sunStrength;\n  float sunBoost;\n  float skyLight;\n  float clearSkyRatio;\n  float cameraAltitude;\n  float maxDistance;\n  float longitudeOffset;\n  float rayleighDensity;\n  float mieDensity;\n  float3 rayleighCoefficients;\n  float mieCoefficient;\n  float rayleighScaleHeight;\n  float mieScaleHeight;\n  float mieG;\n  float planetRadius;\n  float atmosphereThickness;\n  int viewSamples;\n\nlocal:\n  float pi;\n  float horizonLength;\n  float3 manualSunDir;\n  float atmosphereRadius;\n  float3 betaR;\n  float betaMScatter;\n  float betaMExtinction;\n\n  void define()\n  \{\n    defineParam(output, \"output\", 0);\n    defineParam(sunFromHdri, \"sun_from_hdri\", 0);\n    defineParam(lightFromHdri, \"light_from_hdri\", 0);\n    defineParam(sunDirection, \"sun_direction\", float3(0.0f, 0.5f, -1.0f));\n    defineParam(sunColor, \"sun_color\", float3(1.0f, 1.0f, 1.0f));\n    defineParam(sunIntensity, \"sun_intensity\", 20.0f);\n    defineParam(sunStrength, \"sun_strength\", 1.0f);\n    defineParam(sunBoost, \"sun_boost\", 1.0f);\n    defineParam(skyLight, \"sky_light\", 0.0f);\n    defineParam(clearSkyRatio, \"clear_sky_ratio\", 55.0f);\n    defineParam(cameraAltitude, \"camera_altitude_km\", 0.001f);\n    defineParam(maxDistance, \"max_distance_km\", 0.0f);\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(rayleighDensity, \"rayleigh_density\", 1.0f);\n    defineParam(mieDensity, \"mie_density\", 1.0f);\n    defineParam(rayleighCoefficients, \"rayleigh_coefficients\", float3(0.0052f, 0.0121f, 0.0296f));\n    defineParam(mieCoefficient, \"mie_coefficient\", 0.021f);\n    defineParam(rayleighScaleHeight, \"rayleigh_scale_height_km\", 8.5f);\n    defineParam(mieScaleHeight, \"mie_scale_height_km\", 1.2f);\n    defineParam(mieG, \"mie_g\", 0.76f);\n    defineParam(planetRadius, \"planet_radius_km\", 6360.0f);\n    defineParam(atmosphereThickness, \"atmosphere_thickness_km\", 60.0f);\n    defineParam(viewSamples, \"view_samples\", 16);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n    manualSunDir = length(sunDirection) > 0.0f ? normalize(sunDirection) : float3(0.0f, 1.0f, 0.0f);\n    atmosphereRadius = planetRadius + atmosphereThickness;\n    horizonLength = sqrt(atmosphereRadius * atmosphereRadius - planetRadius * planetRadius);\n    betaR = rayleighCoefficients * rayleighDensity;\n    betaMScatter = mieCoefficient * mieDensity;\n    betaMExtinction = betaMScatter / 0.9f;\n  \}\n\n  float3 exp3(float3 v)\n  \{\n    return float3(exp(v.x), exp(v.y), exp(v.z));\n  \}\n\n  float luminance(float3 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  // Far intersection of a ray starting inside a sphere of radius r.\n  // c = |o|^2 - r^2 is passed in precomputed so callers can build it from heights.\n  float exitDistance(float b, float c)\n  \{\n    float disc = b * b - c;\n    return -b + sqrt(max(disc, 0.0f));\n  \}\n\n  // Distance to the ground along the ray, or -1 if the ray misses the planet.\n  float groundDistance(float b, float c)\n  \{\n    if (b > 0.0f)\n      return -1.0f;\n    float disc = b * b - c;\n    if (disc < 0.0f)\n      return -1.0f;\n    return -b - sqrt(disc);\n  \}\n\n  float phaseRayleigh(float mu)\n  \{\n    return 3.0f / (16.0f * pi) * (1.0f + mu * mu);\n  \}\n\n  // Cornette-Shanks approximation of the Mie phase function.\n  float phaseMie(float mu)\n  \{\n    float g2 = mieG * mieG;\n    float denom = pow(max(1.0f + g2 - 2.0f * mieG * mu, 1e-6f), 1.5f);\n    return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);\n  \}\n\n  // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun, read from the\n  // table EzAtmosTransmittanceLUT.blink precomputes. Returns -1 in x if the planet\n  // blocks the sun.\n  float2 sunOpticalDepth(float3 p, float h, float3 sunDir)\n  \{\n    h = clamp(h, 0.0f, atmosphereThickness);\n    float r = h + planetRadius;\n    float b = dot(p, sunDir) * r / length(p);\n    float cGround = h * (r + planetRadius);\n    if (groundDistance(b, cGround) > 0.0f)\n      return float2(-1.0f, 0.0f);\n\n    // Inverse of the mapping in EzAtmosTransmittanceLUT.blink.\n    float rho = sqrt(max(r * r - planetRadius * planetRadius, 0.0f));\n    float d = exitDistance(b, (r - atmosphereRadius) * (r + atmosphereRadius));\n    float dMin = atmosphereRadius - r;\n    float dMax = rho + horizonLength;\n    float u = (d - dMin) / max(dMax - dMin, 1e-6f);\n    float v = rho / horizonLength;\n    float x = lut.bounds.x1 + u * lut.bounds.width() - 0.5f;\n    float y = lut.bounds.y1 + v * lut.bounds.height() - 0.5f;\n    float4 od = bilinear(lut, x, y);\n    return float2(od.x, od.y);\n  \}\n\n  float4 lightPixel(int i)\n  \{\n    return light(light.bounds.x1 + i, light.bounds.y1);\n  \}\n\n  void process(int2 pos)\n  \{\n    float h0 = max(cameraAltitude, 0.0f);\n    float r0 = planetRadius + h0;\n    float3 origin = float3(0.0f, r0, 0.0f);\n\n    // Light measured from the HDRI (see EzAtmosLight.blink).\n    float4 hdriSun = lightPixel(0);\n    float4 hdriSunIrradiance = lightPixel(1);\n    float4 hdriSky = lightPixel(2);\n    float3 skyAverage = float3(hdriSky.x, hdriSky.y, hdriSky.z);\n\n    float3 sunDir = manualSunDir;\n    float3 measuredDir = float3(hdriSun.x, hdriSun.y, hdriSun.z);\n    if (sunFromHdri != 0 && length(measuredDir) > 0.0f)\n      sunDir = normalize(measuredDir);\n\n    // Transmittance and sky light depend on the view ray alone.\n    bool needSun = output != 3 && output != 5;\n\n    float3 sun = sunColor * sunIntensity * sunStrength;\n    if (needSun && lightFromHdri != 0) \{\n      if (hdriSunIrradiance.w > 0.5f) \{\n        // Clipped sun (LDR or low dynamic range capture): its energy is lost, so size it\n        // from the sky instead. clearSkyRatio is sun irradiance over average sky radiance\n        // for this model at default settings.\n        sun = sunColor * (clearSkyRatio * luminance(skyAverage) * sunBoost * sunStrength);\n      \} else \{\n        // Undo the atmosphere between the camera and the sun to get top-of-atmosphere light.\n        float2 od = sunOpticalDepth(origin, h0, sunDir);\n        float3 tSun = float3(1.0f);\n        if (od.x >= 0.0f)\n          tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));\n        tSun = float3(max(tSun.x, 0.02f), max(tSun.y, 0.02f), max(tSun.z, 0.02f));\n        float3 measured = float3(hdriSunIrradiance.x, hdriSunIrradiance.y, hdriSunIrradiance.z);\n        sun = sunColor * (measured / tSun) * sunStrength;\n      \}\n    \}\n\n    float width = src.bounds.width();\n    float height = src.bounds.height();\n    float u = (pos.x - src.bounds.x1 + 0.5f) / width;\n    float v = (pos.y - src.bounds.y1 + 0.5f) / height;\n    float lon = (u - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = (v - 0.5f) * pi;\n    float3 dir = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n\n    float b = dot(origin, dir);\n\n    // March to the top of the atmosphere, or to the ground for downward rays.\n    float tMax = exitDistance(b, (r0 - atmosphereRadius) * (r0 + atmosphereRadius));\n    float tGround = groundDistance(b, h0 * (r0 + planetRadius));\n    if (tGround > 0.0f)\n      tMax = tGround;\n    if (maxDistance > 0.0f)\n      tMax = min(tMax, maxDistance);\n\n    float segment = tMax / viewSamples;\n    float odR = 0.0f;\n    float odM = 0.0f;\n    float3 sumR = float3(0.0f);\n    float3 sumM = float3(0.0f);\n    for (int i = 0; i < viewSamples; i++) \{\n      float3 p = origin + dir * (segment * (i + 0.5f));\n      float h = length(p) - planetRadius;\n      float densR = exp(-h / rayleighScaleHeight) * segment;\n      float densM = exp(-h / mieScaleHeight) * segment;\n      odR += densR;\n      odM += densM;\n\n      if (!needSun)\n        continue;\n      float2 sunOd = sunOpticalDepth(p, h, sunDir);\n      if (sunOd.x >= 0.0f) \{\n        float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y);\n        float3 attenuation = exp3(-tau);\n        sumR += attenuation * densR;\n        sumM += attenuation * densM;\n      \}\n    \}\n\n    float mu = dot(dir, sunDir);\n    float3 rayleigh = sun * sumR * betaR * phaseRayleigh(mu);\n    float3 mie = sun * sumM * betaMScatter * phaseMie(mu);\n    float3 transmittance = exp3(-(betaR * odR + betaMExtinction * odM));\n    // Sky light scattered into the view ray, treated as isotropic.\n    float3 ambient = skyAverage * skyLight * (float3(1.0f) - transmittance);\n\n    float3 result = rayleigh + mie + ambient;\n    float alpha = 1.0f;\n    if (output == 1) \{\n      result = rayleigh;\n    \} else if (output == 2) \{\n      result = mie;\n    \} else if (output == 3) \{\n      result = transmittance;\n    \} else if (output == 4) \{\n      float4 s = src(pos.x, pos.y);\n      result = float3(s.x, s.y, s.z) * transmittance + rayleigh + mie + ambient;\n      alpha = s.w;\n    \} else if (output == 5) \{\n      result = ambient;\n    \}\n    dst() = float4(result.x, result.y, result.z, alpha);\n  \}\n\};\n"
+  rebuild ""
+  AtmosScatter_output {{2}}
+  AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
+  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
+  AtmosScatter_sun_strength {{parent.sun_strength}}
+  AtmosScatter_sun_boost {{parent.sun_boost}}
+  AtmosScatter_sky_light {{parent.sky_light}}
+  AtmosScatter_clear_sky_ratio {{parent.clear_sky_ratio}}
+  AtmosScatter_camera_altitude_km {{"parent.camera_height / 1000"}}
+  AtmosScatter_max_distance_km {{parent.max_distance}}
+  AtmosScatter_longitude_offset_deg {{parent.hdri_rotation}}
+  AtmosScatter_rayleigh_density {{parent.sky_amount}}
+  AtmosScatter_mie_density {{parent.haze_amount}}
+  AtmosScatter_rayleigh_coefficients {{parent.rayleigh_coefficients.x} {parent.rayleigh_coefficients.y} {parent.rayleigh_coefficients.z}}
+  AtmosScatter_mie_coefficient {{parent.mie_coefficient}}
+  AtmosScatter_rayleigh_scale_height_km {{parent.rayleigh_scale_height}}
+  AtmosScatter_mie_scale_height_km {{parent.mie_scale_height}}
+  AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
+  AtmosScatter_planet_radius_km {{parent.planet_radius}}
+  AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
+  AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
+  rebuild_finalise ""
+  name Scatter_mie
+  xpos -150
+  ypos -100
+ }
+set N50fdd800 [stack 0]
+ Crop {
+  box {{0} {0} {input.width} {"input.height / 2"}}
+  crop false
+  name mie_ground_cut
+  xpos -150
+  ypos 30
+ }
+ Reformat {
+  type "to box"
+  box_width {{hdri.width}}
+  box_height {{hdri.height}}
+  box_fixed true
+  resize distort
+  name mie_ground_up
+  xpos -150
+  ypos 60
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name mie_ground_trim
+  xpos -150
+  ypos 90
+ }
+push $N50fdd800
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name mie_sky_cut
+  xpos -150
+  ypos -60
+ }
+ Reformat {
+  type "to box"
+  box_width {{hdri.width}}
+  box_height {{hdri.height}}
+  box_fixed true
+  resize distort
+  name mie_sky_up
+  xpos -150
+  ypos -30
+ }
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name mie_sky_trim
+  xpos -150
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name mie_full
+  xpos -150
+  ypos 120
+ }
+push $N50fdd800
+ Switch {
+  inputs 2
+  which {{"parent.scatter_scale < 1"}}
+  name mie_resolution
+  xpos -150
+  ypos 150
+ }
+set N50f7aa00 [stack 0]
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name mie_upper
+  xpos 80
+  ypos 180
+ }
+set N7d2f6400 [stack 0]
+ Mirror2 {
+  flip true
+  name mie_flip
+  xpos 190
+  ypos 180
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name mie_lower
+  xpos 190
+  ypos 210
+ }
+push $N7d2f6400
+ Merge2 {
+  inputs 2
+  operation plus
+  name mie_mirror
+  xpos 80
+  ypos 240
+ }
+push $N50f7aa00
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name mie_sky
+  xpos -30
+  ypos 180
+ }
+ AdjBBox {
+  numpixels {{hdri.height}}
+  name mie_extend
+  xpos -30
+  ypos 210
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {hdri.height}}
+  name mie_extend_trim
+  xpos -30
+  ypos 240
+ }
+push $N50f7aa00
+ Switch {
+  inputs 3
+  which {{parent.fill_below_horizon}}
+  name mie_fill
+  xpos -30
+  ypos 280
+ }
+set N50f7c300 [stack 0]
+push $N50fa8400
+push $N50f81800
+push $N50fa8800
+ BlinkScript {
+  inputs 3
+  recompileCount 2
+  KernelDescription "3 \"AtmosScatter\" iterate pixelWise e17ed4a1ee2e270f7b30162c3a99e294adae15cf6f4182136877260553ae480c 4 \"src\" Read Random \"light\" Read Random \"lut\" Read Random \"dst\" Write Point 23 \"output\" Int 1 AAAAAA== \"sun_from_hdri\" Int 1 AAAAAA== \"light_from_hdri\" Int 1 AAAAAA== \"sun_direction\" Float 3 AAAAAAAAAD8AAIC/AAAAAA== \"sun_color\" Float 3 AACAPwAAgD8AAIA/AAAAAA== \"sun_intensity\" Float 1 AACgQQ== \"sun_strength\" Float 1 AACAPw== \"sun_boost\" Float 1 AACAPw== \"sky_light\" Float 1 AAAAAA== \"clear_sky_ratio\" Float 1 AABcQg== \"camera_altitude_km\" Float 1 bxKDOg== \"max_distance_km\" Float 1 AAAAAA== \"longitude_offset_deg\" Float 1 AAAAAA== \"rayleigh_density\" Float 1 AACAPw== \"mie_density\" Float 1 AACAPw== \"rayleigh_coefficients\" Float 3 w2SqOxQ/Rjyze/I8AAAAAA== \"mie_coefficient\" Float 1 MQisPA== \"rayleigh_scale_height_km\" Float 1 AAAIQQ== \"mie_scale_height_km\" Float 1 mpmZPw== \"mie_g\" Float 1 XI9CPw== \"planet_radius_km\" Float 1 AMDGRQ== \"atmosphere_thickness_km\" Float 1 AABwQg== \"view_samples\" Int 1 EAAAAA== 23 \"output\" 1 1 Default \"sunFromHdri\" 1 1 Default \"lightFromHdri\" 1 1 Default \"sunDirection\" 3 1 Default \"sunColor\" 3 1 Default \"sunIntensity\" 1 1 Default \"sunStrength\" 1 1 Default \"sunBoost\" 1 1 Default \"skyLight\" 1 1 Default \"clearSkyRatio\" 1 1 Default \"cameraAltitude\" 1 1 Default \"maxDistance\" 1 1 Default \"longitudeOffset\" 1 1 Default \"rayleighDensity\" 1 1 Default \"mieDensity\" 1 1 Default \"rayleighCoefficients\" 3 1 Default \"mieCoefficient\" 1 1 Default \"rayleighScaleHeight\" 1 1 Default \"mieScaleHeight\" 1 1 Default \"mieG\" 1 1 Default \"planetRadius\" 1 1 Default \"atmosphereThickness\" 1 1 Default \"viewSamples\" 1 1 Default 7 \"pi\" Float 1 1 AAAAAA== \"horizonLength\" Float 1 1 AAAAAA== \"manualSunDir\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"atmosphereRadius\" Float 1 1 AAAAAA== \"betaR\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"betaMScatter\" Float 1 1 AAAAAA== \"betaMExtinction\" Float 1 1 AAAAAA=="
+  kernelSource "// EZ Atmos Scatter: single-scattering atmosphere for lat-long images.\n//\n// Every pixel of the lat-long input is treated as a view direction from a camera\n// sitting just above the planet surface. The kernel raymarches that view ray through\n// a spherical atmosphere (Rayleigh + Mie, exponential density falloff) and, at every\n// sample, marches a second ray towards the sun to get the light that reaches it.\n// Based on O'Neil, \"Accurate Atmospheric Scattering\" (GPU Gems 2, ch. 16) and the\n// Nishita model it builds on.\n//\n// Lighting can come from the HDRI itself: the `light` input is the 4x1 image written by\n// EzAtmosLight.blink (sun direction, sun irradiance, average sky radiance). The sun the\n// HDRI shows has already been dimmed by the atmosphere, so its irradiance is divided by\n// the sun's transmittance at the camera to get the light arriving at the top of the\n// atmosphere. Sky light adds an isotropic ambient term that stands in for multiple\n// scattering.\n//\n// The optical depth towards the sun comes from the `lut` input, the table written by\n// EzAtmosTransmittanceLUT.blink, instead of a second raymarch at every sample.\n// Transmittance and sky light need no sun at all, so those outputs skip it.\n//\n// All distances are in kilometres. Heights are carried separately from positions so\n// that near-horizon rays stay stable in 32-bit float.\n//\n// Lat-long convention: x = longitude (centre column looks down -Z), y = latitude\n// (bottom row = straight down, top row = straight up), +Y is up.\n//\n// output: 0 = inscatter (Rayleigh + Mie + ambient), 1 = Rayleigh only, 2 = Mie only,\n//         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter),\n//         5 = ambient (sky light) only\n\nkernel AtmosScatter : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessRandom, eEdgeClamped> src;\n  Image<eRead, eAccessRandom, eEdgeClamped> light;\n  Image<eRead, eAccessRandom, eEdgeClamped> lut;\n  Image<eWrite> dst;\n\nparam:\n  int output;\n  int sunFromHdri;\n  int lightFromHdri;\n  float3 sunDirection;\n  float3 sunColor;\n  float sunIntensity;\n  float sunStrength;\n  float sunBoost;\n  float skyLight;\n  float clearSkyRatio;\n  float cameraAltitude;\n  float maxDistance;\n  float longitudeOffset;\n  float rayleighDensity;\n  float mieDensity;\n  float3 rayleighCoefficients;\n  float mieCoefficient;\n  float rayleighScaleHeight;\n  float mieScaleHeight;\n  float mieG;\n  float planetRadius;\n  float atmosphereThickness;\n  int viewSamples;\n\nlocal:\n  float pi;\n  float horizonLength;\n  float3 manualSunDir;\n  float atmosphereRadius;\n  float3 betaR;\n  float betaMScatter;\n  float betaMExtinction;\n\n  void define()\n  \{\n    defineParam(output, \"output\", 0);\n    defineParam(sunFromHdri, \"sun_from_hdri\", 0);\n    defineParam(lightFromHdri, \"light_from_hdri\", 0);\n    defineParam(sunDirection, \"sun_direction\", float3(0.0f, 0.5f, -1.0f));\n    defineParam(sunColor, \"sun_color\", float3(1.0f, 1.0f, 1.0f));\n    defineParam(sunIntensity, \"sun_intensity\", 20.0f);\n    defineParam(sunStrength, \"sun_strength\", 1.0f);\n    defineParam(sunBoost, \"sun_boost\", 1.0f);\n    defineParam(skyLight, \"sky_light\", 0.0f);\n    defineParam(clearSkyRatio, \"clear_sky_ratio\", 55.0f);\n    defineParam(cameraAltitude, \"camera_altitude_km\", 0.001f);\n    defineParam(maxDistance, \"max_distance_km\", 0.0f);\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(rayleighDensity, \"rayleigh_density\", 1.0f);\n    defineParam(mieDensity, \"mie_density\", 1.0f);\n    defineParam(rayleighCoefficients, \"rayleigh_coefficients\", float3(0.0052f, 0.0121f, 0.0296f));\n    defineParam(mieCoefficient, \"mie_coefficient\", 0.021f);\n    defineParam(rayleighScaleHeight, \"rayleigh_scale_height_km\", 8.5f);\n    defineParam(mieScaleHeight, \"mie_scale_height_km\", 1.2f);\n    defineParam(mieG, \"mie_g\", 0.76f);\n    defineParam(planetRadius, \"planet_radius_km\", 6360.0f);\n    defineParam(atmosphereThickness, \"atmosphere_thickness_km\", 60.0f);\n    defineParam(viewSamples, \"view_samples\", 16);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n    manualSunDir = length(sunDirection) > 0.0f ? normalize(sunDirection) : float3(0.0f, 1.0f, 0.0f);\n    atmosphereRadius = planetRadius + atmosphereThickness;\n    horizonLength = sqrt(atmosphereRadius * atmosphereRadius - planetRadius * planetRadius);\n    betaR = rayleighCoefficients * rayleighDensity;\n    betaMScatter = mieCoefficient * mieDensity;\n    betaMExtinction = betaMScatter / 0.9f;\n  \}\n\n  float3 exp3(float3 v)\n  \{\n    return float3(exp(v.x), exp(v.y), exp(v.z));\n  \}\n\n  float luminance(float3 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  // Far intersection of a ray starting inside a sphere of radius r.\n  // c = |o|^2 - r^2 is passed in precomputed so callers can build it from heights.\n  float exitDistance(float b, float c)\n  \{\n    float disc = b * b - c;\n    return -b + sqrt(max(disc, 0.0f));\n  \}\n\n  // Distance to the ground along the ray, or -1 if the ray misses the planet.\n  float groundDistance(float b, float c)\n  \{\n    if (b > 0.0f)\n      return -1.0f;\n    float disc = b * b - c;\n    if (disc < 0.0f)\n      return -1.0f;\n    return -b - sqrt(disc);\n  \}\n\n  float phaseRayleigh(float mu)\n  \{\n    return 3.0f / (16.0f * pi) * (1.0f + mu * mu);\n  \}\n\n  // Cornette-Shanks approximation of the Mie phase function.\n  float phaseMie(float mu)\n  \{\n    float g2 = mieG * mieG;\n    float denom = pow(max(1.0f + g2 - 2.0f * mieG * mu, 1e-6f), 1.5f);\n    return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);\n  \}\n\n  // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun, read from the\n  // table EzAtmosTransmittanceLUT.blink precomputes. Returns -1 in x if the planet\n  // blocks the sun.\n  float2 sunOpticalDepth(float3 p, float h, float3 sunDir)\n  \{\n    h = clamp(h, 0.0f, atmosphereThickness);\n    float r = h + planetRadius;\n    float b = dot(p, sunDir) * r / length(p);\n    float cGround = h * (r + planetRadius);\n    if (groundDistance(b, cGround) > 0.0f)\n      return float2(-1.0f, 0.0f);\n\n    // Inverse of the mapping in EzAtmosTransmittanceLUT.blink.\n    float rho = sqrt(max(r * r - planetRadius * planetRadius, 0.0f));\n    float d = exitDistance(b, (r - atmosphereRadius) * (r + atmosphereRadius));\n    float dMin = atmosphereRadius - r;\n    float dMax = rho + horizonLength;\n    float u = (d - dMin) / max(dMax - dMin, 1e-6f);\n    float v = rho / horizonLength;\n    float x = lut.bounds.x1 + u * lut.bounds.width() - 0.5f;\n    float y = lut.bounds.y1 + v * lut.bounds.height() - 0.5f;\n    float4 od = bilinear(lut, x, y);\n    return float2(od.x, od.y);\n  \}\n\n  float4 lightPixel(int i)\n  \{\n    return light(light.bounds.x1 + i, light.bounds.y1);\n  \}\n\n  void process(int2 pos)\n  \{\n    float h0 = max(cameraAltitude, 0.0f);\n    float r0 = planetRadius + h0;\n    float3 origin = float3(0.0f, r0, 0.0f);\n\n    // Light measured from the HDRI (see EzAtmosLight.blink).\n    float4 hdriSun = lightPixel(0);\n    float4 hdriSunIrradiance = lightPixel(1);\n    float4 hdriSky = lightPixel(2);\n    float3 skyAverage = float3(hdriSky.x, hdriSky.y, hdriSky.z);\n\n    float3 sunDir = manualSunDir;\n    float3 measuredDir = float3(hdriSun.x, hdriSun.y, hdriSun.z);\n    if (sunFromHdri != 0 && length(measuredDir) > 0.0f)\n      sunDir = normalize(measuredDir);\n\n    // Transmittance and sky light depend on the view ray alone.\n    bool needSun = output != 3 && output != 5;\n\n    float3 sun = sunColor * sunIntensity * sunStrength;\n    if (needSun && lightFromHdri != 0) \{\n      if (hdriSunIrradiance.w > 0.5f) \{\n        // Clipped sun (LDR or low dynamic range capture): its energy is lost, so size it\n        // from the sky instead. clearSkyRatio is sun irradiance over average sky radiance\n        // for this model at default settings.\n        sun = sunColor * (clearSkyRatio * luminance(skyAverage) * sunBoost * sunStrength);\n      \} else \{\n        // Undo the atmosphere between the camera and the sun to get top-of-atmosphere light.\n        float2 od = sunOpticalDepth(origin, h0, sunDir);\n        float3 tSun = float3(1.0f);\n        if (od.x >= 0.0f)\n          tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));\n        tSun = float3(max(tSun.x, 0.02f), max(tSun.y, 0.02f), max(tSun.z, 0.02f));\n        float3 measured = float3(hdriSunIrradiance.x, hdriSunIrradiance.y, hdriSunIrradiance.z);\n        sun = sunColor * (measured / tSun) * sunStrength;\n      \}\n    \}\n\n    float width = src.bounds.width();\n    float height = src.bounds.height();\n    float u = (pos.x - src.bounds.x1 + 0.5f) / width;\n    float v = (pos.y - src.bounds.y1 + 0.5f) / height;\n    float lon = (u - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = (v - 0.5f) * pi;\n    float3 dir = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n\n    float b = dot(origin, dir);\n\n    // March to the top of the atmosphere, or to the ground for downward rays.\n    float tMax = exitDistance(b, (r0 - atmosphereRadius) * (r0 + atmosphereRadius));\n    float tGround = groundDistance(b, h0 * (r0 + planetRadius));\n    if (tGround > 0.0f)\n      tMax = tGround;\n    if (maxDistance > 0.0f)\n      tMax = min(tMax, maxDistance);\n\n    float segment = tMax / viewSamples;\n    float odR = 0.0f;\n    float odM = 0.0f;\n    float3 sumR = float3(0.0f);\n    float3 sumM = float3(0.0f);\n    for (int i = 0; i < viewSamples; i++) \{\n      float3 p = origin + dir * (segment * (i + 0.5f));\n      float h = length(p) - planetRadius;\n      float densR = exp(-h / rayleighScaleHeight) * segment;\n      float densM = exp(-h / mieScaleHeight) * segment;\n      odR += densR;\n      odM += densM;\n\n      if (!needSun)\n        continue;\n      float2 sunOd = sunOpticalDepth(p, h, sunDir);\n      if (sunOd.x >= 0.0f) \{\n        float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y);\n        float3 attenuation = exp3(-tau);\n        sumR += attenuation * densR;\n        sumM += attenuation * densM;\n      \}\n    \}\n\n    float mu = dot(dir, sunDir);\n    float3 rayleigh = sun * sumR * betaR * phaseRayleigh(mu);\n    float3 mie = sun * sumM * betaMScatter * phaseMie(mu);\n    float3 transmittance = exp3(-(betaR * odR + betaMExtinction * odM));\n    // Sky light scattered into the view ray, treated as isotropic.\n    float3 ambient = skyAverage * skyLight * (float3(1.0f) - transmittance);\n\n    float3 result = rayleigh + mie + ambient;\n    float alpha = 1.0f;\n    if (output == 1) \{\n      result = rayleigh;\n    \} else if (output == 2) \{\n      result = mie;\n    \} else if (output == 3) \{\n      result = transmittance;\n    \} else if (output == 4) \{\n      float4 s = src(pos.x, pos.y);\n      result = float3(s.x, s.y, s.z) * transmittance + rayleigh + mie + ambient;\n      alpha = s.w;\n    \} else if (output == 5) \{\n      result = ambient;\n    \}\n    dst() = float4(result.x, result.y, result.z, alpha);\n  \}\n\};\n"
+  rebuild ""
+  AtmosScatter_output {{1}}
+  AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
+  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
+  AtmosScatter_sun_strength {{parent.sun_strength}}
+  AtmosScatter_sun_boost {{parent.sun_boost}}
+  AtmosScatter_sky_light {{parent.sky_light}}
+  AtmosScatter_clear_sky_ratio {{parent.clear_sky_ratio}}
+  AtmosScatter_camera_altitude_km {{"parent.camera_height / 1000"}}
+  AtmosScatter_max_distance_km {{parent.max_distance}}
+  AtmosScatter_longitude_offset_deg {{parent.hdri_rotation}}
+  AtmosScatter_rayleigh_density {{parent.sky_amount}}
+  AtmosScatter_mie_density {{parent.haze_amount}}
+  AtmosScatter_rayleigh_coefficients {{parent.rayleigh_coefficients.x} {parent.rayleigh_coefficients.y} {parent.rayleigh_coefficients.z}}
+  AtmosScatter_mie_coefficient {{parent.mie_coefficient}}
+  AtmosScatter_rayleigh_scale_height_km {{parent.rayleigh_scale_height}}
+  AtmosScatter_mie_scale_height_km {{parent.mie_scale_height}}
+  AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
+  AtmosScatter_planet_radius_km {{parent.planet_radius}}
+  AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
+  AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
+  rebuild_finalise ""
+  name Scatter_rayleigh
+  xpos -300
+  ypos -100
+ }
+set N50fa9000 [stack 0]
+ Crop {
+  box {{0} {0} {input.width} {"input.height / 2"}}
+  crop false
+  name rayleigh_ground_cut
+  xpos -300
+  ypos 30
+ }
+ Reformat {
+  type "to box"
+  box_width {{hdri.width}}
+  box_height {{hdri.height}}
+  box_fixed true
+  resize distort
+  name rayleigh_ground_up
+  xpos -300
+  ypos 60
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name rayleigh_ground_trim
+  xpos -300
+  ypos 90
+ }
+push $N50fa9000
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name rayleigh_sky_cut
+  xpos -300
+  ypos -60
+ }
+ Reformat {
+  type "to box"
+  box_width {{hdri.width}}
+  box_height {{hdri.height}}
+  box_fixed true
+  resize distort
+  name rayleigh_sky_up
+  xpos -300
+  ypos -30
+ }
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name rayleigh_sky_trim
+  xpos -300
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name rayleigh_full
+  xpos -300
+  ypos 120
+ }
+push $N50fa9000
+ Switch {
+  inputs 2
+  which {{"parent.scatter_scale < 1"}}
+  name rayleigh_resolution
+  xpos -300
+  ypos 150
+ }
+set N50f7a500 [stack 0]
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name rayleigh_upper
+  xpos -70
+  ypos 180
+ }
+set N7d2be800 [stack 0]
+ Mirror2 {
+  flip true
+  name rayleigh_flip
+  xpos 40
+  ypos 180
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name rayleigh_lower
+  xpos 40
+  ypos 210
+ }
+push $N7d2be800
+ Merge2 {
+  inputs 2
+  operation plus
+  name rayleigh_mirror
+  xpos -70
+  ypos 240
+ }
+push $N50f7a500
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name rayleigh_sky
+  xpos -180
+  ypos 180
+ }
+ AdjBBox {
+  numpixels {{hdri.height}}
+  name rayleigh_extend
+  xpos -180
+  ypos 210
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {hdri.height}}
+  name rayleigh_extend_trim
+  xpos -180
+  ypos 240
+ }
+push $N50f7a500
+ Switch {
+  inputs 3
+  which {{parent.fill_below_horizon}}
+  name rayleigh_fill
+  xpos -180
+  ypos 280
+ }
+set N50f7be00 [stack 0]
+push $N50f7b400
+push $N50f7aa00
+push $N50f7a500
+ Merge2 {
+  inputs 2
+  operation plus
+  name AddMie
+  xpos -300
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name AddSkyLight
+  xpos -300
+  ypos 60
+ }
+set N7d241400 [stack 0]
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name inscatter_upper
+  xpos -70
+  ypos 90
+ }
+set N7d282c00 [stack 0]
+ Mirror2 {
+  flip true
+  name inscatter_flip
+  xpos 40
+  ypos 90
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name inscatter_lower
+  xpos 40
+  ypos 120
+ }
+push $N7d282c00
+ Merge2 {
+  inputs 2
+  operation plus
+  name inscatter_mirror
+  xpos -70
+  ypos 150
+ }
+push $N7d241400
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name inscatter_sky
+  xpos -180
+  ypos 90
+ }
+ AdjBBox {
+  numpixels {{hdri.height}}
+  name inscatter_extend
+  xpos -180
+  ypos 120
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {hdri.height}}
+  name inscatter_extend_trim
+  xpos -180
+  ypos 150
+ }
+push $N7d241400
+ Switch {
+  inputs 3
+  which {{parent.fill_below_horizon}}
+  name inscatter_fill
+  xpos -180
+  ypos 190
+ }
+set N50f7b900 [stack 0]
+push $N50f7cd00
+push $N50f7c800
+push $N50f7c300
+push $N50f7be00
+push $N50f7b900
+push $N7d241400
+push $N50f7af00
+push $N50f80000
+ Merge2 {
+  inputs 2
+  operation multiply
+  output rgb
+  name Attenuate
+  xpos 0
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  output rgb
+  name PreviewComp
+  xpos 0
+  ypos 60
+ }
+ Switch {
+  inputs 6
+  which {{parent.view_output}}
+  name ViewOutput
+  xpos 0
+  ypos 160
+ }
+push $N50f80000
+ Copy {
+  inputs 2
+  channels rgb
+  name MainRGB
+  xpos 0
+  ypos 240
+ }
+add_layer {atmos_inscatter atmos_inscatter.red atmos_inscatter.green atmos_inscatter.blue}
+ Copy {
+  inputs 2
+  from0 rgba.red
+  to0 atmos_inscatter.red
+  from1 rgba.green
+  to1 atmos_inscatter.green
+  from2 rgba.blue
+  to2 atmos_inscatter.blue
+  name Layer_atmos_inscatter
+  xpos 0
+  ypos 300
+ }
+add_layer {atmos_rayleigh atmos_rayleigh.red atmos_rayleigh.green atmos_rayleigh.blue}
+ Copy {
+  inputs 2
+  from0 rgba.red
+  to0 atmos_rayleigh.red
+  from1 rgba.green
+  to1 atmos_rayleigh.green
+  from2 rgba.blue
+  to2 atmos_rayleigh.blue
+  name Layer_atmos_rayleigh
+  xpos 0
+  ypos 360
+ }
+add_layer {atmos_mie atmos_mie.red atmos_mie.green atmos_mie.blue}
+ Copy {
+  inputs 2
+  from0 rgba.red
+  to0 atmos_mie.red
+  from1 rgba.green
+  to1 atmos_mie.green
+  from2 rgba.blue
+  to2 atmos_mie.blue
+  name Layer_atmos_mie
+  xpos 0
+  ypos 420
+ }
+add_layer {atmos_ambient atmos_ambient.red atmos_ambient.green atmos_ambient.blue}
+ Copy {
+  inputs 2
+  from0 rgba.red
+  to0 atmos_ambient.red
+  from1 rgba.green
+  to1 atmos_ambient.green
+  from2 rgba.blue
+  to2 atmos_ambient.blue
+  name Layer_atmos_ambient
+  xpos 0
+  ypos 480
+ }
+add_layer {atmos_transmittance atmos_transmittance.red atmos_transmittance.green atmos_transmittance.blue}
+ Copy {
+  inputs 2
+  from0 rgba.red
+  to0 atmos_transmittance.red
+  from1 rgba.green
+  to1 atmos_transmittance.green
+  from2 rgba.blue
+  to2 atmos_transmittance.blue
+  name Layer_atmos_transmittance
+  xpos 0
+  ypos 540
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos 660
+ }
+end_group

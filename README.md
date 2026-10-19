@@ -2,74 +2,143 @@
 
 Physically based atmospheric scattering for The Foundry Nuke, built in BlinkScript.
 
-EZ Atmos Scatter takes a lat-long HDRI and a sun direction (driven by an Axis node) and
-generates atmospheric scattering passes as AOV layers that can be composited on top of the
-source HDRI.
+EZ Atmos Scatter takes a lat-long HDRI and a sun direction (found in the HDRI, or driven by
+an Axis node) and generates atmospheric scattering passes as AOV layers that can be
+composited on top of the source HDRI.
 
 Target: Nuke 15.1.
 
 ## Status
 
-Step 1 of 4: the core single-scattering kernel. The Axis-driven gizmo, HDRI-driven sun
-colour and ambient, automatic sun detection and multiple scattering come next.
+Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun colour
+and brightness from the image, sky light). Depth-aware haze and multiple scattering come next.
 
 ## Contents
 
 | Path | What it is |
 | --- | --- |
+| `gizmos/EzAtmosScatter.gizmo` | The node artists use. Built from the kernels by `python/build_gizmo.py` |
 | `blink/AtmosScatter.blink` | BlinkScript kernel: Rayleigh + Mie single scattering per lat-long pixel |
-| `python/build_test_setup.py` | Builds a test node graph in Nuke around a selected HDRI Read node |
-| `reference/atmos_reference.py` | NumPy port of the kernel for checking the math outside Nuke |
+| `blink/EzAtmosLight.blink` | BlinkScript kernel: measures the sun and sky light in the HDRI |
+| `blink/EzAtmosTransmittanceLUT.blink` | BlinkScript kernel: precomputes the optical depth towards the sun as a 256x64 table |
+| `python/build_gizmo.py` | Rebuilds the gizmo after a kernel change |
+| `python/ezatmosscatter.py` | Helpers for the gizmo's buttons |
+| `init.py`, `menu.py` | Plugin path and the Nodes menu entry |
+| `reference/atmos_reference.py` | NumPy port of the scattering core for checking the math outside Nuke |
 | `docs/previews/contact_sheet.png` | Reference renders: inscatter, Mie and transmittance at 45°, 10°, 2° and -2° sun elevation |
 
 ![Reference renders](docs/previews/contact_sheet.png)
 
-## Trying it in Nuke
+## Installing
 
-1. Read in a lat-long HDRI and select the Read node.
-2. In the Script Editor run
-   `exec(open('/path/to/ez-atmos-scatter/python/build_test_setup.py').read())`
-   and point it at `blink/AtmosScatter.blink` if asked.
-3. Adjust the knobs on `AtmosScatter_master`. The other BlinkScript nodes follow it.
+Clone the repo into `~/.nuke/plugins/EzAtmosScatter` and add this line to `~/.nuke/init.py`:
 
-The setup writes four RGB layers on top of the HDRI:
+```python
+nuke.pluginAddPath('./plugins/EzAtmosScatter')
+```
+
+The node then shows up under **Nodes > EzAtmosScatter**.
+
+## Using it
+
+1. Read in a lat-long HDRI and connect it to the `hdri` input.
+2. Leave **sun from** on *Auto (HDRI)*, or plug an Axis into the `sun` input and set it to
+   *Axis* (the sun is in the direction of the Axis's world position), or type a direction
+   in *Manual*.
+3. Pick what the main rgba shows with **view output**. Every pass is also written to its
+   own layer, whatever the view output is:
 
 | Layer | Contents |
 | --- | --- |
-| `atmos_inscatter` | Light scattered towards the camera (Rayleigh + Mie) |
-| `atmos_rayleigh` | Rayleigh part only (blue sky) |
-| `atmos_mie` | Mie part only (haze and glow around the sun) |
+| `atmos_inscatter` | Light scattered towards the camera (sky + haze + sky light) |
+| `atmos_rayleigh` | Sky only (blue sky) |
+| `atmos_mie` | Haze only (haze and glow around the sun) |
+| `atmos_ambient` | Sky light: the whole HDRI sky scattered into the haze |
 | `atmos_transmittance` | How much of the background survives along each view ray |
 
-A physically consistent comp is `hdri * atmos_transmittance + atmos_inscatter`; the
-`AtmosScatter_preview_comp` node shows exactly that.
+The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 
-### Kernel knobs
+### Knobs
 
-| Knob | Default | Notes |
+| Knob | Default | What it does |
 | --- | --- | --- |
-| `sun_direction` | (0, 0.5, -1) | World direction towards the sun, +Y up. Normalised internally |
-| `sun_color`, `sun_intensity` | (1, 1, 1), 20 | Will come from the HDRI in step 2 |
-| `camera_altitude_km` | 0.001 | Viewer height above sea level |
-| `max_distance_km` | 0 (off) | Limits how far each ray marches. Use it to add haze up to a set distance instead of a full sky |
-| `longitude_offset_deg` | 0 | Rotates the lat-long mapping to line up with your HDRI |
-| `rayleigh_density`, `mie_density` | 1, 1 | Artist multipliers; raise `mie_density` for hazier air |
-| `rayleigh_coefficients` | (0.0052, 0.0121, 0.0296) /km | Sea-level Rayleigh scattering at 680, 550, 440 nm |
-| `mie_coefficient` | 0.021 /km | Sea-level Mie scattering; extinction is this / 0.9 |
-| `rayleigh_scale_height_km`, `mie_scale_height_km` | 8.5, 1.2 | Exponential density falloff |
-| `mie_g` | 0.76 | Cornette-Shanks asymmetry; higher is a tighter sun glow |
-| `planet_radius_km`, `atmosphere_thickness_km` | 6360, 60 | |
-| `view_samples`, `light_samples` | 16, 8 | Quality vs speed |
-| `output` | 0 | 0 inscatter, 1 Rayleigh, 2 Mie, 3 transmittance, 4 preview comp |
+| view output | Scatter Preview Comp | What the main rgba shows |
+| sun from | Auto (HDRI) | Where the sun direction comes from: the HDRI, the Axis input or the manual knob |
+| sun direction | (0, 0.5, -1) | Manual sun direction, +Y up |
+| copy detected sun to manual | | Writes the sun found in the HDRI into *sun direction* |
+| hdri rotation | 0 | Rotates the lat-long mapping, in degrees |
+| light from HDRI | on | Sun colour and brightness come from the HDRI. Off: *sun color* and *sun strength* set them |
+| sun color | white | Tint on the HDRI's sun, or the sun colour when *light from HDRI* is off |
+| sun strength | 1 | Multiplies the sun's brightness |
+| sun boost | 1 | Only for clipped suns (JPEGs, LDR captures); scales the brightness estimated from the sky |
+| sky light | 1 | How much of the HDRI sky lights the haze |
+| sky amount | 1 | Air density (Rayleigh) |
+| haze amount | 1 | Haze density (Mie) |
+| haze glow size | 1 | Size of the glow around the sun |
+| camera height (m) | 1 | Camera height above sea level |
+| max distance (km) | 0 (off) | How far the haze reaches. Use it to add haze up to a set distance instead of a full sky |
+| fill below horizon | Off | Fills the lower half of every pass and layer for use as a full sky dome: *Extend Horizon* repeats the horizon row, *Mirror Sky* reflects the sky. The preview comp stays physical |
+| quality | Normal | Samples per ray (Draft is about 4x faster than High) |
+| viewer resolution | Half | Resolution the haze is computed at in the Nuke GUI (Full / Half / Quarter) |
+| render resolution | Full | Resolution the haze is computed at in terminal and farm renders |
+
+The **Advanced** section holds the physical constants (scattering coefficients, scale
+heights, planet size) and the sun detection settings.
+
+### How the HDRI lights it
+
+`EzAtmosLight.blink` looks at a 512x256 copy of the HDRI. It finds the brightest spot above
+the horizon, treats everything within 6° of it as the sun, and averages the rest of the
+upper hemisphere as the sky.
+
+- **Unclipped sun** (a real HDR capture): the sun's irradiance is measured from the image
+  and divided by the atmosphere's transmittance towards the sun, so the scattering uses
+  the light arriving at the top of the atmosphere.
+- **Clipped sun** (its peak is under 20x the average sky): the energy is gone, so the sun
+  is sized from the sky brightness instead, using the ratio this model has on a clear day.
+  *sun boost* scales that estimate.
 
 Lat-long convention: the centre column looks down -Z, the top row is straight up.
-If your sun lands in the wrong place horizontally, use `longitude_offset_deg`.
+
+### Speed
+
+The haze is smooth, so it is computed at a reduced size and scaled back up, with the sky
+and ground halves scaled separately so the horizon stays sharp. *viewer resolution* is
+used while Nuke's GUI is open and *render resolution* when rendering from a terminal
+(`$gui` decides which). Half and Quarter stay within about 2% of Full.
+
+Measured on a 3044x1522 HDRI in Nuke 15.1 (RTX 3070, warm):
+
+| | CPU | GPU |
+| --- | --- | --- |
+| Full | 3.1 s | 0.2 s |
+| Half | 0.95 s | 0.2 s |
+| Quarter | 0.36 s | 0.2 s |
+
+On the farm:
+
+- Terminal Nuke only uses the GPU when started with `--gpu`
+  (`Nuke15.1.exe --gpu -x script.nk`). Without it BlinkScript runs on the CPU.
+- Each new Nuke process compiles the kernels once before the first frame (about 7 s on
+  the GPU, 30 s on the CPU), so render several frames per task.
+
+## Rebuilding the gizmo
+
+After changing a kernel, run
+
+```
+Nuke15.1.exe --nukex -i -t python/build_gizmo.py
+```
+
+It loads the kernels from `blink/`, embeds them in the group and writes
+`gizmos/EzAtmosScatter.gizmo`.
 
 ## Reference renders
 
 `python3 reference/atmos_reference.py --out docs/previews` regenerates the previews.
-The NumPy port mirrors the kernel line for line, so it is also the place to try changes
-to the model before porting them to BlinkScript.
+The NumPy port mirrors the scattering core of the kernel (a fixed sun, no HDRI lighting
+or sky light), so it is the place to try changes to the model before porting them to
+BlinkScript.
 
 ## References
 
