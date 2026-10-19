@@ -115,9 +115,9 @@ def _add_knobs(group):
         knob.setTooltip(tip)
         k.append(knob)
     fill = nuke.Enumeration_Knob("fill_below_horizon", "fill below horizon", ["Off", "Extend Horizon", "Mirror Sky"])
-    fill.setTooltip("Fills the empty lower half of the sky passes (Scatter, Sky, Haze, Sky Light) so they "
+    fill.setTooltip("Fills the lower half of the passes (Scatter, Sky, Haze, Sky Light, Transmittance) so they "
                     "can be used as a full sky dome. Extend Horizon repeats the row just above the horizon, "
-                    "Mirror Sky reflects the sky. The Scatter Preview Comp and Transmittance stay physical.")
+                    "Mirror Sky reflects the sky. The Scatter Preview Comp stays physical.")
     k.append(fill)
     quality = nuke.Enumeration_Knob("quality", "quality", ["Draft", "Normal", "High"])
     quality.setTooltip("Number of samples along each ray. Draft is about 4x faster than High.")
@@ -357,12 +357,12 @@ def build():
     comp.setInput(0, attenuated)
     comp.setInput(1, inscatter)
 
-    # Optional fill of the empty lower half, for the sky passes only: the preview comp keeps
-    # the physical (black) haze below the horizon so the HDRI ground is not washed out.
+    # Optional fill of the empty lower half of every pass. The preview comp is built from the
+    # unfilled passes above, so the HDRI ground is not washed out.
     filled = {"inscatter": _fill_below(inscatter, "inscatter")}
     for name in ("rayleigh", "mie", "ambient"):
         filled[name] = _fill_below(passes[name], name)
-    filled["transmittance"] = passes["transmittance"]
+    filled["transmittance"] = _fill_below(passes["transmittance"], "transmittance")
 
     sources = {"comp": comp}
     sources.update(filled)

@@ -77,7 +77,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | haze glow size | 1 | Size of the glow around the sun |
 | camera height (m) | 1 | Camera height above sea level |
 | max distance (km) | 0 (off) | How far the haze reaches. Use it to add haze up to a set distance instead of a full sky |
-| fill below horizon | Off | Fills the empty lower half of the sky passes for use as a full sky dome: *Extend Horizon* repeats the horizon row, *Mirror Sky* reflects the sky. The preview comp and transmittance stay physical |
+| fill below horizon | Off | Fills the lower half of every pass and layer for use as a full sky dome: *Extend Horizon* repeats the horizon row, *Mirror Sky* reflects the sky. The preview comp stays physical |
 | quality | Normal | Samples per ray (Draft is about 4x faster than High) |
 | viewer resolution | Half | Resolution the haze is computed at in the Nuke GUI (Full / Half / Quarter) |
 | render resolution | Full | Resolution the haze is computed at in terminal and farm renders |
