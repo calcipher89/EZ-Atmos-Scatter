@@ -36,6 +36,7 @@ Gizmo {
  addUserKnob {7 camera_height l "camera height (m)" t "Camera height above sea level, in metres." R 0 5000}
  camera_height 1
  addUserKnob {7 max_distance l "max distance (km)" t "How far the haze reaches along each ray. 0 = to the top of the atmosphere." R 0 200}
+ addUserKnob {4 fill_below_horizon l "fill below horizon" t "Fills the empty lower half of the sky passes (Scatter, Sky, Haze, Sky Light) so they can be used as a full sky dome. Extend Horizon repeats the row just above the horizon, Mirror Sky reflects the sky. The Scatter Preview Comp and Transmittance stay physical." M {Off "Extend Horizon" "Mirror Sky"}}
  addUserKnob {4 quality t "Number of samples along each ray. Draft is about 4x faster than High." M {Draft Normal High}}
  quality Normal
  addUserKnob {4 viewer_resolution l "viewer resolution" t "Resolution the haze is computed at while you work in the Nuke GUI. It is smooth, so Half or Quarter look almost the same and are 4x or 16x faster. The horizon stays sharp." M {Full Half Quarter}}
@@ -79,7 +80,7 @@ Gizmo {
   xpos 0
   ypos -400
  }
-set N3b590000 [stack 0]
+set N8a740000 [stack 0]
  Reformat {
   type "to box"
   box_width 256
@@ -104,8 +105,8 @@ set N3b590000 [stack 0]
   xpos 450
   ypos -180
  }
-set N3b5b8400 [stack 0]
-push $N3b590000
+set N8a768400 [stack 0]
+push $N8a740000
  Reformat {
   type "to box"
   box_width 512
@@ -117,8 +118,8 @@ push $N3b590000
   xpos 300
   ypos -300
  }
-set N3b590800 [stack 0]
-push $N3b590800
+set N8a740800 [stack 0]
+push $N8a740800
  Reformat {
   type "to box"
   box_width 4
@@ -143,8 +144,8 @@ push $N3b590800
   xpos 300
   ypos -180
  }
-set N3b591800 [stack 0]
-push $N3b590000
+set N8a741800 [stack 0]
+push $N8a740000
  Reformat {
   type "to box"
   box_width {{"max(floor(hdri.width * parent.scatter_scale + 0.5), 4)"}}
@@ -155,7 +156,7 @@ push $N3b590000
   xpos -300
   ypos -240
  }
-set N3b5b8800 [stack 0]
+set N8a768800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -190,7 +191,7 @@ set N3b5b8800 [stack 0]
   xpos 0
   ypos -100
  }
-set N67802000 [stack 0]
+set Nb6ad2000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -214,7 +215,7 @@ set N67802000 [stack 0]
   xpos 0
   ypos 90
  }
-push $N67802000
+push $Nb6ad2000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -244,7 +245,7 @@ push $N67802000
   xpos 0
   ypos 120
  }
-push $N67802000
+push $Nb6ad2000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -252,10 +253,10 @@ push $N67802000
   xpos 0
   ypos 150
  }
-set N3b58af00 [stack 0]
-push $N3b5b8400
-push $N3b591800
-push $N3b5b8800
+set N8a73af00 [stack 0]
+push $N8a768400
+push $N8a741800
+push $N8a768800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -290,7 +291,7 @@ push $N3b5b8800
   xpos 150
   ypos -100
  }
-set N67832800 [stack 0]
+set Nb6b02800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -314,7 +315,7 @@ set N67832800 [stack 0]
   xpos 150
   ypos 90
  }
-push $N67832800
+push $Nb6b02800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -344,7 +345,7 @@ push $N67832800
   xpos 150
   ypos 120
  }
-push $N67832800
+push $Nb6b02800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -352,10 +353,66 @@ push $N67832800
   xpos 150
   ypos 150
  }
-set N3b58b400 [stack 0]
-push $N3b5b8400
-push $N3b591800
-push $N3b5b8800
+set N8a73b400 [stack 0]
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name ambient_upper
+  xpos 380
+  ypos 180
+ }
+set Nb7c00000 [stack 0]
+ Mirror2 {
+  flip true
+  name ambient_flip
+  xpos 490
+  ypos 180
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name ambient_lower
+  xpos 490
+  ypos 210
+ }
+push $Nb7c00000
+ Merge2 {
+  inputs 2
+  operation plus
+  name ambient_mirror
+  xpos 380
+  ypos 240
+ }
+push $N8a73b400
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name ambient_sky
+  xpos 270
+  ypos 180
+ }
+ AdjBBox {
+  numpixels {{hdri.height}}
+  name ambient_extend
+  xpos 270
+  ypos 210
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {hdri.height}}
+  name ambient_extend_trim
+  xpos 270
+  ypos 240
+ }
+push $N8a73b400
+ Switch {
+  inputs 3
+  which {{parent.fill_below_horizon}}
+  name ambient_fill
+  xpos 270
+  ypos 280
+ }
+set N8a73c800 [stack 0]
+push $N8a768400
+push $N8a741800
+push $N8a768800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -390,7 +447,7 @@ push $N3b5b8800
   xpos -150
   ypos -100
  }
-set N3b5ed800 [stack 0]
+set N8a79d800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -414,7 +471,7 @@ set N3b5ed800 [stack 0]
   xpos -150
   ypos 90
  }
-push $N3b5ed800
+push $N8a79d800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -444,7 +501,7 @@ push $N3b5ed800
   xpos -150
   ypos 120
  }
-push $N3b5ed800
+push $N8a79d800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -452,10 +509,66 @@ push $N3b5ed800
   xpos -150
   ypos 150
  }
-set N3b58aa00 [stack 0]
-push $N3b5b8400
-push $N3b591800
-push $N3b5b8800
+set N8a73aa00 [stack 0]
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name mie_upper
+  xpos 80
+  ypos 180
+ }
+set Nb7bc6400 [stack 0]
+ Mirror2 {
+  flip true
+  name mie_flip
+  xpos 190
+  ypos 180
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name mie_lower
+  xpos 190
+  ypos 210
+ }
+push $Nb7bc6400
+ Merge2 {
+  inputs 2
+  operation plus
+  name mie_mirror
+  xpos 80
+  ypos 240
+ }
+push $N8a73aa00
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name mie_sky
+  xpos -30
+  ypos 180
+ }
+ AdjBBox {
+  numpixels {{hdri.height}}
+  name mie_extend
+  xpos -30
+  ypos 210
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {hdri.height}}
+  name mie_extend_trim
+  xpos -30
+  ypos 240
+ }
+push $N8a73aa00
+ Switch {
+  inputs 3
+  which {{parent.fill_below_horizon}}
+  name mie_fill
+  xpos -30
+  ypos 280
+ }
+set N8a73c300 [stack 0]
+push $N8a768400
+push $N8a741800
+push $N8a768800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -490,7 +603,7 @@ push $N3b5b8800
   xpos -300
   ypos -100
  }
-set N3b5b9000 [stack 0]
+set N8a769000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -514,7 +627,7 @@ set N3b5b9000 [stack 0]
   xpos -300
   ypos 90
  }
-push $N3b5b9000
+push $N8a769000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -544,7 +657,7 @@ push $N3b5b9000
   xpos -300
   ypos 120
  }
-push $N3b5b9000
+push $N8a769000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -552,10 +665,66 @@ push $N3b5b9000
   xpos -300
   ypos 150
  }
-set N3b58a500 [stack 0]
-push $N3b58b400
-push $N3b58aa00
-push $N3b58a500
+set N8a73a500 [stack 0]
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name rayleigh_upper
+  xpos -70
+  ypos 180
+ }
+set Nb6bbe800 [stack 0]
+ Mirror2 {
+  flip true
+  name rayleigh_flip
+  xpos 40
+  ypos 180
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name rayleigh_lower
+  xpos 40
+  ypos 210
+ }
+push $Nb6bbe800
+ Merge2 {
+  inputs 2
+  operation plus
+  name rayleigh_mirror
+  xpos -70
+  ypos 240
+ }
+push $N8a73a500
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name rayleigh_sky
+  xpos -180
+  ypos 180
+ }
+ AdjBBox {
+  numpixels {{hdri.height}}
+  name rayleigh_extend
+  xpos -180
+  ypos 210
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {hdri.height}}
+  name rayleigh_extend_trim
+  xpos -180
+  ypos 240
+ }
+push $N8a73a500
+ Switch {
+  inputs 3
+  which {{parent.fill_below_horizon}}
+  name rayleigh_fill
+  xpos -180
+  ypos 280
+ }
+set N8a73be00 [stack 0]
+push $N8a73b400
+push $N8a73aa00
+push $N8a73a500
  Merge2 {
   inputs 2
   operation plus
@@ -569,15 +738,71 @@ push $N3b58a500
   xpos -300
   ypos 60
  }
-set N67871400 [stack 0]
-push $N3b58af00
-push $N3b58b400
-push $N3b58aa00
-push $N3b58a500
-push $N67871400
-push $N67871400
-push $N3b58af00
-push $N3b590000
+set Nb6b41400 [stack 0]
+ Crop {
+  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  name inscatter_upper
+  xpos -70
+  ypos 90
+ }
+set Nb6b82c00 [stack 0]
+ Mirror2 {
+  flip true
+  name inscatter_flip
+  xpos 40
+  ypos 90
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  name inscatter_lower
+  xpos 40
+  ypos 120
+ }
+push $Nb6b82c00
+ Merge2 {
+  inputs 2
+  operation plus
+  name inscatter_mirror
+  xpos -70
+  ypos 150
+ }
+push $Nb6b41400
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name inscatter_sky
+  xpos -180
+  ypos 90
+ }
+ AdjBBox {
+  numpixels {{hdri.height}}
+  name inscatter_extend
+  xpos -180
+  ypos 120
+ }
+ Crop {
+  box {{0} {0} {hdri.width} {hdri.height}}
+  name inscatter_extend_trim
+  xpos -180
+  ypos 150
+ }
+push $Nb6b41400
+ Switch {
+  inputs 3
+  which {{parent.fill_below_horizon}}
+  name inscatter_fill
+  xpos -180
+  ypos 190
+ }
+set N8a73b900 [stack 0]
+push $N8a73af00
+push $N8a73c800
+push $N8a73c300
+push $N8a73be00
+push $N8a73b900
+push $Nb6b41400
+push $N8a73af00
+push $N8a740000
  Merge2 {
   inputs 2
   operation multiply
@@ -600,7 +825,7 @@ push $N3b590000
   xpos 0
   ypos 160
  }
-push $N3b590000
+push $N8a740000
  Copy {
   inputs 2
   channels rgb

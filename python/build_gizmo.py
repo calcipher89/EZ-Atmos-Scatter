@@ -114,6 +114,11 @@ def _add_knobs(group):
         knob.setRange(lo, hi)
         knob.setTooltip(tip)
         k.append(knob)
+    fill = nuke.Enumeration_Knob("fill_below_horizon", "fill below horizon", ["Off", "Extend Horizon", "Mirror Sky"])
+    fill.setTooltip("Fills the empty lower half of the sky passes (Scatter, Sky, Haze, Sky Light) so they "
+                    "can be used as a full sky dome. Extend Horizon repeats the row just above the horizon, "
+                    "Mirror Sky reflects the sky. The Scatter Preview Comp and Transmittance stay physical.")
+    k.append(fill)
     quality = nuke.Enumeration_Knob("quality", "quality", ["Draft", "Normal", "High"])
     quality.setTooltip("Number of samples along each ray. Draft is about 4x faster than High.")
     k.append(quality)
@@ -243,6 +248,45 @@ def _upscale(node, hdri, name):
     return pick
 
 
+def _fill_below(node, name):
+    """Fill the rows below the horizon from the sky above them, as 'fill below horizon'
+    picks: 0 leaves them black, 1 repeats the horizon row, 2 mirrors the sky."""
+    x, y = node.xpos() + 120, node.ypos()
+    sky = nuke.nodes.Crop(name="%s_sky" % name, crop=False, xpos=x, ypos=y + 30)
+    sky.setInput(0, node)
+    for i, e in enumerate(("0", "input.height / 2", "input.width", "input.height")):
+        sky["box"].setExpression(e, i)
+    # AdjBBox bakes the repeated edge row into real pixels; the Crop trims it to the frame.
+    grow = nuke.nodes.AdjBBox(name="%s_extend" % name, xpos=x, ypos=y + 60)
+    grow["numpixels"].setExpression("hdri.height")
+    grow.setInput(0, sky)
+    extend = nuke.nodes.Crop(name="%s_extend_trim" % name, xpos=x, ypos=y + 90)
+    extend.setInput(0, grow)
+    for i, e in enumerate(("0", "0", "hdri.width", "hdri.height")):
+        extend["box"].setExpression(e, i)
+
+    upper = nuke.nodes.Crop(name="%s_upper" % name, xpos=x + 110, ypos=y + 30)
+    upper.setInput(0, node)
+    for i, e in enumerate(("0", "hdri.height / 2", "hdri.width", "hdri.height")):
+        upper["box"].setExpression(e, i)
+    flipped = nuke.nodes.Mirror2(name="%s_flip" % name, flip=True, xpos=x + 220, ypos=y + 30)
+    flipped.setInput(0, upper)
+    lower = nuke.nodes.Crop(name="%s_lower" % name, xpos=x + 220, ypos=y + 60)
+    lower.setInput(0, flipped)
+    for i, e in enumerate(("0", "0", "hdri.width", "hdri.height / 2")):
+        lower["box"].setExpression(e, i)
+    mirror = nuke.nodes.Merge2(name="%s_mirror" % name, operation="plus", xpos=x + 110, ypos=y + 90)
+    mirror.setInput(0, upper)
+    mirror.setInput(1, lower)
+
+    pick = nuke.nodes.Switch(name="%s_fill" % name, xpos=x, ypos=y + 130)
+    pick.setInput(0, node)
+    pick.setInput(1, extend)
+    pick.setInput(2, mirror)
+    pick["which"].setExpression("parent.fill_below_horizon")
+    return pick
+
+
 def build():
     for layer in LAYERS:
         nuke.Layer(layer, ["%s.red" % layer, "%s.green" % layer, "%s.blue" % layer])
@@ -313,8 +357,15 @@ def build():
     comp.setInput(0, attenuated)
     comp.setInput(1, inscatter)
 
-    sources = {"comp": comp, "inscatter": inscatter}
-    sources.update(passes)
+    # Optional fill of the empty lower half, for the sky passes only: the preview comp keeps
+    # the physical (black) haze below the horizon so the HDRI ground is not washed out.
+    filled = {"inscatter": _fill_below(inscatter, "inscatter")}
+    for name in ("rayleigh", "mie", "ambient"):
+        filled[name] = _fill_below(passes[name], name)
+    filled["transmittance"] = passes["transmittance"]
+
+    sources = {"comp": comp}
+    sources.update(filled)
     view = nuke.nodes.Switch(name="ViewOutput", xpos=0, ypos=160)
     for i, (_, key) in enumerate(VIEW_OUTPUTS):
         view.setInput(i, sources[key])
@@ -324,8 +375,8 @@ def build():
     stream = nuke.nodes.Copy(name="MainRGB", channels="rgb", xpos=0, ypos=240)
     stream.setInput(0, hdri)
     stream.setInput(1, view)
-    layer_sources = {"atmos_inscatter": inscatter}
-    layer_sources.update({layer: passes[name] for name, _, layer in PASSES})
+    layer_sources = {"atmos_inscatter": filled["inscatter"]}
+    layer_sources.update({layer: filled[name] for name, _, layer in PASSES})
     for i, layer in enumerate(LAYERS):
         copy = nuke.nodes.Copy(name="Layer_" + layer, xpos=0, ypos=300 + 60 * i)
         copy.setInput(0, stream)
