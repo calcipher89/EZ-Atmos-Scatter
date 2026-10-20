@@ -56,6 +56,8 @@ The node then shows up under **Nodes > EzAtmosScatter**.
 | `atmos_ambient` | Sky light: the whole HDRI sky scattered into the haze |
 | `atmos_transmittance` | How much of the background survives along each view ray |
 | `atmos_haze_color` | Depth haze colour: what infinitely deep haze looks like in each direction (see Depth haze below) |
+| `atmos_haze_sun` | The sunlit part of `atmos_haze_color`: what shadowed haze loses |
+| `atmos_haze_sky` | The sky-lit part of `atmos_haze_color`: what shadowed haze keeps |
 
 The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 

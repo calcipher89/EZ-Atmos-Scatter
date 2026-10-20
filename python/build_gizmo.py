@@ -18,7 +18,7 @@ BLINK = os.path.join(ROOT, "blink")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzAtmosScatter.gizmo")
 
 LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
-          "atmos_haze_color"]
+          "atmos_haze_color", "atmos_haze_sun", "atmos_haze_sky"]
 
 VIEW_OUTPUTS = [
     # (menu label, node feeding the main rgba)
@@ -38,6 +38,8 @@ PASSES = [("rayleigh", 1, "atmos_rayleigh"),
           ("transmittance", 3, "atmos_transmittance"),
           ("ambient", 5, "atmos_ambient"),
           ("haze_color", 8, "atmos_haze_color"),
+          ("haze_sun", 10, "atmos_haze_sun"),
+          ("haze_sky", 11, "atmos_haze_sky"),
           ("haze_transmittance", 9, None)]
 
 # Extinction per metre at camera height, per channel; matches the kernel's local

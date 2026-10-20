@@ -26,7 +26,8 @@
 //
 // output: 0 = inscatter (Rayleigh + Mie + ambient), 1 = Rayleigh only, 2 = Mie only,
 //         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter),
-//         5 = ambient (sky light) only, 8 = haze colour, 9 = haze transmittance at
+//         5 = ambient (sky light) only, 8 = haze colour, 10 and 11 = its sunlit and sky-lit
+//         parts, 9 = haze transmittance at
 //         hazeDistance. With depthHaze on, outputs 0-5 describe haze around the camera
 //         out to hazeDistance instead of the atmosphere (see the depth haze block).
 
@@ -287,6 +288,10 @@ local:
         hazeResult = ambientHaze * veil;
       } else if (output == 8) {
         hazeResult = rayleighHaze + mieHaze + ambientHaze;
+      } else if (output == 10) {
+        hazeResult = rayleighHaze + mieHaze;
+      } else if (output == 11) {
+        hazeResult = ambientHaze;
       }
       dst() = float4(hazeResult.x, hazeResult.y, hazeResult.z, hazeAlpha);
       return;
