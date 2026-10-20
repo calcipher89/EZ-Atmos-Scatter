@@ -17,7 +17,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLINK = os.path.join(ROOT, "blink")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzAtmosScatter.gizmo")
 
-LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance"]
+LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
+          "atmos_haze_color"]
 
 VIEW_OUTPUTS = [
     # (menu label, node feeding the main rgba)
@@ -27,13 +28,22 @@ VIEW_OUTPUTS = [
     ("Haze (Mie)", "mie"),
     ("Sky Light (Ambient)", "ambient"),
     ("Transmittance", "transmittance"),
+    ("Haze Color", "haze_color"),
+    ("Haze Preview", "haze_preview"),
 ]
 
-# Kernel output index for each pass (see AtmosScatter.blink).
+# Kernel output index for each pass (see AtmosScatter.blink), and the layer it goes to.
 PASSES = [("rayleigh", 1, "atmos_rayleigh"),
           ("mie", 2, "atmos_mie"),
           ("transmittance", 3, "atmos_transmittance"),
-          ("ambient", 5, "atmos_ambient")]
+          ("ambient", 5, "atmos_ambient"),
+          ("haze_color", 8, "atmos_haze_color"),
+          ("haze_transmittance", 9, None)]
+
+# Extinction per metre at camera height, per channel; matches the kernel's local
+# coefficients. Used by the read-only 'haze density' knob.
+HAZE_DENSITY = ("(rayleigh_coefficients.{c} * sky_amount * exp(-camera_height / 1000 / rayleigh_scale_height)"
+                " + mie_coefficient * haze_amount / 0.9 * exp(-camera_height / 1000 / haze_height)) / 1000")
 
 SUN_FROM_AXIS = "parent.input1.world_matrix.%d"
 
@@ -108,17 +118,29 @@ def _add_knobs(group):
             ("sky_amount", "sky amount", 0, 4, "Density of the air (Rayleigh). More gives a bluer, brighter sky."),
             ("haze_amount", "haze amount", 0, 10, "Density of the haze (Mie). More gives whiter, thicker air."),
             ("haze_glow_size", "haze glow size", 0, 4, "Size of the glow around the sun. Bigger spreads it wider."),
+            ("haze_height", "haze height (km)", 0.1, 10, "Height over which the haze thins out by about two thirds "
+             "(its scale height). Low keeps it near the ground, so looking up clears quickly; high fills the "
+             "air evenly around the camera."),
             ("camera_height", "camera height (m)", 0, 5000, "Camera height above sea level, in metres."),
             ("max_distance", "max distance (km)", 0, 200, "How far the haze reaches along each ray. 0 = to the top of the atmosphere.")]:
         knob = nuke.Double_Knob(name, label)
         knob.setRange(lo, hi)
         knob.setTooltip(tip)
         k.append(knob)
-    fill = nuke.Enumeration_Knob("fill_below_horizon", "fill below horizon", ["Off", "Extend Horizon", "Mirror Sky"])
-    fill.setTooltip("Fills the lower half of the passes (Scatter, Sky, Haze, Sky Light, Transmittance) so they "
-                    "can be used as a full sky dome. Extend Horizon repeats the row just above the horizon, "
-                    "Mirror Sky reflects the sky. The Scatter Preview Comp stays physical.")
-    k.append(fill)
+
+    k.append(nuke.Text_Knob("depth_haze_divider", "Depth Haze"))
+    density = nuke.Color_Knob("haze_density", "haze density (1/m)")
+    density.setFlag(nuke.DISABLED)
+    density.setTooltip("Read only. How much the air and haze at camera height dim light per metre. For depth "
+                       "hazing a plate: T = exp(-haze_density * depth_in_metres), then "
+                       "plate * T + atmos_haze_color * (1 - T).")
+    k.append(density)
+    preview_distance = nuke.Double_Knob("haze_preview_distance", "haze preview distance (km)")
+    preview_distance.setRange(0, 50)
+    preview_distance.setTooltip("Distance used by the Haze Preview view: the Scatter Preview Comp hazed as if "
+                                "everything were this far away, with the haze thinning with height.")
+    k.append(preview_distance)
+
     quality = nuke.Enumeration_Knob("quality", "quality", ["Draft", "Normal", "High"])
     quality.setTooltip("Number of samples along each ray. Draft is about 4x faster than High.")
     k.append(quality)
@@ -147,7 +169,6 @@ def _add_knobs(group):
     for name, label, tip in [
             ("mie_coefficient", "mie coefficient", "Sea-level Mie scattering per km. Extinction is this / 0.9."),
             ("rayleigh_scale_height", "rayleigh scale height (km)", "Height over which air density falls by e."),
-            ("mie_scale_height", "mie scale height (km)", "Height over which haze density falls by e."),
             ("planet_radius", "planet radius (km)", ""),
             ("atmosphere_thickness", "atmosphere thickness (km)", ""),
             ("manual_sun_brightness", "manual sun brightness", "Sun brightness when 'light from HDRI' is off, before 'sun strength'."),
@@ -169,7 +190,7 @@ def _add_knobs(group):
         "haze_glow_size": 1.0, "camera_height": 1.0, "max_distance": 0.0, "quality": 1,
         "viewer_resolution": 1, "render_resolution": 0,
         "rayleigh_coefficients": [0.0052, 0.0121, 0.0296], "mie_coefficient": 0.021,
-        "rayleigh_scale_height": 8.5, "mie_scale_height": 1.2, "planet_radius": 6360.0,
+        "rayleigh_scale_height": 8.5, "haze_height": 1.2, "haze_preview_distance": 5.0, "planet_radius": 6360.0,
         "atmosphere_thickness": 60.0, "manual_sun_brightness": 20.0, "clear_sky_ratio": 55.0,
         "sun_search_cone": 6.0, "clip_ratio": 20.0,
     }
@@ -178,6 +199,8 @@ def _add_knobs(group):
     res = "(%s==0 ? 1 : %s==1 ? 0.5 : 0.25)"
     group["scatter_scale"].setExpression("$gui ? %s : %s" % (res % ("viewer_resolution", "viewer_resolution"),
                                                               res % ("render_resolution", "render_resolution")))
+    for i, c in enumerate("xyz"):
+        group["haze_density"].setExpression(HAZE_DENSITY.format(c=c), i)
 
 
 def _link_scatter(node, output):
@@ -203,7 +226,8 @@ def _link_scatter(node, output):
     _link(node, "mie_g", "clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)")
     _link(node, "mie_coefficient", "parent.mie_coefficient")
     _link(node, "rayleigh_scale_height_km", "parent.rayleigh_scale_height")
-    _link(node, "mie_scale_height_km", "parent.mie_scale_height")
+    _link(node, "mie_scale_height_km", "parent.haze_height")
+    _link(node, "haze_distance_km", "parent.haze_preview_distance")
     _link(node, "planet_radius_km", "parent.planet_radius")
     _link(node, "atmosphere_thickness_km", "parent.atmosphere_thickness")
     _link(node, "view_samples", "parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32")
@@ -248,45 +272,6 @@ def _upscale(node, hdri, name):
     return pick
 
 
-def _fill_below(node, name):
-    """Fill the rows below the horizon from the sky above them, as 'fill below horizon'
-    picks: 0 leaves them black, 1 repeats the horizon row, 2 mirrors the sky."""
-    x, y = node.xpos() + 120, node.ypos()
-    sky = nuke.nodes.Crop(name="%s_sky" % name, crop=False, xpos=x, ypos=y + 30)
-    sky.setInput(0, node)
-    for i, e in enumerate(("0", "input.height / 2", "input.width", "input.height")):
-        sky["box"].setExpression(e, i)
-    # AdjBBox bakes the repeated edge row into real pixels; the Crop trims it to the frame.
-    grow = nuke.nodes.AdjBBox(name="%s_extend" % name, xpos=x, ypos=y + 60)
-    grow["numpixels"].setExpression("hdri.height")
-    grow.setInput(0, sky)
-    extend = nuke.nodes.Crop(name="%s_extend_trim" % name, xpos=x, ypos=y + 90)
-    extend.setInput(0, grow)
-    for i, e in enumerate(("0", "0", "hdri.width", "hdri.height")):
-        extend["box"].setExpression(e, i)
-
-    upper = nuke.nodes.Crop(name="%s_upper" % name, xpos=x + 110, ypos=y + 30)
-    upper.setInput(0, node)
-    for i, e in enumerate(("0", "hdri.height / 2", "hdri.width", "hdri.height")):
-        upper["box"].setExpression(e, i)
-    flipped = nuke.nodes.Mirror2(name="%s_flip" % name, flip=True, xpos=x + 220, ypos=y + 30)
-    flipped.setInput(0, upper)
-    lower = nuke.nodes.Crop(name="%s_lower" % name, xpos=x + 220, ypos=y + 60)
-    lower.setInput(0, flipped)
-    for i, e in enumerate(("0", "0", "hdri.width", "hdri.height / 2")):
-        lower["box"].setExpression(e, i)
-    mirror = nuke.nodes.Merge2(name="%s_mirror" % name, operation="plus", xpos=x + 110, ypos=y + 90)
-    mirror.setInput(0, upper)
-    mirror.setInput(1, lower)
-
-    pick = nuke.nodes.Switch(name="%s_fill" % name, xpos=x, ypos=y + 130)
-    pick.setInput(0, node)
-    pick.setInput(1, extend)
-    pick.setInput(2, mirror)
-    pick["which"].setExpression("parent.fill_below_horizon")
-    return pick
-
-
 def build():
     for layer in LAYERS:
         nuke.Layer(layer, ["%s.red" % layer, "%s.green" % layer, "%s.blue" % layer])
@@ -323,7 +308,7 @@ def build():
     _load_kernel(lut, "EzAtmosTransmittanceLUT.blink")
     for param, knob in [("planet_radius_km", "planet_radius"), ("atmosphere_thickness_km", "atmosphere_thickness"),
                         ("rayleigh_scale_height_km", "rayleigh_scale_height"),
-                        ("mie_scale_height_km", "mie_scale_height")]:
+                        ("mie_scale_height_km", "haze_height")]:
         _link(lut, param, "parent." + knob)
 
     # The passes are computed at scatter_scale. Even height keeps the horizon on a row edge.
@@ -357,15 +342,22 @@ def build():
     comp.setInput(0, attenuated)
     comp.setInput(1, inscatter)
 
-    # Optional fill of the empty lower half of every pass. The preview comp is built from the
-    # unfilled passes above, so the HDRI ground is not washed out.
-    filled = {"inscatter": _fill_below(inscatter, "inscatter")}
-    for name in ("rayleigh", "mie", "ambient"):
-        filled[name] = _fill_below(passes[name], name)
-    filled["transmittance"] = _fill_below(passes["transmittance"], "transmittance")
+    # Haze Preview: the comp hazed as if everything were haze_preview_distance away,
+    #   comp * T + hazeColor * (1 - T)
+    hazed = nuke.nodes.Merge2(name="HazePreviewAttenuate", operation="multiply", output="rgb", xpos=150, ypos=0)
+    hazed.setInput(0, comp)
+    hazed.setInput(1, passes["haze_transmittance"])
+    clear = nuke.nodes.Invert(name="HazePreviewOpacity", channels="rgb", xpos=300, ypos=0)
+    clear.setInput(0, passes["haze_transmittance"])
+    veil = nuke.nodes.Merge2(name="HazePreviewVeil", operation="multiply", output="rgb", xpos=300, ypos=60)
+    veil.setInput(0, passes["haze_color"])
+    veil.setInput(1, clear)
+    haze_preview = nuke.nodes.Merge2(name="HazePreview", operation="plus", output="rgb", xpos=150, ypos=60)
+    haze_preview.setInput(0, hazed)
+    haze_preview.setInput(1, veil)
 
-    sources = {"comp": comp}
-    sources.update(filled)
+    sources = {"comp": comp, "inscatter": inscatter, "haze_preview": haze_preview}
+    sources.update(passes)
     view = nuke.nodes.Switch(name="ViewOutput", xpos=0, ypos=160)
     for i, (_, key) in enumerate(VIEW_OUTPUTS):
         view.setInput(i, sources[key])
@@ -375,8 +367,8 @@ def build():
     stream = nuke.nodes.Copy(name="MainRGB", channels="rgb", xpos=0, ypos=240)
     stream.setInput(0, hdri)
     stream.setInput(1, view)
-    layer_sources = {"atmos_inscatter": filled["inscatter"]}
-    layer_sources.update({layer: filled[name] for name, _, layer in PASSES})
+    layer_sources = {"atmos_inscatter": inscatter}
+    layer_sources.update({layer: passes[name] for name, _, layer in PASSES if layer})
     for i, layer in enumerate(LAYERS):
         copy = nuke.nodes.Copy(name="Layer_" + layer, xpos=0, ypos=300 + 60 * i)
         copy.setInput(0, stream)

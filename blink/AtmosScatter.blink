@@ -26,7 +26,8 @@
 //
 // output: 0 = inscatter (Rayleigh + Mie + ambient), 1 = Rayleigh only, 2 = Mie only,
 //         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter),
-//         5 = ambient (sky light) only
+//         5 = ambient (sky light) only, 8 = haze colour, 9 = haze transmittance at
+//         hazeDistance (see the depth haze block in process())
 
 kernel AtmosScatter : ImageComputationKernel<ePixelWise>
 {
@@ -48,6 +49,7 @@ param:
   float clearSkyRatio;
   float cameraAltitude;
   float maxDistance;
+  float hazeDistance;
   float longitudeOffset;
   float rayleighDensity;
   float mieDensity;
@@ -83,6 +85,7 @@ local:
     defineParam(clearSkyRatio, "clear_sky_ratio", 55.0f);
     defineParam(cameraAltitude, "camera_altitude_km", 0.001f);
     defineParam(maxDistance, "max_distance_km", 0.0f);
+    defineParam(hazeDistance, "haze_distance_km", 5.0f);
     defineParam(longitudeOffset, "longitude_offset_deg", 0.0f);
     defineParam(rayleighDensity, "rayleigh_density", 1.0f);
     defineParam(mieDensity, "mie_density", 1.0f);
@@ -197,7 +200,7 @@ local:
       sunDir = normalize(measuredDir);
 
     // Transmittance and sky light depend on the view ray alone.
-    bool needSun = output != 3 && output != 5;
+    bool needSun = output != 3 && output != 5 && output != 9;
 
     float3 sun = sunColor * sunIntensity * sunStrength;
     if (needSun && lightFromHdri != 0) {
@@ -225,6 +228,46 @@ local:
     float lon = (u - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;
     float lat = (v - 0.5f) * pi;
     float3 dir = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));
+
+    // Depth haze: the air and haze around the camera, for hazing a plate with its depth.
+    // Scattering and extinction coefficients at camera height, per km.
+    float3 localR = betaR * exp(-h0 / rayleighScaleHeight);
+    float localMScatter = betaMScatter * exp(-h0 / mieScaleHeight);
+    float localMExtinction = betaMExtinction * exp(-h0 / mieScaleHeight);
+    if (output == 8) {
+      // Haze colour: what infinitely deep haze looks like in this direction. Sunlight
+      // reaching the camera height, scattered towards the viewer, plus sky light scattered
+      // evenly, over everything the haze absorbs or scatters away:
+      //   hazeColor = (sun * Tsun * scatter(mu) + sky * scatter) / extinction
+      // Plate hazing then is plate * T + hazeColor * (1 - T).
+      float2 od = sunOpticalDepth(origin, h0, sunDir);
+      float3 tSun = float3(0.0f);
+      if (od.x >= 0.0f)
+        tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));
+      float mu = dot(dir, sunDir);
+      float3 scatterSun = localR * phaseRayleigh(mu) + float3(localMScatter * phaseMie(mu));
+      float3 scatterAll = localR + float3(localMScatter);
+      float3 extinction = localR + float3(localMExtinction);
+      float3 haze = (sun * tSun * scatterSun + skyAverage * skyLight * scatterAll) / extinction;
+      dst() = float4(haze.x, haze.y, haze.z, 1.0f);
+      return;
+    }
+    if (output == 9) {
+      // Haze transmittance at hazeDistance along this direction, with each kind of
+      // particle thinning out exponentially with height (flat-ground approximation):
+      //   tau = beta(h0) * H * (1 - exp(-d * cos / H)) / cos,  cos = dir.y
+      float c = dir.y;
+      float d = hazeDistance;
+      float fR = d;
+      float fM = d;
+      if (fabs(c) > 1e-4f) {
+        fR = rayleighScaleHeight * (1.0f - exp(-d * c / rayleighScaleHeight)) / c;
+        fM = mieScaleHeight * (1.0f - exp(-d * c / mieScaleHeight)) / c;
+      }
+      float3 tHaze = exp3(-(localR * fR + float3(localMExtinction * fM)));
+      dst() = float4(tHaze.x, tHaze.y, tHaze.z, 1.0f);
+      return;
+    }
 
     float b = dot(origin, dir);
 

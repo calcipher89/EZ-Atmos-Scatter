@@ -55,6 +55,7 @@ The node then shows up under **Nodes > EzAtmosScatter**.
 | `atmos_mie` | Haze only (haze and glow around the sun) |
 | `atmos_ambient` | Sky light: the whole HDRI sky scattered into the haze |
 | `atmos_transmittance` | How much of the background survives along each view ray |
+| `atmos_haze_color` | Depth haze colour: what infinitely deep haze looks like in each direction (see Depth haze below) |
 
 The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 
@@ -77,13 +78,38 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | haze glow size | 1 | Size of the glow around the sun |
 | camera height (m) | 1 | Camera height above sea level |
 | max distance (km) | 0 (off) | How far the haze reaches. Use it to add haze up to a set distance instead of a full sky |
-| fill below horizon | Off | Fills the lower half of every pass and layer for use as a full sky dome: *Extend Horizon* repeats the horizon row, *Mirror Sky* reflects the sky. The preview comp stays physical |
+| haze height (km) | 1.2 | How quickly the haze thins with altitude (its scale height). Low keeps it near the ground |
+| haze density (1/m) | read only | Extinction per metre at camera height, for depth hazing in a comp |
+| haze preview distance (km) | 5 | Distance the *Haze Preview* view hazes the preview comp to |
 | quality | Normal | Samples per ray (Draft is about 4x faster than High) |
 | viewer resolution | Half | Resolution the haze is computed at in the Nuke GUI (Full / Half / Quarter) |
 | render resolution | Full | Resolution the haze is computed at in terminal and farm renders |
 
 The **Advanced** section holds the physical constants (scattering coefficients, scale
 heights, planet size) and the sun detection settings.
+
+### Depth haze
+
+The *Haze Color* view (and the `atmos_haze_color` layer) is the colour fog settles to when it is
+infinitely deep, for every direction around the camera. It combines sunlight scattered
+by the air and haze at camera height, strongest near the sun because haze scatters
+mostly forwards, with the HDRI sky light scattered evenly. It has no ground and no
+horizon line, so it can haze a plate with any metric depth pass:
+
+```
+T      = exp(-haze_density * depth_in_metres)
+result = plate * T + hazeColor * (1 - T)
+```
+
+In a comp, an Expression node can read *haze density* from the gizmo
+(`EzAtmosScatter1.haze_density.r` and so on), and `hazeColor` comes from a lat-long lookup
+of `atmos_haze_color` along each pixel's view direction.
+
+*Haze Preview* shows the result on the preview comp as if everything were *haze preview
+distance* away. There the haze also thins with height: along a ray at elevation
+cos = dir.y each part of the atmosphere adds `beta(h0) * H * (1 - exp(-d * cos / H)) / cos`
+of optical depth (scale height H), so looking up clears faster than looking sideways.
+A low *haze height* with a high *haze amount* gives a fog bank sitting on the ground.
 
 ### How the HDRI lights it
 
