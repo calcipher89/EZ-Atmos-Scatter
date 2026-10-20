@@ -64,6 +64,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | Knob | Default | What it does |
 | --- | --- | --- |
 | view output | Scatter Preview Comp | What the main rgba shows |
+| passes | Atmosphere | *Atmosphere*: rays run through the whole sky down to the ground. *Depth Haze*: every pass describes the haze around the camera out to *haze distance*, with no ground and no horizon line |
 | sun from | Auto (HDRI) | Where the sun direction comes from: the HDRI, the Axis input or the manual knob |
 | sun direction | (0, 0.5, -1) | Manual sun direction, +Y up |
 | copy detected sun to manual | | Writes the sun found in the HDRI into *sun direction* |
@@ -80,7 +81,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | max distance (km) | 0 (off) | How far the haze reaches. Use it to add haze up to a set distance instead of a full sky |
 | haze height (km) | 1.2 | How quickly the haze thins with altitude (its scale height). Low keeps it near the ground |
 | haze density (1/m) | read only | Extinction per metre at camera height, for depth hazing in a comp |
-| haze preview distance (km) | 5 | Distance the *Haze Preview* view hazes the preview comp to |
+| haze distance (km) | 5 | How far the depth haze reaches, for the *Haze Preview* view and the *Depth Haze* passes |
 | quality | Normal | Samples per ray (Draft is about 4x faster than High) |
 | viewer resolution | Half | Resolution the haze is computed at in the Nuke GUI (Full / Half / Quarter) |
 | render resolution | Full | Resolution the haze is computed at in terminal and farm renders |
@@ -105,8 +106,10 @@ In a comp, an Expression node can read *haze density* from the gizmo
 (`EzAtmosScatter1.haze_density.r` and so on), and `hazeColor` comes from a lat-long lookup
 of `atmos_haze_color` along each pixel's view direction.
 
-*Haze Preview* shows the result on the preview comp as if everything were *haze preview
-distance* away. There the haze also thins with height: along a ray at elevation
+*Haze Preview* shows the result on the preview comp as if everything were *haze
+distance* away. Setting **passes** to *Depth Haze* gives every layer (Scatter, Sky, Haze,
+Sky Light, Transmittance) in that form, so they composite the same way as the atmosphere
+passes: `plate * atmos_transmittance + atmos_inscatter`. There the haze also thins with height: along a ray at elevation
 cos = dir.y each part of the atmosphere adds `beta(h0) * H * (1 - exp(-d * cos / H)) / cos`
 of optical depth (scale height H), so looking up clears faster than looking sideways.
 A low *haze height* with a high *haze amount* gives a fog bank sitting on the ground.
