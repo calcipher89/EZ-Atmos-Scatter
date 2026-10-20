@@ -72,6 +72,12 @@ def _add_knobs(group):
     view = nuke.Enumeration_Knob("view_output", "view output", [label for label, _ in VIEW_OUTPUTS])
     view.setTooltip("What the main rgba shows. Every pass is also written to its own atmos_* layer.")
     k.append(view)
+    passes = nuke.Enumeration_Knob("passes", "passes", ["Atmosphere", "Depth Haze"])
+    passes.setTooltip("Atmosphere: every ray runs through the whole sky down to the ground, as seen from the "
+                      "camera. Depth Haze: Scatter, Sky, Haze, Sky Light and Transmittance describe the haze "
+                      "around the camera out to 'haze distance', with no ground and no horizon line, for hazing "
+                      "a plate. Composite either with plate * transmittance + scatter.")
+    k.append(passes)
 
     k.append(nuke.Text_Knob("sun_divider", "Sun"))
     sun_from = nuke.Enumeration_Knob("sun_from", "sun from", ["Auto (HDRI)", "Axis", "Manual"])
@@ -135,10 +141,10 @@ def _add_knobs(group):
                        "hazing a plate: T = exp(-haze_density * depth_in_metres), then "
                        "plate * T + atmos_haze_color * (1 - T).")
     k.append(density)
-    preview_distance = nuke.Double_Knob("haze_preview_distance", "haze preview distance (km)")
+    preview_distance = nuke.Double_Knob("haze_distance", "haze distance (km)")
     preview_distance.setRange(0, 50)
-    preview_distance.setTooltip("Distance used by the Haze Preview view: the Scatter Preview Comp hazed as if "
-                                "everything were this far away, with the haze thinning with height.")
+    preview_distance.setTooltip("How far the depth haze reaches: used by the Haze Preview view and, with passes set to "
+                                "Depth Haze, by every pass. The haze thins with height along each ray.")
     k.append(preview_distance)
 
     quality = nuke.Enumeration_Knob("quality", "quality", ["Draft", "Normal", "High"])
@@ -190,7 +196,7 @@ def _add_knobs(group):
         "haze_glow_size": 1.0, "camera_height": 1.0, "max_distance": 0.0, "quality": 1,
         "viewer_resolution": 1, "render_resolution": 0,
         "rayleigh_coefficients": [0.0052, 0.0121, 0.0296], "mie_coefficient": 0.021,
-        "rayleigh_scale_height": 8.5, "haze_height": 1.2, "haze_preview_distance": 5.0, "planet_radius": 6360.0,
+        "rayleigh_scale_height": 8.5, "haze_height": 1.2, "haze_distance": 5.0, "planet_radius": 6360.0,
         "atmosphere_thickness": 60.0, "manual_sun_brightness": 20.0, "clear_sky_ratio": 55.0,
         "sun_search_cone": 6.0, "clip_ratio": 20.0,
     }
@@ -205,6 +211,7 @@ def _add_knobs(group):
 
 def _link_scatter(node, output):
     _link(node, "output", str(output))
+    _link(node, "depth_haze", "parent.passes")
     _link(node, "sun_from_hdri", "parent.sun_from==0")
     _link(node, "light_from_hdri", "parent.light_from_hdri")
     for i, axis in enumerate("xyz"):
@@ -227,7 +234,7 @@ def _link_scatter(node, output):
     _link(node, "mie_coefficient", "parent.mie_coefficient")
     _link(node, "rayleigh_scale_height_km", "parent.rayleigh_scale_height")
     _link(node, "mie_scale_height_km", "parent.haze_height")
-    _link(node, "haze_distance_km", "parent.haze_preview_distance")
+    _link(node, "haze_distance_km", "parent.haze_distance")
     _link(node, "planet_radius_km", "parent.planet_radius")
     _link(node, "atmosphere_thickness_km", "parent.atmosphere_thickness")
     _link(node, "view_samples", "parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32")
@@ -342,7 +349,7 @@ def build():
     comp.setInput(0, attenuated)
     comp.setInput(1, inscatter)
 
-    # Haze Preview: the comp hazed as if everything were haze_preview_distance away,
+    # Haze Preview: the comp hazed as if everything were haze_distance away,
     #   comp * T + hazeColor * (1 - T)
     hazed = nuke.nodes.Merge2(name="HazePreviewAttenuate", operation="multiply", output="rgb", xpos=150, ypos=0)
     hazed.setInput(0, comp)
@@ -355,8 +362,13 @@ def build():
     haze_preview = nuke.nodes.Merge2(name="HazePreview", operation="plus", output="rgb", xpos=150, ypos=60)
     haze_preview.setInput(0, hazed)
     haze_preview.setInput(1, veil)
+    # With passes on Depth Haze the comp is already hazed; do not haze it twice.
+    preview_pick = nuke.nodes.Switch(name="HazePreviewMode", xpos=150, ypos=100)
+    preview_pick.setInput(0, haze_preview)
+    preview_pick.setInput(1, comp)
+    preview_pick["which"].setExpression("parent.passes")
 
-    sources = {"comp": comp, "inscatter": inscatter, "haze_preview": haze_preview}
+    sources = {"comp": comp, "inscatter": inscatter, "haze_preview": preview_pick}
     sources.update(passes)
     view = nuke.nodes.Switch(name="ViewOutput", xpos=0, ypos=160)
     for i, (_, key) in enumerate(VIEW_OUTPUTS):

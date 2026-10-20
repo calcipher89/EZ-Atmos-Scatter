@@ -27,7 +27,9 @@
 // output: 0 = inscatter (Rayleigh + Mie + ambient), 1 = Rayleigh only, 2 = Mie only,
 //         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter),
 //         5 = ambient (sky light) only, 8 = haze colour, 9 = haze transmittance at
-//         hazeDistance (see the depth haze block in process())
+//         hazeDistance. With depthHaze on, outputs 0-5 describe haze around the camera
+//         out to hazeDistance instead of the atmosphere (see the depth haze block).
+
 
 kernel AtmosScatter : ImageComputationKernel<ePixelWise>
 {
@@ -38,6 +40,7 @@ kernel AtmosScatter : ImageComputationKernel<ePixelWise>
 
 param:
   int output;
+  int depthHaze;
   int sunFromHdri;
   int lightFromHdri;
   float3 sunDirection;
@@ -74,6 +77,7 @@ local:
   void define()
   {
     defineParam(output, "output", 0);
+    defineParam(depthHaze, "depth_haze", 0);
     defineParam(sunFromHdri, "sun_from_hdri", 0);
     defineParam(lightFromHdri, "light_from_hdri", 0);
     defineParam(sunDirection, "sun_direction", float3(0.0f, 0.5f, -1.0f));
@@ -234,7 +238,7 @@ local:
     float3 localR = betaR * exp(-h0 / rayleighScaleHeight);
     float localMScatter = betaMScatter * exp(-h0 / mieScaleHeight);
     float localMExtinction = betaMExtinction * exp(-h0 / mieScaleHeight);
-    if (output == 8) {
+    if (output >= 8 || depthHaze != 0) {
       // Haze colour: what infinitely deep haze looks like in this direction. Sunlight
       // reaching the camera height, scattered towards the viewer, plus sky light scattered
       // evenly, over everything the haze absorbs or scatters away:
@@ -245,16 +249,14 @@ local:
       if (od.x >= 0.0f)
         tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));
       float mu = dot(dir, sunDir);
-      float3 scatterSun = localR * phaseRayleigh(mu) + float3(localMScatter * phaseMie(mu));
-      float3 scatterAll = localR + float3(localMScatter);
       float3 extinction = localR + float3(localMExtinction);
-      float3 haze = (sun * tSun * scatterSun + skyAverage * skyLight * scatterAll) / extinction;
-      dst() = float4(haze.x, haze.y, haze.z, 1.0f);
-      return;
-    }
-    if (output == 9) {
-      // Haze transmittance at hazeDistance along this direction, with each kind of
-      // particle thinning out exponentially with height (flat-ground approximation):
+      float3 sunPart = sun * tSun / extinction;
+      float3 rayleighHaze = sunPart * localR * phaseRayleigh(mu);
+      float3 mieHaze = sunPart * (localMScatter * phaseMie(mu));
+      float3 ambientHaze = skyAverage * skyLight * (localR + float3(localMScatter)) / extinction;
+
+      // Transmittance over hazeDistance along this direction, with each kind of particle
+      // thinning out exponentially with height (flat-ground approximation):
       //   tau = beta(h0) * H * (1 - exp(-d * cos / H)) / cos,  cos = dir.y
       float c = dir.y;
       float d = hazeDistance;
@@ -265,7 +267,28 @@ local:
         fM = mieScaleHeight * (1.0f - exp(-d * c / mieScaleHeight)) / c;
       }
       float3 tHaze = exp3(-(localR * fR + float3(localMExtinction * fM)));
-      dst() = float4(tHaze.x, tHaze.y, tHaze.z, 1.0f);
+      float3 veil = float3(1.0f) - tHaze;
+
+      // Depth haze passes: the same layers as the atmosphere passes, but for haze around
+      // the camera out to hazeDistance, with no ground and no horizon line.
+      float3 hazeResult = (rayleighHaze + mieHaze + ambientHaze) * veil;
+      float hazeAlpha = 1.0f;
+      if (output == 1) {
+        hazeResult = rayleighHaze * veil;
+      } else if (output == 2) {
+        hazeResult = mieHaze * veil;
+      } else if (output == 3 || output == 9) {
+        hazeResult = tHaze;
+      } else if (output == 4) {
+        float4 s = src(pos.x, pos.y);
+        hazeResult = float3(s.x, s.y, s.z) * tHaze + hazeResult;
+        hazeAlpha = s.w;
+      } else if (output == 5) {
+        hazeResult = ambientHaze * veil;
+      } else if (output == 8) {
+        hazeResult = rayleighHaze + mieHaze + ambientHaze;
+      }
+      dst() = float4(hazeResult.x, hazeResult.y, hazeResult.z, hazeAlpha);
       return;
     }
 
