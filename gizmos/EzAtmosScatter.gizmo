@@ -10,6 +10,7 @@ add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky
 Gizmo {
  name EzAtmosScatter1
  tile_color 0x4a7fb5ff
+ label "\[python -execlocal \{g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nimport os\nf = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\nok = g\['baked_hash'].value() == h and os.path.exists(f)\nret = '' if not g\['use_baked'].value() or not g\['baked_hash'].value() else ('baked' if ok else 'bake out of date: live')\n\}]"
  selected true
  addUserKnob {20 ezatmos l EzAtmosScatter}
  addUserKnob {4 view_output l "view output" t "What the main rgba shows. Every pass is also written to its own atmos_* layer." M {"Scatter Preview Comp" Scatter "Sky (Rayleigh)" "Haze (Mie)" "Sky Light (Ambient)" Transmittance "Haze Color" "Haze Preview"}}
@@ -20,6 +21,7 @@ Gizmo {
  sun_direction {0 0.5 -1}
  addUserKnob {22 use_detected_sun l "copy detected sun to manual" t "Writes the sun direction found in the HDRI into 'sun direction'." -STARTLINE T "import ezatmosscatter; ezatmosscatter.copy_detected_sun(nuke.thisNode())"}
  addUserKnob {7 hdri_rotation l "hdri rotation" t "Rotates the lat-long mapping in degrees, if the HDRI's centre column does not look down -Z." R -180 180}
+ addUserKnob {6 self_lit l "self-lit (no HDRI)" t "For setups without an HDRI: the sky light comes from this atmosphere's own sky instead of the hdri input, and the sun from 'sun color' and 'sun strength' (light from HDRI is ignored). Set 'sun from' to Manual or Axis." +STARTLINE}
  addUserKnob {6 light_from_hdri l "light from HDRI" t "Take the sun's colour and brightness from the HDRI. Off: 'sun color' and 'sun strength' set them directly." +STARTLINE}
  light_from_hdri true
  addUserKnob {18 sun_color l "sun color" t "Tint on the HDRI's sun, or the sun colour itself when 'light from HDRI' is off."}
@@ -74,6 +76,16 @@ Gizmo {
  addUserKnob {7 clip_ratio l "clip ratio" t "The sun counts as clipped when its peak is under this many times the average sky."}
  clip_ratio 20
  addUserKnob {20 advanced_end n -1}
+ addUserKnob {26 bake_divider l Bake}
+ addUserKnob {2 bake_file l "bake file" t "Leave empty for the default: <script dir>/ezatmos_cache/<script>/<node>/<script>_<node>.####.exr, or \$EZATMOS_CACHE_DIR/<script>/<node>/... when that is set. Fill in to override."}
+ addUserKnob {4 bake_range l "bake range" t "Current Frame: one frame, held for the whole shot (a sun that doesn't move). Script Range: every frame, for an animated sun or knobs." M {"Current Frame (hold)" "Script Range"}}
+ addUserKnob {22 bake_now l "bake now" t "Writes all layers to the bake file here and now." -STARTLINE T "g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nif g\['bake_range'].getValue() == 0:\n    first = last = nuke.frame()\nelse:\n    first, last = int(nuke.root()\['first_frame'].value()), int(nuke.root()\['last_frame'].value())\nuse = g\['use_baked'].value()\ng\['use_baked'].setValue(False)\ntry:\n    with g:\n        nuke.execute(nuke.toNode('BakeWrite'), first, last)\n    g\['baked_hash'].setValue(h)\n    g\['baked_first'].setValue(first)\n    g\['baked_last'].setValue(last)\nfinally:\n    g\['use_baked'].setValue(use)\n"}
+ addUserKnob {22 bake_farm_write l "make farm bake Write" t "Adds a Write below this node with the bake path, to render on the farm before the comp." -STARTLINE T "g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nif g\['bake_range'].getValue() == 0:\n    first = last = nuke.frame()\nelse:\n    first, last = int(nuke.root()\['first_frame'].value()), int(nuke.root()\['last_frame'].value())\npath = nuke.filename(g.node('BakeRead'))\nwith nuke.root():\n    w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n    w\['create_directories'].setValue(True)\n    w\['use_limit'].setValue(True)\n    w\['first'].setValue(first)\n    w\['last'].setValue(last)\n    w.setInput(0, g)\n    w.setXYpos(g.xpos(), g.ypos() + 80)\ng\['baked_hash'].setValue(h)\ng\['baked_first'].setValue(first)\ng\['baked_last'].setValue(last)\nif nuke.GUI:\n    nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n"}
+ addUserKnob {6 use_baked l "use baked" t "Read the bake instead of computing, but only while it exists and these settings still match it; otherwise the node computes live and its label says the bake is out of date." +STARTLINE}
+ use_baked true
+ addUserKnob {1 baked_hash l "baked hash" +INVISIBLE}
+ addUserKnob {3 baked_first +INVISIBLE}
+ addUserKnob {3 baked_last +INVISIBLE}
 }
  Input {
   inputs 0
@@ -88,7 +100,7 @@ Gizmo {
   xpos 0
   ypos -400
  }
-set N2b7d0000 [stack 0]
+set N2e270000 [stack 0]
  Reformat {
   type "to box"
   box_width 256
@@ -113,8 +125,9 @@ set N2b7d0000 [stack 0]
   xpos 450
   ypos -180
  }
-set N2b7f8400 [stack 0]
-push $N2b7d0000
+set N2e298400 [stack 0]
+push $N2e298400
+push $N2e270000
  Reformat {
   type "to box"
   box_width 512
@@ -126,8 +139,8 @@ push $N2b7d0000
   xpos 300
   ypos -300
  }
-set N2b7d0800 [stack 0]
-push $N2b7d0800
+set N2e270800 [stack 0]
+push $N2e270800
  Reformat {
   type "to box"
   box_width 4
@@ -138,6 +151,7 @@ push $N2b7d0800
   xpos 300
   ypos -240
  }
+set N2e271000 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -152,8 +166,127 @@ push $N2b7d0800
   xpos 300
   ypos -180
  }
-set N2b7d1800 [stack 0]
-push $N2b7d0000
+set N2e271800 [stack 0]
+push $N2e270000
+ Reformat {
+  type "to box"
+  box_width 512
+  box_height 256
+  box_fixed true
+  resize distort
+  name SelfSkySize
+  xpos 600
+  ypos -300
+ }
+set N2e299000 [stack 0]
+ BlinkScript {
+  inputs 3
+  recompileCount 2
+  KernelDescription "3 \"AtmosScatter\" iterate pixelWise 68f8a1e790cd7bb95b524fc060282b8efe8cbaaf00885df912f5633ae951bc4e 4 \"src\" Read Random \"light\" Read Random \"lut\" Read Random \"dst\" Write Point 25 \"output\" Int 1 AAAAAA== \"depth_haze\" Int 1 AAAAAA== \"sun_from_hdri\" Int 1 AAAAAA== \"light_from_hdri\" Int 1 AAAAAA== \"sun_direction\" Float 3 AAAAAAAAAD8AAIC/AAAAAA== \"sun_color\" Float 3 AACAPwAAgD8AAIA/AAAAAA== \"sun_intensity\" Float 1 AACgQQ== \"sun_strength\" Float 1 AACAPw== \"sun_boost\" Float 1 AACAPw== \"sky_light\" Float 1 AAAAAA== \"clear_sky_ratio\" Float 1 AABcQg== \"camera_altitude_km\" Float 1 bxKDOg== \"max_distance_km\" Float 1 AAAAAA== \"haze_distance_km\" Float 1 AACgQA== \"longitude_offset_deg\" Float 1 AAAAAA== \"rayleigh_density\" Float 1 AACAPw== \"mie_density\" Float 1 AACAPw== \"rayleigh_coefficients\" Float 3 w2SqOxQ/Rjyze/I8AAAAAA== \"mie_coefficient\" Float 1 MQisPA== \"rayleigh_scale_height_km\" Float 1 AAAIQQ== \"mie_scale_height_km\" Float 1 mpmZPw== \"mie_g\" Float 1 XI9CPw== \"planet_radius_km\" Float 1 AMDGRQ== \"atmosphere_thickness_km\" Float 1 AABwQg== \"view_samples\" Int 1 EAAAAA== 25 \"output\" 1 1 Default \"depthHaze\" 1 1 Default \"sunFromHdri\" 1 1 Default \"lightFromHdri\" 1 1 Default \"sunDirection\" 3 1 Default \"sunColor\" 3 1 Default \"sunIntensity\" 1 1 Default \"sunStrength\" 1 1 Default \"sunBoost\" 1 1 Default \"skyLight\" 1 1 Default \"clearSkyRatio\" 1 1 Default \"cameraAltitude\" 1 1 Default \"maxDistance\" 1 1 Default \"hazeDistance\" 1 1 Default \"longitudeOffset\" 1 1 Default \"rayleighDensity\" 1 1 Default \"mieDensity\" 1 1 Default \"rayleighCoefficients\" 3 1 Default \"mieCoefficient\" 1 1 Default \"rayleighScaleHeight\" 1 1 Default \"mieScaleHeight\" 1 1 Default \"mieG\" 1 1 Default \"planetRadius\" 1 1 Default \"atmosphereThickness\" 1 1 Default \"viewSamples\" 1 1 Default 7 \"pi\" Float 1 1 AAAAAA== \"horizonLength\" Float 1 1 AAAAAA== \"manualSunDir\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"atmosphereRadius\" Float 1 1 AAAAAA== \"betaR\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"betaMScatter\" Float 1 1 AAAAAA== \"betaMExtinction\" Float 1 1 AAAAAA=="
+  kernelSource "// EZ Atmos Scatter: single-scattering atmosphere for lat-long images.\n//\n// Every pixel of the lat-long input is treated as a view direction from a camera\n// sitting just above the planet surface. The kernel raymarches that view ray through\n// a spherical atmosphere (Rayleigh + Mie, exponential density falloff) and, at every\n// sample, marches a second ray towards the sun to get the light that reaches it.\n// Based on O'Neil, \"Accurate Atmospheric Scattering\" (GPU Gems 2, ch. 16) and the\n// Nishita model it builds on.\n//\n// Lighting can come from the HDRI itself: the `light` input is the 4x1 image written by\n// EzAtmosLight.blink (sun direction, sun irradiance, average sky radiance). The sun the\n// HDRI shows has already been dimmed by the atmosphere, so its irradiance is divided by\n// the sun's transmittance at the camera to get the light arriving at the top of the\n// atmosphere. Sky light adds an isotropic ambient term that stands in for multiple\n// scattering.\n//\n// The optical depth towards the sun comes from the `lut` input, the table written by\n// EzAtmosTransmittanceLUT.blink, instead of a second raymarch at every sample.\n// Transmittance and sky light need no sun at all, so those outputs skip it.\n//\n// All distances are in kilometres. Heights are carried separately from positions so\n// that near-horizon rays stay stable in 32-bit float.\n//\n// Lat-long convention: x = longitude (centre column looks down -Z), y = latitude\n// (bottom row = straight down, top row = straight up), +Y is up.\n//\n// output: 0 = inscatter (Rayleigh + Mie + ambient), 1 = Rayleigh only, 2 = Mie only,\n//         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter),\n//         5 = ambient (sky light) only, 8 = haze colour, 10 and 11 = its sunlit and sky-lit\n//         parts, 9 = haze transmittance at\n//         hazeDistance. With depthHaze on, outputs 0-5 describe haze around the camera\n//         out to hazeDistance instead of the atmosphere (see the depth haze block).\n\n\nkernel AtmosScatter : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessRandom, eEdgeClamped> src;\n  Image<eRead, eAccessRandom, eEdgeClamped> light;\n  Image<eRead, eAccessRandom, eEdgeClamped> lut;\n  Image<eWrite> dst;\n\nparam:\n  int output;\n  int depthHaze;\n  int sunFromHdri;\n  int lightFromHdri;\n  float3 sunDirection;\n  float3 sunColor;\n  float sunIntensity;\n  float sunStrength;\n  float sunBoost;\n  float skyLight;\n  float clearSkyRatio;\n  float cameraAltitude;\n  float maxDistance;\n  float hazeDistance;\n  float longitudeOffset;\n  float rayleighDensity;\n  float mieDensity;\n  float3 rayleighCoefficients;\n  float mieCoefficient;\n  float rayleighScaleHeight;\n  float mieScaleHeight;\n  float mieG;\n  float planetRadius;\n  float atmosphereThickness;\n  int viewSamples;\n\nlocal:\n  float pi;\n  float horizonLength;\n  float3 manualSunDir;\n  float atmosphereRadius;\n  float3 betaR;\n  float betaMScatter;\n  float betaMExtinction;\n\n  void define()\n  \{\n    defineParam(output, \"output\", 0);\n    defineParam(depthHaze, \"depth_haze\", 0);\n    defineParam(sunFromHdri, \"sun_from_hdri\", 0);\n    defineParam(lightFromHdri, \"light_from_hdri\", 0);\n    defineParam(sunDirection, \"sun_direction\", float3(0.0f, 0.5f, -1.0f));\n    defineParam(sunColor, \"sun_color\", float3(1.0f, 1.0f, 1.0f));\n    defineParam(sunIntensity, \"sun_intensity\", 20.0f);\n    defineParam(sunStrength, \"sun_strength\", 1.0f);\n    defineParam(sunBoost, \"sun_boost\", 1.0f);\n    defineParam(skyLight, \"sky_light\", 0.0f);\n    defineParam(clearSkyRatio, \"clear_sky_ratio\", 55.0f);\n    defineParam(cameraAltitude, \"camera_altitude_km\", 0.001f);\n    defineParam(maxDistance, \"max_distance_km\", 0.0f);\n    defineParam(hazeDistance, \"haze_distance_km\", 5.0f);\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(rayleighDensity, \"rayleigh_density\", 1.0f);\n    defineParam(mieDensity, \"mie_density\", 1.0f);\n    defineParam(rayleighCoefficients, \"rayleigh_coefficients\", float3(0.0052f, 0.0121f, 0.0296f));\n    defineParam(mieCoefficient, \"mie_coefficient\", 0.021f);\n    defineParam(rayleighScaleHeight, \"rayleigh_scale_height_km\", 8.5f);\n    defineParam(mieScaleHeight, \"mie_scale_height_km\", 1.2f);\n    defineParam(mieG, \"mie_g\", 0.76f);\n    defineParam(planetRadius, \"planet_radius_km\", 6360.0f);\n    defineParam(atmosphereThickness, \"atmosphere_thickness_km\", 60.0f);\n    defineParam(viewSamples, \"view_samples\", 16);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n    manualSunDir = length(sunDirection) > 0.0f ? normalize(sunDirection) : float3(0.0f, 1.0f, 0.0f);\n    atmosphereRadius = planetRadius + atmosphereThickness;\n    horizonLength = sqrt(atmosphereRadius * atmosphereRadius - planetRadius * planetRadius);\n    betaR = rayleighCoefficients * rayleighDensity;\n    betaMScatter = mieCoefficient * mieDensity;\n    betaMExtinction = betaMScatter / 0.9f;\n  \}\n\n  float3 exp3(float3 v)\n  \{\n    return float3(exp(v.x), exp(v.y), exp(v.z));\n  \}\n\n  float luminance(float3 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  // Far intersection of a ray starting inside a sphere of radius r.\n  // c = |o|^2 - r^2 is passed in precomputed so callers can build it from heights.\n  float exitDistance(float b, float c)\n  \{\n    float disc = b * b - c;\n    return -b + sqrt(max(disc, 0.0f));\n  \}\n\n  // Distance to the ground along the ray, or -1 if the ray misses the planet.\n  float groundDistance(float b, float c)\n  \{\n    if (b > 0.0f)\n      return -1.0f;\n    float disc = b * b - c;\n    if (disc < 0.0f)\n      return -1.0f;\n    return -b - sqrt(disc);\n  \}\n\n  float phaseRayleigh(float mu)\n  \{\n    return 3.0f / (16.0f * pi) * (1.0f + mu * mu);\n  \}\n\n  // Cornette-Shanks approximation of the Mie phase function.\n  float phaseMie(float mu)\n  \{\n    float g2 = mieG * mieG;\n    float denom = pow(max(1.0f + g2 - 2.0f * mieG * mu, 1e-6f), 1.5f);\n    return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);\n  \}\n\n  // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun, read from the\n  // table EzAtmosTransmittanceLUT.blink precomputes. Returns -1 in x if the planet\n  // blocks the sun.\n  float2 sunOpticalDepth(float3 p, float h, float3 sunDir)\n  \{\n    h = clamp(h, 0.0f, atmosphereThickness);\n    float r = h + planetRadius;\n    float b = dot(p, sunDir) * r / length(p);\n    float cGround = h * (r + planetRadius);\n    if (groundDistance(b, cGround) > 0.0f)\n      return float2(-1.0f, 0.0f);\n\n    // Inverse of the mapping in EzAtmosTransmittanceLUT.blink.\n    float rho = sqrt(max(r * r - planetRadius * planetRadius, 0.0f));\n    float d = exitDistance(b, (r - atmosphereRadius) * (r + atmosphereRadius));\n    float dMin = atmosphereRadius - r;\n    float dMax = rho + horizonLength;\n    float u = (d - dMin) / max(dMax - dMin, 1e-6f);\n    float v = rho / horizonLength;\n    float x = lut.bounds.x1 + u * lut.bounds.width() - 0.5f;\n    float y = lut.bounds.y1 + v * lut.bounds.height() - 0.5f;\n    float4 od = bilinear(lut, x, y);\n    return float2(od.x, od.y);\n  \}\n\n  float4 lightPixel(int i)\n  \{\n    return light(light.bounds.x1 + i, light.bounds.y1);\n  \}\n\n  void process(int2 pos)\n  \{\n    float h0 = max(cameraAltitude, 0.0f);\n    float r0 = planetRadius + h0;\n    float3 origin = float3(0.0f, r0, 0.0f);\n\n    // Light measured from the HDRI (see EzAtmosLight.blink).\n    float4 hdriSun = lightPixel(0);\n    float4 hdriSunIrradiance = lightPixel(1);\n    float4 hdriSky = lightPixel(2);\n    float3 skyAverage = float3(hdriSky.x, hdriSky.y, hdriSky.z);\n\n    float3 sunDir = manualSunDir;\n    float3 measuredDir = float3(hdriSun.x, hdriSun.y, hdriSun.z);\n    if (sunFromHdri != 0 && length(measuredDir) > 0.0f)\n      sunDir = normalize(measuredDir);\n\n    // Transmittance and sky light depend on the view ray alone.\n    bool needSun = output != 3 && output != 5 && output != 9;\n\n    float3 sun = sunColor * sunIntensity * sunStrength;\n    if (needSun && lightFromHdri != 0) \{\n      if (hdriSunIrradiance.w > 0.5f) \{\n        // Clipped sun (LDR or low dynamic range capture): its energy is lost, so size it\n        // from the sky instead. clearSkyRatio is sun irradiance over average sky radiance\n        // for this model at default settings.\n        sun = sunColor * (clearSkyRatio * luminance(skyAverage) * sunBoost * sunStrength);\n      \} else \{\n        // Undo the atmosphere between the camera and the sun to get top-of-atmosphere light.\n        float2 od = sunOpticalDepth(origin, h0, sunDir);\n        float3 tSun = float3(1.0f);\n        if (od.x >= 0.0f)\n          tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));\n        tSun = float3(max(tSun.x, 0.02f), max(tSun.y, 0.02f), max(tSun.z, 0.02f));\n        float3 measured = float3(hdriSunIrradiance.x, hdriSunIrradiance.y, hdriSunIrradiance.z);\n        sun = sunColor * (measured / tSun) * sunStrength;\n      \}\n    \}\n\n    float width = src.bounds.width();\n    float height = src.bounds.height();\n    float u = (pos.x - src.bounds.x1 + 0.5f) / width;\n    float v = (pos.y - src.bounds.y1 + 0.5f) / height;\n    float lon = (u - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = (v - 0.5f) * pi;\n    float3 dir = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n\n    // Depth haze: the air and haze around the camera, for hazing a plate with its depth.\n    // Scattering and extinction coefficients at camera height, per km.\n    float3 localR = betaR * exp(-h0 / rayleighScaleHeight);\n    float localMScatter = betaMScatter * exp(-h0 / mieScaleHeight);\n    float localMExtinction = betaMExtinction * exp(-h0 / mieScaleHeight);\n    if (output >= 8 || depthHaze != 0) \{\n      // Haze colour: what infinitely deep haze looks like in this direction. Sunlight\n      // reaching the camera height, scattered towards the viewer, plus sky light scattered\n      // evenly, over everything the haze absorbs or scatters away:\n      //   hazeColor = (sun * Tsun * scatter(mu) + sky * scatter) / extinction\n      // Plate hazing then is plate * T + hazeColor * (1 - T).\n      float2 od = sunOpticalDepth(origin, h0, sunDir);\n      float3 tSun = float3(0.0f);\n      if (od.x >= 0.0f)\n        tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));\n      float mu = dot(dir, sunDir);\n      float3 extinction = localR + float3(localMExtinction);\n      float3 sunPart = sun * tSun / extinction;\n      float3 rayleighHaze = sunPart * localR * phaseRayleigh(mu);\n      float3 mieHaze = sunPart * (localMScatter * phaseMie(mu));\n      float3 ambientHaze = skyAverage * skyLight * (localR + float3(localMScatter)) / extinction;\n\n      // Transmittance over hazeDistance along this direction, with each kind of particle\n      // thinning out exponentially with height (flat-ground approximation):\n      //   tau = beta(h0) * H * (1 - exp(-d * cos / H)) / cos,  cos = dir.y\n      float c = dir.y;\n      float d = hazeDistance;\n      float fR = d;\n      float fM = d;\n      if (fabs(c) > 1e-4f) \{\n        fR = rayleighScaleHeight * (1.0f - exp(-d * c / rayleighScaleHeight)) / c;\n        fM = mieScaleHeight * (1.0f - exp(-d * c / mieScaleHeight)) / c;\n      \}\n      float3 tHaze = exp3(-(localR * fR + float3(localMExtinction * fM)));\n      float3 veil = float3(1.0f) - tHaze;\n\n      // Depth haze passes: the same layers as the atmosphere passes, but for haze around\n      // the camera out to hazeDistance, with no ground and no horizon line.\n      float3 hazeResult = (rayleighHaze + mieHaze + ambientHaze) * veil;\n      float hazeAlpha = 1.0f;\n      if (output == 1) \{\n        hazeResult = rayleighHaze * veil;\n      \} else if (output == 2) \{\n        hazeResult = mieHaze * veil;\n      \} else if (output == 3 || output == 9) \{\n        hazeResult = tHaze;\n      \} else if (output == 4) \{\n        float4 s = src(pos.x, pos.y);\n        hazeResult = float3(s.x, s.y, s.z) * tHaze + hazeResult;\n        hazeAlpha = s.w;\n      \} else if (output == 5) \{\n        hazeResult = ambientHaze * veil;\n      \} else if (output == 8) \{\n        hazeResult = rayleighHaze + mieHaze + ambientHaze;\n      \} else if (output == 10) \{\n        hazeResult = rayleighHaze + mieHaze;\n      \} else if (output == 11) \{\n        hazeResult = ambientHaze;\n      \}\n      dst() = float4(hazeResult.x, hazeResult.y, hazeResult.z, hazeAlpha);\n      return;\n    \}\n\n    float b = dot(origin, dir);\n\n    // March to the top of the atmosphere, or to the ground for downward rays.\n    float tMax = exitDistance(b, (r0 - atmosphereRadius) * (r0 + atmosphereRadius));\n    float tGround = groundDistance(b, h0 * (r0 + planetRadius));\n    if (tGround > 0.0f)\n      tMax = tGround;\n    if (maxDistance > 0.0f)\n      tMax = min(tMax, maxDistance);\n\n    float segment = tMax / viewSamples;\n    float odR = 0.0f;\n    float odM = 0.0f;\n    float3 sumR = float3(0.0f);\n    float3 sumM = float3(0.0f);\n    for (int i = 0; i < viewSamples; i++) \{\n      float3 p = origin + dir * (segment * (i + 0.5f));\n      float h = length(p) - planetRadius;\n      float densR = exp(-h / rayleighScaleHeight) * segment;\n      float densM = exp(-h / mieScaleHeight) * segment;\n      odR += densR;\n      odM += densM;\n\n      if (!needSun)\n        continue;\n      float2 sunOd = sunOpticalDepth(p, h, sunDir);\n      if (sunOd.x >= 0.0f) \{\n        float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y);\n        float3 attenuation = exp3(-tau);\n        sumR += attenuation * densR;\n        sumM += attenuation * densM;\n      \}\n    \}\n\n    float mu = dot(dir, sunDir);\n    float3 rayleigh = sun * sumR * betaR * phaseRayleigh(mu);\n    float3 mie = sun * sumM * betaMScatter * phaseMie(mu);\n    float3 transmittance = exp3(-(betaR * odR + betaMExtinction * odM));\n    // Sky light scattered into the view ray, treated as isotropic.\n    float3 ambient = skyAverage * skyLight * (float3(1.0f) - transmittance);\n\n    float3 result = rayleigh + mie + ambient;\n    float alpha = 1.0f;\n    if (output == 1) \{\n      result = rayleigh;\n    \} else if (output == 2) \{\n      result = mie;\n    \} else if (output == 3) \{\n      result = transmittance;\n    \} else if (output == 4) \{\n      float4 s = src(pos.x, pos.y);\n      result = float3(s.x, s.y, s.z) * transmittance + rayleigh + mie + ambient;\n      alpha = s.w;\n    \} else if (output == 5) \{\n      result = ambient;\n    \}\n    dst() = float4(result.x, result.y, result.z, alpha);\n  \}\n\};\n"
+  rebuild ""
+  AtmosScatter_output {{2}}
+  AtmosScatter_depth_haze {{0}}
+  AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
+  AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
+  AtmosScatter_sun_strength {{parent.sun_strength}}
+  AtmosScatter_sun_boost {{parent.sun_boost}}
+  AtmosScatter_sky_light {{parent.sky_light}}
+  AtmosScatter_clear_sky_ratio {{parent.clear_sky_ratio}}
+  AtmosScatter_camera_altitude_km {{"parent.camera_height / 1000"}}
+  AtmosScatter_max_distance_km {{parent.max_distance}}
+  AtmosScatter_haze_distance_km {{parent.haze_distance}}
+  AtmosScatter_longitude_offset_deg {{parent.hdri_rotation}}
+  AtmosScatter_rayleigh_density {{parent.sky_amount}}
+  AtmosScatter_mie_density {{parent.haze_amount}}
+  AtmosScatter_rayleigh_coefficients {{parent.rayleigh_coefficients.x} {parent.rayleigh_coefficients.y} {parent.rayleigh_coefficients.z}}
+  AtmosScatter_mie_coefficient {{parent.mie_coefficient}}
+  AtmosScatter_rayleigh_scale_height_km {{parent.rayleigh_scale_height}}
+  AtmosScatter_mie_scale_height_km {{parent.haze_height}}
+  AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
+  AtmosScatter_planet_radius_km {{parent.planet_radius}}
+  AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
+  AtmosScatter_view_samples {{8}}
+  rebuild_finalise ""
+  name SelfSky_mie
+  xpos 720
+  ypos -240
+ }
+push $N2e298400
+push $N2e271800
+push $N2e299000
+ BlinkScript {
+  inputs 3
+  recompileCount 2
+  KernelDescription "3 \"AtmosScatter\" iterate pixelWise 68f8a1e790cd7bb95b524fc060282b8efe8cbaaf00885df912f5633ae951bc4e 4 \"src\" Read Random \"light\" Read Random \"lut\" Read Random \"dst\" Write Point 25 \"output\" Int 1 AAAAAA== \"depth_haze\" Int 1 AAAAAA== \"sun_from_hdri\" Int 1 AAAAAA== \"light_from_hdri\" Int 1 AAAAAA== \"sun_direction\" Float 3 AAAAAAAAAD8AAIC/AAAAAA== \"sun_color\" Float 3 AACAPwAAgD8AAIA/AAAAAA== \"sun_intensity\" Float 1 AACgQQ== \"sun_strength\" Float 1 AACAPw== \"sun_boost\" Float 1 AACAPw== \"sky_light\" Float 1 AAAAAA== \"clear_sky_ratio\" Float 1 AABcQg== \"camera_altitude_km\" Float 1 bxKDOg== \"max_distance_km\" Float 1 AAAAAA== \"haze_distance_km\" Float 1 AACgQA== \"longitude_offset_deg\" Float 1 AAAAAA== \"rayleigh_density\" Float 1 AACAPw== \"mie_density\" Float 1 AACAPw== \"rayleigh_coefficients\" Float 3 w2SqOxQ/Rjyze/I8AAAAAA== \"mie_coefficient\" Float 1 MQisPA== \"rayleigh_scale_height_km\" Float 1 AAAIQQ== \"mie_scale_height_km\" Float 1 mpmZPw== \"mie_g\" Float 1 XI9CPw== \"planet_radius_km\" Float 1 AMDGRQ== \"atmosphere_thickness_km\" Float 1 AABwQg== \"view_samples\" Int 1 EAAAAA== 25 \"output\" 1 1 Default \"depthHaze\" 1 1 Default \"sunFromHdri\" 1 1 Default \"lightFromHdri\" 1 1 Default \"sunDirection\" 3 1 Default \"sunColor\" 3 1 Default \"sunIntensity\" 1 1 Default \"sunStrength\" 1 1 Default \"sunBoost\" 1 1 Default \"skyLight\" 1 1 Default \"clearSkyRatio\" 1 1 Default \"cameraAltitude\" 1 1 Default \"maxDistance\" 1 1 Default \"hazeDistance\" 1 1 Default \"longitudeOffset\" 1 1 Default \"rayleighDensity\" 1 1 Default \"mieDensity\" 1 1 Default \"rayleighCoefficients\" 3 1 Default \"mieCoefficient\" 1 1 Default \"rayleighScaleHeight\" 1 1 Default \"mieScaleHeight\" 1 1 Default \"mieG\" 1 1 Default \"planetRadius\" 1 1 Default \"atmosphereThickness\" 1 1 Default \"viewSamples\" 1 1 Default 7 \"pi\" Float 1 1 AAAAAA== \"horizonLength\" Float 1 1 AAAAAA== \"manualSunDir\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"atmosphereRadius\" Float 1 1 AAAAAA== \"betaR\" Float 3 1 AAAAAAAAAAAAAAAAAAAAAA== \"betaMScatter\" Float 1 1 AAAAAA== \"betaMExtinction\" Float 1 1 AAAAAA=="
+  kernelSource "// EZ Atmos Scatter: single-scattering atmosphere for lat-long images.\n//\n// Every pixel of the lat-long input is treated as a view direction from a camera\n// sitting just above the planet surface. The kernel raymarches that view ray through\n// a spherical atmosphere (Rayleigh + Mie, exponential density falloff) and, at every\n// sample, marches a second ray towards the sun to get the light that reaches it.\n// Based on O'Neil, \"Accurate Atmospheric Scattering\" (GPU Gems 2, ch. 16) and the\n// Nishita model it builds on.\n//\n// Lighting can come from the HDRI itself: the `light` input is the 4x1 image written by\n// EzAtmosLight.blink (sun direction, sun irradiance, average sky radiance). The sun the\n// HDRI shows has already been dimmed by the atmosphere, so its irradiance is divided by\n// the sun's transmittance at the camera to get the light arriving at the top of the\n// atmosphere. Sky light adds an isotropic ambient term that stands in for multiple\n// scattering.\n//\n// The optical depth towards the sun comes from the `lut` input, the table written by\n// EzAtmosTransmittanceLUT.blink, instead of a second raymarch at every sample.\n// Transmittance and sky light need no sun at all, so those outputs skip it.\n//\n// All distances are in kilometres. Heights are carried separately from positions so\n// that near-horizon rays stay stable in 32-bit float.\n//\n// Lat-long convention: x = longitude (centre column looks down -Z), y = latitude\n// (bottom row = straight down, top row = straight up), +Y is up.\n//\n// output: 0 = inscatter (Rayleigh + Mie + ambient), 1 = Rayleigh only, 2 = Mie only,\n//         3 = view transmittance, 4 = preview comp (src * transmittance + inscatter),\n//         5 = ambient (sky light) only, 8 = haze colour, 10 and 11 = its sunlit and sky-lit\n//         parts, 9 = haze transmittance at\n//         hazeDistance. With depthHaze on, outputs 0-5 describe haze around the camera\n//         out to hazeDistance instead of the atmosphere (see the depth haze block).\n\n\nkernel AtmosScatter : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessRandom, eEdgeClamped> src;\n  Image<eRead, eAccessRandom, eEdgeClamped> light;\n  Image<eRead, eAccessRandom, eEdgeClamped> lut;\n  Image<eWrite> dst;\n\nparam:\n  int output;\n  int depthHaze;\n  int sunFromHdri;\n  int lightFromHdri;\n  float3 sunDirection;\n  float3 sunColor;\n  float sunIntensity;\n  float sunStrength;\n  float sunBoost;\n  float skyLight;\n  float clearSkyRatio;\n  float cameraAltitude;\n  float maxDistance;\n  float hazeDistance;\n  float longitudeOffset;\n  float rayleighDensity;\n  float mieDensity;\n  float3 rayleighCoefficients;\n  float mieCoefficient;\n  float rayleighScaleHeight;\n  float mieScaleHeight;\n  float mieG;\n  float planetRadius;\n  float atmosphereThickness;\n  int viewSamples;\n\nlocal:\n  float pi;\n  float horizonLength;\n  float3 manualSunDir;\n  float atmosphereRadius;\n  float3 betaR;\n  float betaMScatter;\n  float betaMExtinction;\n\n  void define()\n  \{\n    defineParam(output, \"output\", 0);\n    defineParam(depthHaze, \"depth_haze\", 0);\n    defineParam(sunFromHdri, \"sun_from_hdri\", 0);\n    defineParam(lightFromHdri, \"light_from_hdri\", 0);\n    defineParam(sunDirection, \"sun_direction\", float3(0.0f, 0.5f, -1.0f));\n    defineParam(sunColor, \"sun_color\", float3(1.0f, 1.0f, 1.0f));\n    defineParam(sunIntensity, \"sun_intensity\", 20.0f);\n    defineParam(sunStrength, \"sun_strength\", 1.0f);\n    defineParam(sunBoost, \"sun_boost\", 1.0f);\n    defineParam(skyLight, \"sky_light\", 0.0f);\n    defineParam(clearSkyRatio, \"clear_sky_ratio\", 55.0f);\n    defineParam(cameraAltitude, \"camera_altitude_km\", 0.001f);\n    defineParam(maxDistance, \"max_distance_km\", 0.0f);\n    defineParam(hazeDistance, \"haze_distance_km\", 5.0f);\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(rayleighDensity, \"rayleigh_density\", 1.0f);\n    defineParam(mieDensity, \"mie_density\", 1.0f);\n    defineParam(rayleighCoefficients, \"rayleigh_coefficients\", float3(0.0052f, 0.0121f, 0.0296f));\n    defineParam(mieCoefficient, \"mie_coefficient\", 0.021f);\n    defineParam(rayleighScaleHeight, \"rayleigh_scale_height_km\", 8.5f);\n    defineParam(mieScaleHeight, \"mie_scale_height_km\", 1.2f);\n    defineParam(mieG, \"mie_g\", 0.76f);\n    defineParam(planetRadius, \"planet_radius_km\", 6360.0f);\n    defineParam(atmosphereThickness, \"atmosphere_thickness_km\", 60.0f);\n    defineParam(viewSamples, \"view_samples\", 16);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n    manualSunDir = length(sunDirection) > 0.0f ? normalize(sunDirection) : float3(0.0f, 1.0f, 0.0f);\n    atmosphereRadius = planetRadius + atmosphereThickness;\n    horizonLength = sqrt(atmosphereRadius * atmosphereRadius - planetRadius * planetRadius);\n    betaR = rayleighCoefficients * rayleighDensity;\n    betaMScatter = mieCoefficient * mieDensity;\n    betaMExtinction = betaMScatter / 0.9f;\n  \}\n\n  float3 exp3(float3 v)\n  \{\n    return float3(exp(v.x), exp(v.y), exp(v.z));\n  \}\n\n  float luminance(float3 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  // Far intersection of a ray starting inside a sphere of radius r.\n  // c = |o|^2 - r^2 is passed in precomputed so callers can build it from heights.\n  float exitDistance(float b, float c)\n  \{\n    float disc = b * b - c;\n    return -b + sqrt(max(disc, 0.0f));\n  \}\n\n  // Distance to the ground along the ray, or -1 if the ray misses the planet.\n  float groundDistance(float b, float c)\n  \{\n    if (b > 0.0f)\n      return -1.0f;\n    float disc = b * b - c;\n    if (disc < 0.0f)\n      return -1.0f;\n    return -b - sqrt(disc);\n  \}\n\n  float phaseRayleigh(float mu)\n  \{\n    return 3.0f / (16.0f * pi) * (1.0f + mu * mu);\n  \}\n\n  // Cornette-Shanks approximation of the Mie phase function.\n  float phaseMie(float mu)\n  \{\n    float g2 = mieG * mieG;\n    float denom = pow(max(1.0f + g2 - 2.0f * mieG * mu, 1e-6f), 1.5f);\n    return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);\n  \}\n\n  // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun, read from the\n  // table EzAtmosTransmittanceLUT.blink precomputes. Returns -1 in x if the planet\n  // blocks the sun.\n  float2 sunOpticalDepth(float3 p, float h, float3 sunDir)\n  \{\n    h = clamp(h, 0.0f, atmosphereThickness);\n    float r = h + planetRadius;\n    float b = dot(p, sunDir) * r / length(p);\n    float cGround = h * (r + planetRadius);\n    if (groundDistance(b, cGround) > 0.0f)\n      return float2(-1.0f, 0.0f);\n\n    // Inverse of the mapping in EzAtmosTransmittanceLUT.blink.\n    float rho = sqrt(max(r * r - planetRadius * planetRadius, 0.0f));\n    float d = exitDistance(b, (r - atmosphereRadius) * (r + atmosphereRadius));\n    float dMin = atmosphereRadius - r;\n    float dMax = rho + horizonLength;\n    float u = (d - dMin) / max(dMax - dMin, 1e-6f);\n    float v = rho / horizonLength;\n    float x = lut.bounds.x1 + u * lut.bounds.width() - 0.5f;\n    float y = lut.bounds.y1 + v * lut.bounds.height() - 0.5f;\n    float4 od = bilinear(lut, x, y);\n    return float2(od.x, od.y);\n  \}\n\n  float4 lightPixel(int i)\n  \{\n    return light(light.bounds.x1 + i, light.bounds.y1);\n  \}\n\n  void process(int2 pos)\n  \{\n    float h0 = max(cameraAltitude, 0.0f);\n    float r0 = planetRadius + h0;\n    float3 origin = float3(0.0f, r0, 0.0f);\n\n    // Light measured from the HDRI (see EzAtmosLight.blink).\n    float4 hdriSun = lightPixel(0);\n    float4 hdriSunIrradiance = lightPixel(1);\n    float4 hdriSky = lightPixel(2);\n    float3 skyAverage = float3(hdriSky.x, hdriSky.y, hdriSky.z);\n\n    float3 sunDir = manualSunDir;\n    float3 measuredDir = float3(hdriSun.x, hdriSun.y, hdriSun.z);\n    if (sunFromHdri != 0 && length(measuredDir) > 0.0f)\n      sunDir = normalize(measuredDir);\n\n    // Transmittance and sky light depend on the view ray alone.\n    bool needSun = output != 3 && output != 5 && output != 9;\n\n    float3 sun = sunColor * sunIntensity * sunStrength;\n    if (needSun && lightFromHdri != 0) \{\n      if (hdriSunIrradiance.w > 0.5f) \{\n        // Clipped sun (LDR or low dynamic range capture): its energy is lost, so size it\n        // from the sky instead. clearSkyRatio is sun irradiance over average sky radiance\n        // for this model at default settings.\n        sun = sunColor * (clearSkyRatio * luminance(skyAverage) * sunBoost * sunStrength);\n      \} else \{\n        // Undo the atmosphere between the camera and the sun to get top-of-atmosphere light.\n        float2 od = sunOpticalDepth(origin, h0, sunDir);\n        float3 tSun = float3(1.0f);\n        if (od.x >= 0.0f)\n          tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));\n        tSun = float3(max(tSun.x, 0.02f), max(tSun.y, 0.02f), max(tSun.z, 0.02f));\n        float3 measured = float3(hdriSunIrradiance.x, hdriSunIrradiance.y, hdriSunIrradiance.z);\n        sun = sunColor * (measured / tSun) * sunStrength;\n      \}\n    \}\n\n    float width = src.bounds.width();\n    float height = src.bounds.height();\n    float u = (pos.x - src.bounds.x1 + 0.5f) / width;\n    float v = (pos.y - src.bounds.y1 + 0.5f) / height;\n    float lon = (u - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = (v - 0.5f) * pi;\n    float3 dir = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n\n    // Depth haze: the air and haze around the camera, for hazing a plate with its depth.\n    // Scattering and extinction coefficients at camera height, per km.\n    float3 localR = betaR * exp(-h0 / rayleighScaleHeight);\n    float localMScatter = betaMScatter * exp(-h0 / mieScaleHeight);\n    float localMExtinction = betaMExtinction * exp(-h0 / mieScaleHeight);\n    if (output >= 8 || depthHaze != 0) \{\n      // Haze colour: what infinitely deep haze looks like in this direction. Sunlight\n      // reaching the camera height, scattered towards the viewer, plus sky light scattered\n      // evenly, over everything the haze absorbs or scatters away:\n      //   hazeColor = (sun * Tsun * scatter(mu) + sky * scatter) / extinction\n      // Plate hazing then is plate * T + hazeColor * (1 - T).\n      float2 od = sunOpticalDepth(origin, h0, sunDir);\n      float3 tSun = float3(0.0f);\n      if (od.x >= 0.0f)\n        tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));\n      float mu = dot(dir, sunDir);\n      float3 extinction = localR + float3(localMExtinction);\n      float3 sunPart = sun * tSun / extinction;\n      float3 rayleighHaze = sunPart * localR * phaseRayleigh(mu);\n      float3 mieHaze = sunPart * (localMScatter * phaseMie(mu));\n      float3 ambientHaze = skyAverage * skyLight * (localR + float3(localMScatter)) / extinction;\n\n      // Transmittance over hazeDistance along this direction, with each kind of particle\n      // thinning out exponentially with height (flat-ground approximation):\n      //   tau = beta(h0) * H * (1 - exp(-d * cos / H)) / cos,  cos = dir.y\n      float c = dir.y;\n      float d = hazeDistance;\n      float fR = d;\n      float fM = d;\n      if (fabs(c) > 1e-4f) \{\n        fR = rayleighScaleHeight * (1.0f - exp(-d * c / rayleighScaleHeight)) / c;\n        fM = mieScaleHeight * (1.0f - exp(-d * c / mieScaleHeight)) / c;\n      \}\n      float3 tHaze = exp3(-(localR * fR + float3(localMExtinction * fM)));\n      float3 veil = float3(1.0f) - tHaze;\n\n      // Depth haze passes: the same layers as the atmosphere passes, but for haze around\n      // the camera out to hazeDistance, with no ground and no horizon line.\n      float3 hazeResult = (rayleighHaze + mieHaze + ambientHaze) * veil;\n      float hazeAlpha = 1.0f;\n      if (output == 1) \{\n        hazeResult = rayleighHaze * veil;\n      \} else if (output == 2) \{\n        hazeResult = mieHaze * veil;\n      \} else if (output == 3 || output == 9) \{\n        hazeResult = tHaze;\n      \} else if (output == 4) \{\n        float4 s = src(pos.x, pos.y);\n        hazeResult = float3(s.x, s.y, s.z) * tHaze + hazeResult;\n        hazeAlpha = s.w;\n      \} else if (output == 5) \{\n        hazeResult = ambientHaze * veil;\n      \} else if (output == 8) \{\n        hazeResult = rayleighHaze + mieHaze + ambientHaze;\n      \} else if (output == 10) \{\n        hazeResult = rayleighHaze + mieHaze;\n      \} else if (output == 11) \{\n        hazeResult = ambientHaze;\n      \}\n      dst() = float4(hazeResult.x, hazeResult.y, hazeResult.z, hazeAlpha);\n      return;\n    \}\n\n    float b = dot(origin, dir);\n\n    // March to the top of the atmosphere, or to the ground for downward rays.\n    float tMax = exitDistance(b, (r0 - atmosphereRadius) * (r0 + atmosphereRadius));\n    float tGround = groundDistance(b, h0 * (r0 + planetRadius));\n    if (tGround > 0.0f)\n      tMax = tGround;\n    if (maxDistance > 0.0f)\n      tMax = min(tMax, maxDistance);\n\n    float segment = tMax / viewSamples;\n    float odR = 0.0f;\n    float odM = 0.0f;\n    float3 sumR = float3(0.0f);\n    float3 sumM = float3(0.0f);\n    for (int i = 0; i < viewSamples; i++) \{\n      float3 p = origin + dir * (segment * (i + 0.5f));\n      float h = length(p) - planetRadius;\n      float densR = exp(-h / rayleighScaleHeight) * segment;\n      float densM = exp(-h / mieScaleHeight) * segment;\n      odR += densR;\n      odM += densM;\n\n      if (!needSun)\n        continue;\n      float2 sunOd = sunOpticalDepth(p, h, sunDir);\n      if (sunOd.x >= 0.0f) \{\n        float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y);\n        float3 attenuation = exp3(-tau);\n        sumR += attenuation * densR;\n        sumM += attenuation * densM;\n      \}\n    \}\n\n    float mu = dot(dir, sunDir);\n    float3 rayleigh = sun * sumR * betaR * phaseRayleigh(mu);\n    float3 mie = sun * sumM * betaMScatter * phaseMie(mu);\n    float3 transmittance = exp3(-(betaR * odR + betaMExtinction * odM));\n    // Sky light scattered into the view ray, treated as isotropic.\n    float3 ambient = skyAverage * skyLight * (float3(1.0f) - transmittance);\n\n    float3 result = rayleigh + mie + ambient;\n    float alpha = 1.0f;\n    if (output == 1) \{\n      result = rayleigh;\n    \} else if (output == 2) \{\n      result = mie;\n    \} else if (output == 3) \{\n      result = transmittance;\n    \} else if (output == 4) \{\n      float4 s = src(pos.x, pos.y);\n      result = float3(s.x, s.y, s.z) * transmittance + rayleigh + mie + ambient;\n      alpha = s.w;\n    \} else if (output == 5) \{\n      result = ambient;\n    \}\n    dst() = float4(result.x, result.y, result.z, alpha);\n  \}\n\};\n"
+  rebuild ""
+  AtmosScatter_output {{1}}
+  AtmosScatter_depth_haze {{0}}
+  AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
+  AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
+  AtmosScatter_sun_strength {{parent.sun_strength}}
+  AtmosScatter_sun_boost {{parent.sun_boost}}
+  AtmosScatter_sky_light {{parent.sky_light}}
+  AtmosScatter_clear_sky_ratio {{parent.clear_sky_ratio}}
+  AtmosScatter_camera_altitude_km {{"parent.camera_height / 1000"}}
+  AtmosScatter_max_distance_km {{parent.max_distance}}
+  AtmosScatter_haze_distance_km {{parent.haze_distance}}
+  AtmosScatter_longitude_offset_deg {{parent.hdri_rotation}}
+  AtmosScatter_rayleigh_density {{parent.sky_amount}}
+  AtmosScatter_mie_density {{parent.haze_amount}}
+  AtmosScatter_rayleigh_coefficients {{parent.rayleigh_coefficients.x} {parent.rayleigh_coefficients.y} {parent.rayleigh_coefficients.z}}
+  AtmosScatter_mie_coefficient {{parent.mie_coefficient}}
+  AtmosScatter_rayleigh_scale_height_km {{parent.rayleigh_scale_height}}
+  AtmosScatter_mie_scale_height_km {{parent.haze_height}}
+  AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
+  AtmosScatter_planet_radius_km {{parent.planet_radius}}
+  AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
+  AtmosScatter_view_samples {{8}}
+  rebuild_finalise ""
+  name SelfSky_rayleigh
+  xpos 600
+  ypos -240
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  output rgb
+  name SelfSky
+  xpos 600
+  ypos -200
+ }
+push $N2e271000
+ BlinkScript {
+  inputs 2
+  recompileCount 2
+  KernelDescription "3 \"EzAtmosLight\" iterate pixelWise d86d8533eb5194dc00f699366ffd4d718bac911a06cb2d2cc635f4ab8a56a76a 3 \"ref\" Read Point \"env\" Read Random \"dst\" Write Point 3 \"longitude_offset_deg\" Float 1 AAAAAA== \"sun_cone_deg\" Float 1 AADAQA== \"clip_ratio\" Float 1 AACgQQ== 3 \"longitudeOffset\" 1 1 Default \"sunConeDeg\" 1 1 Default \"clipRatio\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
+  kernelSource "// EzAtmosLight: measures the light in a lat-long HDRI for AtmosScatter.blink.\n//\n// Feed it a small copy of the HDRI (`env`, 512x256 is plenty) and a 4x1 image (`ref`)\n// that sets the output size. It writes four pixels:\n//   0: rgb = direction towards the sun (world, +Y up), a = sun peak luminance\n//   1: rgb = sun irradiance (sum of radiance x solid angle over the sun),\n//      a = 1 when the sun looks clipped (peak not far above the sky), else 0\n//   2: rgb = average sky radiance over the upper hemisphere outside the sun cone\n//   3: unused\n// Every output pixel repeats the same search; the input is small so that is cheap.\n// Uses the same lat-long convention as AtmosScatter.blink.\n\nkernel EzAtmosLight : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> ref;\n  Image<eRead, eAccessRandom, eEdgeClamped> env;\n  Image<eWrite> dst;\n\nparam:\n  float longitudeOffset;\n  float sunConeDeg;\n  float clipRatio;\n\nlocal:\n  float pi;\n\n  void define()\n  \{\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(sunConeDeg, \"sun_cone_deg\", 6.0f);\n    defineParam(clipRatio, \"clip_ratio\", 20.0f);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n  \}\n\n  float luminance(float4 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  float3 direction(int x, int y, float w, float h)\n  \{\n    float lon = ((x + 0.5f) / w - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = ((y + 0.5f) / h - 0.5f) * pi;\n    return float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n  \}\n\n  void process(int2 pos)\n  \{\n    int index = pos.x - ref.bounds.x1;\n    int x1 = env.bounds.x1;\n    int y1 = env.bounds.y1;\n    int w = env.bounds.width();\n    int h = env.bounds.height();\n    float fw = w;\n    float fh = h;\n    // Solid angle of one pixel at the equator; scaled by cos(latitude) per row.\n    float pixelSolidAngle = (2.0f * pi / fw) * (pi / fh);\n    int yHorizon = h / 2;\n\n    // Pass 1: brightest spot above the horizon. A 3x3 average keeps single hot pixels\n    // (glints, specular highlights) from beating the sun.\n    float bestLum = -1.0f;\n    int bestX = 0;\n    int bestY = h - 1;\n    float peak = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      for (int x = 0; x < w; x++) \{\n        float sum = 0.0f;\n        for (int j = -1; j <= 1; j++) \{\n          for (int i = -1; i <= 1; i++) \{\n            int xi = x + i;\n            if (xi < 0) xi += w;\n            if (xi >= w) xi -= w;\n            sum += luminance(env(x1 + xi, y1 + min(max(y + j, 0), h - 1)));\n          \}\n        \}\n        if (sum > bestLum) \{\n          bestLum = sum;\n          bestX = x;\n          bestY = y;\n        \}\n      \}\n    \}\n    for (int j = -1; j <= 1; j++) \{\n      for (int i = -1; i <= 1; i++) \{\n        int xi = bestX + i;\n        if (xi < 0) xi += w;\n        if (xi >= w) xi -= w;\n        peak = max(peak, luminance(env(x1 + xi, y1 + min(max(bestY + j, 0), h - 1))));\n      \}\n    \}\n    float3 peakDir = direction(bestX, bestY, fw, fh);\n\n    // Pass 2: everything inside a small cone around the peak is the sun; its direction is the\n    // centroid of the pixels brighter than half the peak. Everything else above the horizon\n    // is sky.\n    float cosCone = cos(sunConeDeg * pi / 180.0f);\n    float threshold = 0.5f * peak;\n    float3 sunDirSum = float3(0.0f);\n    float3 sunIrradiance = float3(0.0f);\n    float3 skySum = float3(0.0f);\n    float skyWeight = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      float lat = ((y + 0.5f) / fh - 0.5f) * pi;\n      float dOmega = pixelSolidAngle * cos(lat);\n      for (int x = 0; x < w; x++) \{\n        float4 c = env(x1 + x, y1 + y);\n        float3 rgb = float3(c.x, c.y, c.z);\n        float lum = luminance(c);\n        float3 d = direction(x, y, fw, fh);\n        if (dot(d, peakDir) > cosCone) \{\n          // The whole cone counts towards the sun's energy so the glow a downsized or\n          // filtered sun spreads around itself is not mistaken for sky.\n          sunIrradiance += rgb * dOmega;\n          if (lum > threshold)\n            sunDirSum += d * ((lum - threshold) * dOmega);\n        \} else \{\n          skySum += rgb * dOmega;\n          skyWeight += dOmega;\n        \}\n      \}\n    \}\n    float3 sunDir = peakDir;\n    if (length(sunDirSum) > 0.0f)\n      sunDir = normalize(sunDirSum);\n    float3 sky = skyWeight > 0.0f ? skySum / skyWeight : float3(0.0f);\n    float skyLum = 0.2126f * sky.x + 0.7152f * sky.y + 0.0722f * sky.z;\n    float clipped = peak < clipRatio * skyLum ? 1.0f : 0.0f;\n\n    float4 result = float4(0.0f);\n    if (index == 0)\n      result = float4(sunDir.x, sunDir.y, sunDir.z, peak);\n    else if (index == 1)\n      result = float4(sunIrradiance.x, sunIrradiance.y, sunIrradiance.z, clipped);\n    else if (index == 2)\n      result = float4(sky.x, sky.y, sky.z, 0.0f);\n    dst() = result;\n  \}\n\};\n"
+  rebuild ""
+  EzAtmosLight_longitude_offset_deg {{0}}
+  EzAtmosLight_sun_cone_deg {{parent.sun_search_cone}}
+  EzAtmosLight_clip_ratio {{parent.clip_ratio}}
+  rebuild_finalise ""
+  name SelfLight
+  xpos 600
+  ypos -160
+ }
+push $N2e271800
+ Switch {
+  inputs 2
+  which {{parent.self_lit}}
+  name SkyLightSource
+  xpos 450
+  ypos -120
+ }
+set N2e26aa00 [stack 0]
+push $N2e270000
  Reformat {
   type "to box"
   box_width {{"max(floor(hdri.width * parent.scatter_scale + 0.5), 4)"}}
@@ -164,7 +297,7 @@ push $N2b7d0000
   xpos -300
   ypos -240
  }
-set N2b7f8800 [stack 0]
+set N2e298800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -174,7 +307,7 @@ set N2b7f8800 [stack 0]
   AtmosScatter_output {{11}}
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
-  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
@@ -201,7 +334,7 @@ set N2b7f8800 [stack 0]
   xpos 600
   ypos -100
  }
-set N5ba32000 [stack 0]
+set N3927800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -225,7 +358,7 @@ set N5ba32000 [stack 0]
   xpos 600
   ypos 90
  }
-push $N5ba32000
+push $N3927800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -255,7 +388,7 @@ push $N5ba32000
   xpos 600
   ypos 120
  }
-push $N5ba32000
+push $N3927800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -263,9 +396,9 @@ push $N5ba32000
   xpos 600
   ypos 150
  }
-push $N2b7f8400
-push $N2b7d1800
-push $N2b7f8800
+push $N2e298400
+push $N2e271800
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -275,7 +408,7 @@ push $N2b7f8800
   AtmosScatter_output {{10}}
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
-  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
@@ -302,7 +435,7 @@ push $N2b7f8800
   xpos 450
   ypos -100
  }
-set N5998f800 [stack 0]
+set N38e5000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -326,7 +459,7 @@ set N5998f800 [stack 0]
   xpos 450
   ypos 90
  }
-push $N5998f800
+push $N38e5000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -356,7 +489,7 @@ push $N5998f800
   xpos 450
   ypos 120
  }
-push $N5998f800
+push $N38e5000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -364,9 +497,9 @@ push $N5998f800
   xpos 450
   ypos 150
  }
-push $N2b7f8400
-push $N2b7d1800
-push $N2b7f8800
+push $N2e298400
+push $N2e26aa00
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -376,7 +509,7 @@ push $N2b7f8800
   AtmosScatter_output {{8}}
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
-  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
@@ -403,7 +536,7 @@ push $N2b7f8800
   xpos 300
   ypos -100
  }
-set N59953000 [stack 0]
+set N38a4800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -427,7 +560,7 @@ set N59953000 [stack 0]
   xpos 300
   ypos 90
  }
-push $N59953000
+push $N38a4800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -457,7 +590,7 @@ push $N59953000
   xpos 300
   ypos 120
  }
-push $N59953000
+push $N38a4800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -465,10 +598,10 @@ push $N59953000
   xpos 300
   ypos 150
  }
-set N2b7cbe00 [stack 0]
-push $N2b7f8400
-push $N2b7d1800
-push $N2b7f8800
+set N2e26c300 [stack 0]
+push $N2e298400
+push $N2e271800
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -478,7 +611,7 @@ push $N2b7f8800
   AtmosScatter_output {{3}}
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
-  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
@@ -505,7 +638,7 @@ push $N2b7f8800
   xpos 0
   ypos -100
  }
-set N598e4000 [stack 0]
+set N3803800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -529,7 +662,7 @@ set N598e4000 [stack 0]
   xpos 0
   ypos 90
  }
-push $N598e4000
+push $N3803800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -559,7 +692,7 @@ push $N598e4000
   xpos 0
   ypos 120
  }
-push $N598e4000
+push $N3803800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -567,10 +700,10 @@ push $N598e4000
   xpos 0
   ypos 150
  }
-set N2b7cb400 [stack 0]
-push $N2b7f8400
-push $N2b7d1800
-push $N2b7f8800
+set N2e26b900 [stack 0]
+push $N2e298400
+push $N2e26aa00
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -580,7 +713,7 @@ push $N2b7f8800
   AtmosScatter_output {{5}}
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
-  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
@@ -607,7 +740,7 @@ push $N2b7f8800
   xpos 150
   ypos -100
  }
-set N59912800 [stack 0]
+set N3876000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -631,7 +764,7 @@ set N59912800 [stack 0]
   xpos 150
   ypos 90
  }
-push $N59912800
+push $N3876000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -661,7 +794,7 @@ push $N59912800
   xpos 150
   ypos 120
  }
-push $N59912800
+push $N3876000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -669,10 +802,10 @@ push $N59912800
   xpos 150
   ypos 150
  }
-set N2b7cb900 [stack 0]
-push $N2b7f8400
-push $N2b7d1800
-push $N2b7f8800
+set N2e26be00 [stack 0]
+push $N2e298400
+push $N2e271800
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -682,7 +815,7 @@ push $N2b7f8800
   AtmosScatter_output {{2}}
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
-  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
@@ -709,7 +842,7 @@ push $N2b7f8800
   xpos -150
   ypos -100
  }
-set N2b82f800 [stack 0]
+set N2e31b000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -733,7 +866,7 @@ set N2b82f800 [stack 0]
   xpos -150
   ypos 90
  }
-push $N2b82f800
+push $N2e31b000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -763,7 +896,7 @@ push $N2b82f800
   xpos -150
   ypos 120
  }
-push $N2b82f800
+push $N2e31b000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -771,10 +904,10 @@ push $N2b82f800
   xpos -150
   ypos 150
  }
-set N2b7caf00 [stack 0]
-push $N2b7f8400
-push $N2b7d1800
-push $N2b7f8800
+set N2e26b400 [stack 0]
+push $N2e298400
+push $N2e271800
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -784,7 +917,7 @@ push $N2b7f8800
   AtmosScatter_output {{1}}
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
-  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
@@ -811,7 +944,7 @@ push $N2b7f8800
   xpos -300
   ypos -100
  }
-set N2b7f9000 [stack 0]
+set N2e2d4800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -835,7 +968,7 @@ set N2b7f9000 [stack 0]
   xpos -300
   ypos 90
  }
-push $N2b7f9000
+push $N2e2d4800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -865,7 +998,7 @@ push $N2b7f9000
   xpos -300
   ypos 120
  }
-push $N2b7f9000
+push $N2e2d4800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -873,10 +1006,10 @@ push $N2b7f9000
   xpos -300
   ypos 150
  }
-set N2b7caa00 [stack 0]
-push $N2b7cb900
-push $N2b7caf00
-push $N2b7caa00
+set N2e26af00 [stack 0]
+push $N2e26be00
+push $N2e26b400
+push $N2e26af00
  Merge2 {
   inputs 2
   operation plus
@@ -890,10 +1023,10 @@ push $N2b7caa00
   xpos -300
   ypos 60
  }
-set N5baa1400 [stack 0]
-push $N5baa1400
-push $N2b7cb400
-push $N2b7d0000
+set N39ccc00 [stack 0]
+push $N39ccc00
+push $N2e26b900
+push $N2e270000
  Merge2 {
   inputs 2
   operation multiply
@@ -909,10 +1042,10 @@ push $N2b7d0000
   xpos 0
   ypos 60
  }
-set N5baa1c00 [stack 0]
-push $N2b7f8400
-push $N2b7d1800
-push $N2b7f8800
+set N39cd400 [stack 0]
+push $N2e298400
+push $N2e271800
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -922,7 +1055,7 @@ push $N2b7f8800
   AtmosScatter_output {{9}}
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
-  AtmosScatter_light_from_hdri {{parent.light_from_hdri}}
+  AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
@@ -949,7 +1082,7 @@ push $N2b7f8800
   xpos 750
   ypos -100
  }
-set N5ba62800 [stack 0]
+set N3998000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -973,7 +1106,7 @@ set N5ba62800 [stack 0]
   xpos 750
   ypos 90
  }
-push $N5ba62800
+push $N3998000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1003,7 +1136,7 @@ push $N5ba62800
   xpos 750
   ypos 120
  }
-push $N5ba62800
+push $N3998000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1011,13 +1144,13 @@ push $N5ba62800
   xpos 750
   ypos 150
  }
-set N2b7ccd00 [stack 0]
+set N2e26d200 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 300
  }
-push $N2b7cbe00
+push $N2e26c300
  Merge2 {
   inputs 2
   operation multiply
@@ -1026,8 +1159,8 @@ push $N2b7cbe00
   xpos 300
   ypos 60
  }
-push $N2b7ccd00
-push $N5baa1c00
+push $N2e26d200
+push $N39cd400
  Merge2 {
   inputs 2
   operation multiply
@@ -1050,13 +1183,13 @@ push $N5baa1c00
   xpos 150
   ypos 100
  }
-push $N2b7cbe00
-push $N2b7cb400
-push $N2b7cb900
-push $N2b7caf00
-push $N2b7caa00
-push $N5baa1400
-push $N5baa1c00
+push $N2e26c300
+push $N2e26b900
+push $N2e26be00
+push $N2e26b400
+push $N2e26af00
+push $N39ccc00
+push $N39cd400
  Switch {
   inputs 8
   which {{parent.view_output}}
@@ -1064,7 +1197,7 @@ push $N5baa1c00
   xpos 0
   ypos 160
  }
-push $N2b7d0000
+push $N2e270000
  Copy {
   inputs 2
   channels rgb
@@ -1176,9 +1309,47 @@ add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky
   xpos 0
   ypos 720
  }
+set N3a6c800 [stack 0]
+ Write {
+  channels all
+  file "\[if \{\[value parent.bake_file] != \"\"\} \{value parent.bake_file\} \{set d \[if \{\"\[python \{__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''\}]\" != \"\"\} \{set e \"\[python \{__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''\}]\"\} \{set e \[file dirname \[value root.name]]/ezatmos_cache\}]/\[file rootname \[file tail \[value root.name]]]/\[value parent.name]/\[file rootname \[file tail \[value root.name]]]_\[value parent.name].####.exr\}]"
+  file_type exr
+  first_part rgba
+  create_directories true
+  in_colorspace scene_linear
+  out_colorspace scene_linear
+  ocioColorspace scene_linear
+  display default
+  view sRGB
+  name BakeWrite
+  xpos 200
+  ypos 780
+ }
+ Read {
+  inputs 0
+  file "\[if \{\[value parent.bake_file] != \"\"\} \{value parent.bake_file\} \{set d \[if \{\"\[python \{__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''\}]\" != \"\"\} \{set e \"\[python \{__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''\}]\"\} \{set e \[file dirname \[value root.name]]/ezatmos_cache\}]/\[file rootname \[file tail \[value root.name]]]/\[value parent.name]/\[file rootname \[file tail \[value root.name]]]_\[value parent.name].####.exr\}]"
+  first {{parent.baked_first}}
+  last {{parent.baked_last}}
+  origfirst {{parent.baked_first}}
+  origlast {{parent.baked_last}}
+  on_error black
+  in_colorspace scene_linear
+  out_colorspace scene_linear
+  name BakeRead
+  xpos 200
+  ypos 840
+ }
+push $N3a6c800
+ Switch {
+  inputs 2
+  which {{"\[python -execlocal \{g = nuke.thisGroup()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nimport os\nf = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\nret = 1 if g\['use_baked'].value() and g\['baked_hash'].value() == h and os.path.exists(f) else 0\n\}]"}}
+  name UseBake
+  xpos 0
+  ypos 840
+ }
  Output {
   name Output1
   xpos 0
-  ypos 840
+  ypos 920
  }
 end_group

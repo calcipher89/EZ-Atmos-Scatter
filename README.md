@@ -71,6 +71,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | sun direction | (0, 0.5, -1) | Manual sun direction, +Y up |
 | copy detected sun to manual | | Writes the sun found in the HDRI into *sun direction* |
 | hdri rotation | 0 | Rotates the lat-long mapping, in degrees |
+| self-lit (no HDRI) | off | For setups without an HDRI: sky light comes from this atmosphere's own sky, and the sun from *sun color* and *sun strength*. Replaces a second EzAtmosScatter used only as a sky |
 | light from HDRI | on | Sun colour and brightness come from the HDRI. Off: *sun color* and *sun strength* set them |
 | sun color | white | Tint on the HDRI's sun, or the sun colour when *light from HDRI* is off |
 | sun strength | 1 | Multiplies the sun's brightness |
@@ -152,6 +153,30 @@ On the farm:
   (`Nuke15.1.exe --gpu -x script.nk`). Without it BlinkScript runs on the CPU.
 - Each new Nuke process compiles the kernels once before the first frame (about 7 s on
   the GPU, 30 s on the CPU), so render several frames per task.
+
+### Baking
+
+The node's whole output (every layer) can be baked to EXRs and read back instead of being
+computed, which skips the kernels and their compile time on the farm.
+
+- **bake now** renders the bake here and now. **bake range** picks the current frame
+  (held for the whole shot, for a sun that doesn't move) or the script range.
+- **make farm bake Write** adds a top-level Write with the same path instead, to render as
+  a farm job that the comp renders depend on.
+- **use baked** reads the bake, but only while the file exists and the settings still match
+  the ones it was baked with. Otherwise the node computes live and its label reads
+  *bake out of date: live*; it reads *baked* while the bake is used.
+
+The bake goes next to the script by default:
+
+```
+<script dir>/ezatmos_cache/<script>/<node>/<script>_<node>.####.exr
+/shows/abc/seq010/comp/ezatmos_cache/sh010_comp_v003/EzAtmosScatter1/sh010_comp_v003_EzAtmosScatter1.0001.exr
+```
+
+Set `EZATMOS_CACHE_DIR` to put it somewhere else (it replaces `<script dir>/ezatmos_cache`),
+or type a path in *bake file* to override it for one node. Versioning the script up starts
+a new cache folder, so bake again (or keep the old path in *bake file*).
 
 ## Rebuilding the gizmo
 
