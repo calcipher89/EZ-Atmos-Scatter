@@ -154,6 +154,30 @@ On the farm:
 - Each new Nuke process compiles the kernels once before the first frame (about 7 s on
   the GPU, 30 s on the CPU), so render several frames per task.
 
+### Baking
+
+The node's whole output (every layer) can be baked to EXRs and read back instead of being
+computed, which skips the kernels and their compile time on the farm.
+
+- **bake now** renders the bake here and now. **bake range** picks the current frame
+  (held for the whole shot, for a sun that doesn't move) or the script range.
+- **make farm bake Write** adds a top-level Write with the same path instead, to render as
+  a farm job that the comp renders depend on.
+- **use baked** reads the bake, but only while the file exists and the settings still match
+  the ones it was baked with. Otherwise the node computes live and its label reads
+  *bake out of date: live*; it reads *baked* while the bake is used.
+
+The bake goes next to the script by default:
+
+```
+<script dir>/ezatmos_cache/<script>/<node>/<script>_<node>.####.exr
+/shows/abc/seq010/comp/ezatmos_cache/sh010_comp_v003/EzAtmosScatter1/sh010_comp_v003_EzAtmosScatter1.0001.exr
+```
+
+Set `EZATMOS_CACHE_DIR` to put it somewhere else (it replaces `<script dir>/ezatmos_cache`),
+or type a path in *bake file* to override it for one node. Versioning the script up starts
+a new cache folder, so bake again (or keep the old path in *bake file*).
+
 ## Rebuilding the gizmo
 
 After changing a kernel, run

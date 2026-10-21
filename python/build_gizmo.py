@@ -67,6 +67,10 @@ def _link(node, param, expression, channel=None):
         knob.setExpression(expression, channel)
 
 
+# Names of the user knobs, filled in by _add_knobs; the bake fingerprint covers them.
+_USER_KNOBS = set()
+
+
 def _add_knobs(group):
     k = []
 
@@ -197,6 +201,7 @@ def _add_knobs(group):
 
     for knob in k:
         group.addKnob(knob)
+    _USER_KNOBS.update(knob.name() for knob in k)
 
     defaults = {
         "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "sun_strength": 1.0, "sun_boost": 1.0,
@@ -284,6 +289,140 @@ def _upscale(node, hdri, name):
     for i, n in enumerate([halves[0].input(0).input(0), halves[0].input(0), halves[0],
                            halves[1].input(0).input(0), halves[1].input(0), halves[1], joined, pick]):
         n.setXYpos(node.xpos() + (i // 3) * 0, node.ypos() + 40 + 30 * i)
+    return pick
+
+
+# ---- Bake ----------------------------------------------------------------------------
+
+# Default cache path, next to the script (or under $EZATMOS_CACHE_DIR):
+#   <script dir>/ezatmos_cache/<script>/<node>/<script>_<node>.####.exr
+_SCRIPT = "[file rootname [file tail [value root.name]]]"
+_CACHE_ROOT = "[python {__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''}]"
+BAKE_PATH = ("[if {[value parent.bake_file] != \"\"} {value parent.bake_file} "
+             "{set d [if {\"%(root)s\" != \"\"} {set e \"%(root)s\"} "
+             "{set e [file dirname [value root.name]]/ezatmos_cache}]/"
+             "%(script)s/[value parent.name]/%(script)s_[value parent.name].####.exr}]"
+             % {"root": _CACHE_ROOT, "script": _SCRIPT})
+
+
+def _hash_code(names):
+    """Python that sets `h` to a fingerprint of the settings that shape the output."""
+    return ("import hashlib\n"
+            "h = hashlib.md5(repr([(n, g[n].toScript()) for n in %r if g.knob(n)]).encode()).hexdigest()\n"
+            % (list(names),))
+
+
+def _range_code():
+    return ("if g['bake_range'].getValue() == 0:\n"
+            "    first = last = nuke.frame()\n"
+            "else:\n"
+            "    first, last = int(nuke.root()['first_frame'].value()), int(nuke.root()['last_frame'].value())\n")
+
+
+def _use_baked_expression(names):
+    # 1 only when 'use baked' is on, the bake exists and the settings still match it.
+    code = ("g = nuke.thisGroup()\n" + _hash_code(names) +
+            "import os\n"
+            "f = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\n"
+            "ret = 1 if g['use_baked'].value() and g['baked_hash'].value() == h and os.path.exists(f) else 0\n")
+    return "[python -execlocal {%s}]" % code
+
+
+def _label_expression(names):
+    code = ("g = nuke.thisNode()\n" + _hash_code(names) +
+            "import os\n"
+            "f = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\n"
+            "ok = g['baked_hash'].value() == h and os.path.exists(f)\n"
+            "ret = '' if not g['use_baked'].value() or not g['baked_hash'].value() else "
+            "('baked' if ok else 'bake out of date: live')\n")
+    return "[python -execlocal {%s}]" % code
+
+
+def _bake_script(names):
+    return ("g = nuke.thisNode()\n" + _hash_code(names) + _range_code() +
+            "use = g['use_baked'].value()\n"
+            "g['use_baked'].setValue(False)\n"
+            "try:\n"
+            "    with g:\n"
+            "        nuke.execute(nuke.toNode('BakeWrite'), first, last)\n"
+            "    g['baked_hash'].setValue(h)\n"
+            "    g['baked_first'].setValue(first)\n"
+            "    g['baked_last'].setValue(last)\n"
+            "finally:\n"
+            "    g['use_baked'].setValue(use)\n")
+
+
+def _farm_write_script(names):
+    # A top-level Write with the same path, for a farm job the comp renders depend on.
+    return ("g = nuke.thisNode()\n" + _hash_code(names) + _range_code() +
+            "path = nuke.filename(g.node('BakeRead'))\n"
+            "with nuke.root():\n"
+            "    w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n"
+            "    w['create_directories'].setValue(True)\n"
+            "    w['use_limit'].setValue(True)\n"
+            "    w['first'].setValue(first)\n"
+            "    w['last'].setValue(last)\n"
+            "    w.setInput(0, g)\n"
+            "    w.setXYpos(g.xpos(), g.ypos() + 80)\n"
+            "g['baked_hash'].setValue(h)\n"
+            "g['baked_first'].setValue(first)\n"
+            "g['baked_last'].setValue(last)\n"
+            "if nuke.GUI:\n"
+            "    nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n")
+
+
+def _add_bake_knobs(group, names):
+    k = [nuke.Text_Knob("bake_divider", "Bake")]
+    f = nuke.File_Knob("bake_file", "bake file")
+    f.setTooltip("Leave empty for the default: <script dir>/ezatmos_cache/<script>/<node>/<script>_<node>.####.exr, "
+                 "or $EZATMOS_CACHE_DIR/<script>/<node>/... when that is set. Fill in to override.")
+    k.append(f)
+    rng = nuke.Enumeration_Knob("bake_range", "bake range", ["Current Frame (hold)", "Script Range"])
+    rng.setTooltip("Current Frame: one frame, held for the whole shot (a sun that doesn't move). "
+                   "Script Range: every frame, for an animated sun or knobs.")
+    k.append(rng)
+    now = nuke.PyScript_Knob("bake_now", "bake now", _bake_script(names))
+    now.setTooltip("Writes all layers to the bake file here and now.")
+    k.append(now)
+    farm = nuke.PyScript_Knob("bake_farm_write", "make farm bake Write", _farm_write_script(names))
+    farm.setTooltip("Adds a Write below this node with the bake path, to render on the farm before the comp.")
+    k.append(farm)
+    use = nuke.Boolean_Knob("use_baked", "use baked")
+    use.setTooltip("Read the bake instead of computing, but only while it exists and these settings still "
+                   "match it; otherwise the node computes live and its label says the bake is out of date.")
+    use.setFlag(nuke.STARTLINE)
+    k.append(use)
+    s = nuke.String_Knob("baked_hash", "baked hash")
+    s.setFlag(nuke.INVISIBLE)
+    k.append(s)
+    for name in ("baked_first", "baked_last"):
+        n = nuke.Int_Knob(name, name)
+        n.setFlag(nuke.INVISIBLE)
+        k.append(n)
+    for knob in k:
+        group.addKnob(knob)
+    group["use_baked"].setValue(True)
+    group["label"].setValue(_label_expression(names))
+
+
+def _add_bake_nodes(stream, names):
+    """Write the full output to the bake, read it back, and pick between them."""
+    write = nuke.nodes.Write(name="BakeWrite", file_type="exr", channels="all", xpos=200, ypos=stream.ypos() + 60)
+    write["file"].setValue(BAKE_PATH)
+    write["create_directories"].setValue(True)
+    write.setInput(0, stream)
+    read = nuke.nodes.Read(name="BakeRead", xpos=200, ypos=stream.ypos() + 120)
+    read["file"].setValue(BAKE_PATH)
+    for knob, expr in (("first", "parent.baked_first"), ("last", "parent.baked_last"),
+                       ("origfirst", "parent.baked_first"), ("origlast", "parent.baked_last")):
+        read[knob].setExpression(expr)
+    read["before"].setValue("hold")
+    read["after"].setValue("hold")
+    read["on_error"].setValue("black")
+    pick = nuke.nodes.Switch(name="UseBake", xpos=0, ypos=stream.ypos() + 120)
+    pick.setInput(0, stream)
+    pick.setInput(1, read)
+    pick["which"].setExpression(_use_baked_expression(names))
     return pick
 
 
@@ -431,9 +570,14 @@ def build():
             copy["to%d" % c].setValue("%s.%s" % (layer, channel))
         stream = copy
 
-    out = nuke.nodes.Output(xpos=0, ypos=300 + 60 * len(LAYERS) + 60)
+    # Every user knob shapes the output, so the bake fingerprint covers them all.
+    names = [kn.name() for kn in group.allKnobs() if kn.Class() not in ("Tab_Knob", "Text_Knob", "PyScript_Knob")
+             and kn.name() in _USER_KNOBS]
+    stream = _add_bake_nodes(stream, names)
+    out = nuke.nodes.Output(xpos=0, ypos=stream.ypos() + 80)
     out.setInput(0, stream)
     group.end()
+    _add_bake_knobs(group, names)
     return group
 
 
