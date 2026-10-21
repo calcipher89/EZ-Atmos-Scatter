@@ -71,6 +71,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | sun direction | (0, 0.5, -1) | Manual sun direction, +Y up |
 | copy detected sun to manual | | Writes the sun found in the HDRI into *sun direction* |
 | hdri rotation | 0 | Rotates the lat-long mapping, in degrees |
+| self-lit (no HDRI) | off | For setups without an HDRI: sky light comes from this atmosphere's own sky, and the sun from *sun color* and *sun strength*. Replaces a second EzAtmosScatter used only as a sky |
 | light from HDRI | on | Sun colour and brightness come from the HDRI. Off: *sun color* and *sun strength* set them |
 | sun color | white | Tint on the HDRI's sun, or the sun colour when *light from HDRI* is off |
 | sun strength | 1 | Multiplies the sun's brightness |

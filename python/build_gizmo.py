@@ -98,6 +98,12 @@ def _add_knobs(group):
     rotation.setTooltip("Rotates the lat-long mapping in degrees, if the HDRI's centre column does not look down -Z.")
     k.append(rotation)
 
+    self_lit = nuke.Boolean_Knob("self_lit", "self-lit (no HDRI)")
+    self_lit.setTooltip("For setups without an HDRI: the sky light comes from this atmosphere's own sky "
+                        "instead of the hdri input, and the sun from 'sun color' and 'sun strength' "
+                        "(light from HDRI is ignored). Set 'sun from' to Manual or Axis.")
+    self_lit.setFlag(nuke.STARTLINE)
+    k.append(self_lit)
     light = nuke.Boolean_Knob("light_from_hdri", "light from HDRI")
     light.setFlag(nuke.STARTLINE)
     light.setTooltip("Take the sun's colour and brightness from the HDRI. Off: 'sun color' and "
@@ -215,7 +221,7 @@ def _link_scatter(node, output):
     _link(node, "output", str(output))
     _link(node, "depth_haze", "parent.passes")
     _link(node, "sun_from_hdri", "parent.sun_from==0")
-    _link(node, "light_from_hdri", "parent.light_from_hdri")
+    _link(node, "light_from_hdri", "parent.light_from_hdri && !parent.self_lit")
     for i, axis in enumerate("xyz"):
         _link(node, "sun_direction",
               "parent.sun_from==1 && [exists parent.input1] ? (%s) : parent.sun_direction.%s" % (SUN_FROM_AXIS % (3 + 4 * i), axis), i)
@@ -327,11 +333,44 @@ def build():
     low["box_width"].setExpression("max(floor(hdri.width * parent.scatter_scale + 0.5), 4)")
     low["box_height"].setExpression("max(2 * floor(hdri.height * parent.scatter_scale / 2 + 0.5), 2)")
 
+    # Self-lit: with no HDRI, the sky light comes from this atmosphere's own sky. A small
+    # Rayleigh + Mie render (always in Atmosphere mode, no sky light, so no loop) is
+    # measured like an HDRI; the passes that use sky light read that measurement.
+    self_ref = nuke.nodes.Reformat(name="SelfSkySize", type="to box", box_width=512, box_height=256,
+                                   box_fixed=True, resize="distort", xpos=600, ypos=-300)
+    self_ref.setInput(0, hdri)
+    self_parts = []
+    for name, output in (("rayleigh", 1), ("mie", 2)):
+        node = nuke.nodes.BlinkScript(name="SelfSky_" + name, xpos=600 + 120 * len(self_parts), ypos=-240)
+        node.setInput(0, self_ref)
+        node.setInput(1, light)
+        node.setInput(2, lut)
+        _load_kernel(node, "AtmosScatter.blink")
+        _link_scatter(node, output)
+        _link(node, "depth_haze", "0")
+        _link(node, "view_samples", "8")
+        self_parts.append(node)
+    self_sky = nuke.nodes.Merge2(name="SelfSky", operation="plus", output="rgb", xpos=600, ypos=-200)
+    self_sky.setInput(0, self_parts[0])
+    self_sky.setInput(1, self_parts[1])
+    self_light = nuke.nodes.BlinkScript(name="SelfLight", xpos=600, ypos=-160)
+    self_light.setInput(0, ref)
+    self_light.setInput(1, self_sky)
+    _load_kernel(self_light, "EzAtmosLight.blink")
+    _link(self_light, "longitude_offset_deg", "0")
+    _link(self_light, "sun_cone_deg", "parent.sun_search_cone")
+    _link(self_light, "clip_ratio", "parent.clip_ratio")
+    sky_light_source = nuke.nodes.Switch(name="SkyLightSource", xpos=450, ypos=-120)
+    sky_light_source.setInput(0, light)
+    sky_light_source.setInput(1, self_light)
+    sky_light_source["which"].setExpression("parent.self_lit")
+
     passes = {}
     for index, (name, output, _) in enumerate(PASSES):
         node = nuke.nodes.BlinkScript(name="Scatter_" + name, xpos=-300 + 150 * index, ypos=-100)
         node.setInput(0, low)
-        node.setInput(1, light)
+        # Passes that use sky light read it from the HDRI, or from the atmosphere itself.
+        node.setInput(1, sky_light_source if name in ("ambient", "haze_color", "haze_sky") else light)
         node.setInput(2, lut)
         _load_kernel(node, "AtmosScatter.blink")
         _link_scatter(node, output)
