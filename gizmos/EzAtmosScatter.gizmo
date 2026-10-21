@@ -10,7 +10,7 @@ add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky
 Gizmo {
  name EzAtmosScatter1
  tile_color 0x4a7fb5ff
- label "\[python -execlocal \{g = nuke.thisNode()\nimport hashlib\nh = hashlib.md5(repr(\[(n, g\[n].toScript()) for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio'] if g.knob(n)]).encode()).hexdigest()\nimport os\nf = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\nok = g\['baked_hash'].value() == h and os.path.exists(f)\nret = '' if not g\['use_baked'].value() or not g\['baked_hash'].value() else ('baked' if ok else 'bake out of date: live')\n\}]"
+ label "\[python -execlocal \{g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nimport os\nf = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\nok = g\['baked_hash'].value() == h and os.path.exists(f)\nret = '' if not g\['use_baked'].value() or not g\['baked_hash'].value() else ('baked' if ok else 'bake out of date: live')\n\}]"
  selected true
  addUserKnob {20 ezatmos l EzAtmosScatter}
  addUserKnob {4 view_output l "view output" t "What the main rgba shows. Every pass is also written to its own atmos_* layer." M {"Scatter Preview Comp" Scatter "Sky (Rayleigh)" "Haze (Mie)" "Sky Light (Ambient)" Transmittance "Haze Color" "Haze Preview"}}
@@ -79,8 +79,8 @@ Gizmo {
  addUserKnob {26 bake_divider l Bake}
  addUserKnob {2 bake_file l "bake file" t "Leave empty for the default: <script dir>/ezatmos_cache/<script>/<node>/<script>_<node>.####.exr, or \$EZATMOS_CACHE_DIR/<script>/<node>/... when that is set. Fill in to override."}
  addUserKnob {4 bake_range l "bake range" t "Current Frame: one frame, held for the whole shot (a sun that doesn't move). Script Range: every frame, for an animated sun or knobs." M {"Current Frame (hold)" "Script Range"}}
- addUserKnob {22 bake_now l "bake now" t "Writes all layers to the bake file here and now." -STARTLINE T "g = nuke.thisNode()\nimport hashlib\nh = hashlib.md5(repr(\[(n, g\[n].toScript()) for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio'] if g.knob(n)]).encode()).hexdigest()\nif g\['bake_range'].getValue() == 0:\n    first = last = nuke.frame()\nelse:\n    first, last = int(nuke.root()\['first_frame'].value()), int(nuke.root()\['last_frame'].value())\nuse = g\['use_baked'].value()\ng\['use_baked'].setValue(False)\ntry:\n    with g:\n        nuke.execute(nuke.toNode('BakeWrite'), first, last)\n    g\['baked_hash'].setValue(h)\n    g\['baked_first'].setValue(first)\n    g\['baked_last'].setValue(last)\nfinally:\n    g\['use_baked'].setValue(use)\n"}
- addUserKnob {22 bake_farm_write l "make farm bake Write" t "Adds a Write below this node with the bake path, to render on the farm before the comp." -STARTLINE T "g = nuke.thisNode()\nimport hashlib\nh = hashlib.md5(repr(\[(n, g\[n].toScript()) for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio'] if g.knob(n)]).encode()).hexdigest()\nif g\['bake_range'].getValue() == 0:\n    first = last = nuke.frame()\nelse:\n    first, last = int(nuke.root()\['first_frame'].value()), int(nuke.root()\['last_frame'].value())\npath = nuke.filename(g.node('BakeRead'))\nwith nuke.root():\n    w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n    w\['create_directories'].setValue(True)\n    w\['use_limit'].setValue(True)\n    w\['first'].setValue(first)\n    w\['last'].setValue(last)\n    w.setInput(0, g)\n    w.setXYpos(g.xpos(), g.ypos() + 80)\ng\['baked_hash'].setValue(h)\ng\['baked_first'].setValue(first)\ng\['baked_last'].setValue(last)\nif nuke.GUI:\n    nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n"}
+ addUserKnob {22 bake_now l "bake now" t "Writes all layers to the bake file here and now." -STARTLINE T "g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nif g\['bake_range'].getValue() == 0:\n    first = last = nuke.frame()\nelse:\n    first, last = int(nuke.root()\['first_frame'].value()), int(nuke.root()\['last_frame'].value())\nuse = g\['use_baked'].value()\ng\['use_baked'].setValue(False)\ntry:\n    with g:\n        nuke.execute(nuke.toNode('BakeWrite'), first, last)\n    g\['baked_hash'].setValue(h)\n    g\['baked_first'].setValue(first)\n    g\['baked_last'].setValue(last)\nfinally:\n    g\['use_baked'].setValue(use)\n"}
+ addUserKnob {22 bake_farm_write l "make farm bake Write" t "Adds a Write below this node with the bake path, to render on the farm before the comp." -STARTLINE T "g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nif g\['bake_range'].getValue() == 0:\n    first = last = nuke.frame()\nelse:\n    first, last = int(nuke.root()\['first_frame'].value()), int(nuke.root()\['last_frame'].value())\npath = nuke.filename(g.node('BakeRead'))\nwith nuke.root():\n    w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n    w\['create_directories'].setValue(True)\n    w\['use_limit'].setValue(True)\n    w\['first'].setValue(first)\n    w\['last'].setValue(last)\n    w.setInput(0, g)\n    w.setXYpos(g.xpos(), g.ypos() + 80)\ng\['baked_hash'].setValue(h)\ng\['baked_first'].setValue(first)\ng\['baked_last'].setValue(last)\nif nuke.GUI:\n    nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n"}
  addUserKnob {6 use_baked l "use baked" t "Read the bake instead of computing, but only while it exists and these settings still match it; otherwise the node computes live and its label says the bake is out of date." +STARTLINE}
  use_baked true
  addUserKnob {1 baked_hash l "baked hash" +INVISIBLE}
@@ -100,7 +100,7 @@ Gizmo {
   xpos 0
   ypos -400
  }
-set Nc8d80000 [stack 0]
+set N2e270000 [stack 0]
  Reformat {
   type "to box"
   box_width 256
@@ -125,9 +125,9 @@ set Nc8d80000 [stack 0]
   xpos 450
   ypos -180
  }
-set Nc8da8400 [stack 0]
-push $Nc8da8400
-push $Nc8d80000
+set N2e298400 [stack 0]
+push $N2e298400
+push $N2e270000
  Reformat {
   type "to box"
   box_width 512
@@ -139,8 +139,8 @@ push $Nc8d80000
   xpos 300
   ypos -300
  }
-set Nc8d80800 [stack 0]
-push $Nc8d80800
+set N2e270800 [stack 0]
+push $N2e270800
  Reformat {
   type "to box"
   box_width 4
@@ -151,7 +151,7 @@ push $Nc8d80800
   xpos 300
   ypos -240
  }
-set Nc8d81000 [stack 0]
+set N2e271000 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -166,8 +166,8 @@ set Nc8d81000 [stack 0]
   xpos 300
   ypos -180
  }
-set Nc8d81800 [stack 0]
-push $Nc8d80000
+set N2e271800 [stack 0]
+push $N2e270000
  Reformat {
   type "to box"
   box_width 512
@@ -178,7 +178,7 @@ push $Nc8d80000
   xpos 600
   ypos -300
  }
-set Nc8da9000 [stack 0]
+set N2e299000 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -215,9 +215,9 @@ set Nc8da9000 [stack 0]
   xpos 720
   ypos -240
  }
-push $Nc8da8400
-push $Nc8d81800
-push $Nc8da9000
+push $N2e298400
+push $N2e271800
+push $N2e299000
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -262,7 +262,7 @@ push $Nc8da9000
   xpos 600
   ypos -200
  }
-push $Nc8d81000
+push $N2e271000
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -277,7 +277,7 @@ push $Nc8d81000
   xpos 600
   ypos -160
  }
-push $Nc8d81800
+push $N2e271800
  Switch {
   inputs 2
   which {{parent.self_lit}}
@@ -285,8 +285,8 @@ push $Nc8d81800
   xpos 450
   ypos -120
  }
-set Nc8d7aa00 [stack 0]
-push $Nc8d80000
+set N2e26aa00 [stack 0]
+push $N2e270000
  Reformat {
   type "to box"
   box_width {{"max(floor(hdri.width * parent.scatter_scale + 0.5), 4)"}}
@@ -297,7 +297,7 @@ push $Nc8d80000
   xpos -300
   ypos -240
  }
-set Nc8da8800 [stack 0]
+set N2e298800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -334,7 +334,7 @@ set Nc8da8800 [stack 0]
   xpos 600
   ypos -100
  }
-set Nf83b7800 [stack 0]
+set N3927800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -358,7 +358,7 @@ set Nf83b7800 [stack 0]
   xpos 600
   ypos 90
  }
-push $Nf83b7800
+push $N3927800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -388,7 +388,7 @@ push $Nf83b7800
   xpos 600
   ypos 120
  }
-push $Nf83b7800
+push $N3927800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -396,9 +396,9 @@ push $Nf83b7800
   xpos 600
   ypos 150
  }
-push $Nc8da8400
-push $Nc8d81800
-push $Nc8da8800
+push $N2e298400
+push $N2e271800
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -435,7 +435,7 @@ push $Nc8da8800
   xpos 450
   ypos -100
  }
-set Nf73a5000 [stack 0]
+set N38e5000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -459,7 +459,7 @@ set Nf73a5000 [stack 0]
   xpos 450
   ypos 90
  }
-push $Nf73a5000
+push $N38e5000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -489,7 +489,7 @@ push $Nf73a5000
   xpos 450
   ypos 120
  }
-push $Nf73a5000
+push $N38e5000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -497,9 +497,9 @@ push $Nf73a5000
   xpos 450
   ypos 150
  }
-push $Nc8da8400
-push $Nc8d7aa00
-push $Nc8da8800
+push $N2e298400
+push $N2e26aa00
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -536,7 +536,7 @@ push $Nc8da8800
   xpos 300
   ypos -100
  }
-set Nf7364800 [stack 0]
+set N38a4800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -560,7 +560,7 @@ set Nf7364800 [stack 0]
   xpos 300
   ypos 90
  }
-push $Nf7364800
+push $N38a4800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -590,7 +590,7 @@ push $Nf7364800
   xpos 300
   ypos 120
  }
-push $Nf7364800
+push $N38a4800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -598,10 +598,10 @@ push $Nf7364800
   xpos 300
   ypos 150
  }
-set Nc8d7c300 [stack 0]
-push $Nc8da8400
-push $Nc8d81800
-push $Nc8da8800
+set N2e26c300 [stack 0]
+push $N2e298400
+push $N2e271800
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -638,7 +638,7 @@ push $Nc8da8800
   xpos 0
   ypos -100
  }
-set Nf72c3800 [stack 0]
+set N3803800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -662,7 +662,7 @@ set Nf72c3800 [stack 0]
   xpos 0
   ypos 90
  }
-push $Nf72c3800
+push $N3803800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -692,7 +692,7 @@ push $Nf72c3800
   xpos 0
   ypos 120
  }
-push $Nf72c3800
+push $N3803800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -700,10 +700,10 @@ push $Nf72c3800
   xpos 0
   ypos 150
  }
-set Nc8d7b900 [stack 0]
-push $Nc8da8400
-push $Nc8d7aa00
-push $Nc8da8800
+set N2e26b900 [stack 0]
+push $N2e298400
+push $N2e26aa00
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -740,7 +740,7 @@ push $Nc8da8800
   xpos 150
   ypos -100
  }
-set Nf7336000 [stack 0]
+set N3876000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -764,7 +764,7 @@ set Nf7336000 [stack 0]
   xpos 150
   ypos 90
  }
-push $Nf7336000
+push $N3876000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -794,7 +794,7 @@ push $Nf7336000
   xpos 150
   ypos 120
  }
-push $Nf7336000
+push $N3876000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -802,10 +802,10 @@ push $Nf7336000
   xpos 150
   ypos 150
  }
-set Nc8d7be00 [stack 0]
-push $Nc8da8400
-push $Nc8d81800
-push $Nc8da8800
+set N2e26be00 [stack 0]
+push $N2e298400
+push $N2e271800
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -842,7 +842,7 @@ push $Nc8da8800
   xpos -150
   ypos -100
  }
-set Nc8e2b000 [stack 0]
+set N2e31b000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -866,7 +866,7 @@ set Nc8e2b000 [stack 0]
   xpos -150
   ypos 90
  }
-push $Nc8e2b000
+push $N2e31b000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -896,7 +896,7 @@ push $Nc8e2b000
   xpos -150
   ypos 120
  }
-push $Nc8e2b000
+push $N2e31b000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -904,10 +904,10 @@ push $Nc8e2b000
   xpos -150
   ypos 150
  }
-set Nc8d7b400 [stack 0]
-push $Nc8da8400
-push $Nc8d81800
-push $Nc8da8800
+set N2e26b400 [stack 0]
+push $N2e298400
+push $N2e271800
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -944,7 +944,7 @@ push $Nc8da8800
   xpos -300
   ypos -100
  }
-set Nc8de4800 [stack 0]
+set N2e2d4800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -968,7 +968,7 @@ set Nc8de4800 [stack 0]
   xpos -300
   ypos 90
  }
-push $Nc8de4800
+push $N2e2d4800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -998,7 +998,7 @@ push $Nc8de4800
   xpos -300
   ypos 120
  }
-push $Nc8de4800
+push $N2e2d4800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1006,10 +1006,10 @@ push $Nc8de4800
   xpos -300
   ypos 150
  }
-set Nc8d7af00 [stack 0]
-push $Nc8d7be00
-push $Nc8d7b400
-push $Nc8d7af00
+set N2e26af00 [stack 0]
+push $N2e26be00
+push $N2e26b400
+push $N2e26af00
  Merge2 {
   inputs 2
   operation plus
@@ -1023,10 +1023,10 @@ push $Nc8d7af00
   xpos -300
   ypos 60
  }
-set Nf845cc00 [stack 0]
-push $Nf845cc00
-push $Nc8d7b900
-push $Nc8d80000
+set N39ccc00 [stack 0]
+push $N39ccc00
+push $N2e26b900
+push $N2e270000
  Merge2 {
   inputs 2
   operation multiply
@@ -1042,10 +1042,10 @@ push $Nc8d80000
   xpos 0
   ypos 60
  }
-set Nf845d400 [stack 0]
-push $Nc8da8400
-push $Nc8d81800
-push $Nc8da8800
+set N39cd400 [stack 0]
+push $N2e298400
+push $N2e271800
+push $N2e298800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1082,7 +1082,7 @@ push $Nc8da8800
   xpos 750
   ypos -100
  }
-set Nf8428000 [stack 0]
+set N3998000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1106,7 +1106,7 @@ set Nf8428000 [stack 0]
   xpos 750
   ypos 90
  }
-push $Nf8428000
+push $N3998000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1136,7 +1136,7 @@ push $Nf8428000
   xpos 750
   ypos 120
  }
-push $Nf8428000
+push $N3998000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1144,13 +1144,13 @@ push $Nf8428000
   xpos 750
   ypos 150
  }
-set Nc8d7d200 [stack 0]
+set N2e26d200 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 300
  }
-push $Nc8d7c300
+push $N2e26c300
  Merge2 {
   inputs 2
   operation multiply
@@ -1159,8 +1159,8 @@ push $Nc8d7c300
   xpos 300
   ypos 60
  }
-push $Nc8d7d200
-push $Nf845d400
+push $N2e26d200
+push $N39cd400
  Merge2 {
   inputs 2
   operation multiply
@@ -1183,13 +1183,13 @@ push $Nf845d400
   xpos 150
   ypos 100
  }
-push $Nc8d7c300
-push $Nc8d7b900
-push $Nc8d7be00
-push $Nc8d7b400
-push $Nc8d7af00
-push $Nf845cc00
-push $Nf845d400
+push $N2e26c300
+push $N2e26b900
+push $N2e26be00
+push $N2e26b400
+push $N2e26af00
+push $N39ccc00
+push $N39cd400
  Switch {
   inputs 8
   which {{parent.view_output}}
@@ -1197,7 +1197,7 @@ push $Nf845d400
   xpos 0
   ypos 160
  }
-push $Nc8d80000
+push $N2e270000
  Copy {
   inputs 2
   channels rgb
@@ -1309,7 +1309,7 @@ add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky
   xpos 0
   ypos 720
  }
-set Nf84fc800 [stack 0]
+set N3a6c800 [stack 0]
  Write {
   channels all
   file "\[if \{\[value parent.bake_file] != \"\"\} \{value parent.bake_file\} \{set d \[if \{\"\[python \{__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''\}]\" != \"\"\} \{set e \"\[python \{__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''\}]\"\} \{set e \[file dirname \[value root.name]]/ezatmos_cache\}]/\[file rootname \[file tail \[value root.name]]]/\[value parent.name]/\[file rootname \[file tail \[value root.name]]]_\[value parent.name].####.exr\}]"
@@ -1339,10 +1339,10 @@ set Nf84fc800 [stack 0]
   xpos 200
   ypos 840
  }
-push $Nf84fc800
+push $N3a6c800
  Switch {
   inputs 2
-  which {{"\[python -execlocal \{g = nuke.thisGroup()\nimport hashlib\nh = hashlib.md5(repr(\[(n, g\[n].toScript()) for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio'] if g.knob(n)]).encode()).hexdigest()\nimport os\nf = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\nret = 1 if g\['use_baked'].value() and g\['baked_hash'].value() == h and os.path.exists(f) else 0\n\}]"}}
+  which {{"\[python -execlocal \{g = nuke.thisGroup()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nimport os\nf = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\nret = 1 if g\['use_baked'].value() and g\['baked_hash'].value() == h and os.path.exists(f) else 0\n\}]"}}
   name UseBake
   xpos 0
   ypos 840

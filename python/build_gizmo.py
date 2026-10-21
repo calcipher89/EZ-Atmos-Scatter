@@ -307,8 +307,13 @@ BAKE_PATH = ("[if {[value parent.bake_file] != \"\"} {value parent.bake_file} "
 
 def _hash_code(names):
     """Python that sets `h` to a fingerprint of the settings that shape the output."""
+    # A plain loop: Nuke runs this with separate locals, which a comprehension can't see.
     return ("import hashlib\n"
-            "h = hashlib.md5(repr([(n, g[n].toScript()) for n in %r if g.knob(n)]).encode()).hexdigest()\n"
+            "s = []\n"
+            "for n in %r:\n"
+            "    if g.knob(n):\n"
+            "        s.append((n, g[n].toScript()))\n"
+            "h = hashlib.md5(repr(s).encode()).hexdigest()\n"
             % (list(names),))
 
 
