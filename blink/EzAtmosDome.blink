@@ -1,0 +1,84 @@
+// EzAtmosDome: re-maps an HDRI textured on a skydome Sphere to the lat-long seen from the
+// camera, in EzAtmosScatter's convention (centre column looks down -Z, top row up).
+//
+// For each output direction it follows the ray from the camera to the dome (the Sphere's
+// local space, after all of its transforms; `domeRow0..2` are the rows of the inverse of its
+// world matrix), and reads the HDRI where the ray hits, with Nuke's Sphere UV mapping. So a
+// dome that is rotated, moved off the camera or squashed shows the HDRI exactly where a
+// ScanlineRender of the dome does.
+
+kernel EzAtmosDome : ImageComputationKernel<ePixelWise>
+{
+  Image<eRead, eAccessPoint, eEdgeClamped> ref;
+  Image<eRead, eAccessRandom, eEdgeClamped> src;
+  Image<eWrite> dst;
+
+param:
+  float4 domeRow0;
+  float4 domeRow1;
+  float4 domeRow2;
+  float3 eye;
+  float radius;
+
+local:
+  float pi;
+
+  void define()
+  {
+    defineParam(domeRow0, "dome_row0", float4(1.0f, 0.0f, 0.0f, 0.0f));
+    defineParam(domeRow1, "dome_row1", float4(0.0f, 1.0f, 0.0f, 0.0f));
+    defineParam(domeRow2, "dome_row2", float4(0.0f, 0.0f, 1.0f, 0.0f));
+    defineParam(eye, "eye", float3(0.0f, 0.0f, 0.0f));
+    defineParam(radius, "radius", 1.0f);
+  }
+
+  void init()
+  {
+    pi = 3.14159265358979f;
+  }
+
+  float3 toLocal(float3 p, float w)
+  {
+    float4 q = float4(p.x, p.y, p.z, w);
+    return float3(dot(domeRow0, q), dot(domeRow1, q), dot(domeRow2, q));
+  }
+
+  float4 sampleWrapped(float x, float y)
+  {
+    // Wrap around the seam so the two edges blend.
+    float w = src.bounds.width();
+    float fx = x - floor((x - src.bounds.x1) / w) * w;
+    return bilinear(src, fx, y);
+  }
+
+  void process(int2 pos)
+  {
+    float u = (pos.x - ref.bounds.x1 + 0.5f) / ref.bounds.width();
+    float v = (pos.y - ref.bounds.y1 + 0.5f) / ref.bounds.height();
+    float lon = (u - 0.5f) * 2.0f * pi;
+    float lat = (v - 0.5f) * pi;
+    float3 d = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));
+
+    float3 o = toLocal(eye, 1.0f);
+    float3 dl = toLocal(d, 0.0f);
+    float a = dot(dl, dl);
+    float b = 2.0f * dot(o, dl);
+    float c = dot(o, o) - radius * radius;
+    float disc = b * b - 4.0f * a * c;
+    if (disc < 0.0f || a <= 0.0f) {
+      dst() = float4(0.0f);
+      return;
+    }
+    float t = (-b + sqrt(disc)) / (2.0f * a);
+    if (t <= 0.0f) {
+      dst() = float4(0.0f);
+      return;
+    }
+    float3 p = normalize(o + dl * t);
+    // Nuke's Sphere UVs: u = 0.5 looks down -Z, u = 0.75 down -X; v = 1 at the top.
+    float su = 0.5f + atan2(-p.x, -p.z) / (2.0f * pi);
+    float sv = 0.5f + asin(clamp(p.y, -1.0f, 1.0f)) / pi;
+    dst() = sampleWrapped(src.bounds.x1 + su * src.bounds.width() - 0.5f,
+                          src.bounds.y1 + sv * src.bounds.height() - 0.5f);
+  }
+};
