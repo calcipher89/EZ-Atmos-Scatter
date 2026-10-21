@@ -313,6 +313,11 @@ def _hash_code(names):
             "for n in %r:\n"
             "    if g.knob(n):\n"
             "        s.append((n, g[n].toScript()))\n"
+            "# Where the skydome sits shapes the output too.\n"
+            "d = g.node('DomeRemap')\n"
+            "if d is not None and g.input(2) is not None:\n"
+            "    for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n"
+            "        s.append((k, repr(d['EzAtmosDome_' + k].value())))\n"
             "h = hashlib.md5(repr(s).encode()).hexdigest()\n"
             % (list(names),))
 
@@ -431,6 +436,92 @@ def _add_bake_nodes(stream, names):
     return pick
 
 
+# ---- Skydome ---------------------------------------------------------------------------
+
+# Python that sets `m` to the skydome's world matrix and `r` to its radius at this frame,
+# from the geometry in the dome input: TransformGeos (and their axis input) down to the
+# Sphere. A knob's own matrix ignores the frame being rendered, so each transform is built
+# from its knobs at nuke.frame(), in its transform and rotation orders.
+_DOME_WALK = """\
+def local(n, t):
+    import math
+    M = nuke.math.Matrix4
+    def v(k, i):
+        return n[k].getValueAt(t, i)
+    T = M()
+    T.makeIdentity()
+    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))
+    P = M()
+    P.makeIdentity()
+    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))
+    us = n['uniform_scale'].getValueAt(t)
+    S = M()
+    S.makeIdentity()
+    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)
+    R = M()
+    R.makeIdentity()
+    for axis in reversed(n['rot_order'].value()):
+        a = math.radians(v('rotate', 'XYZ'.index(axis)))
+        if axis == 'X':
+            R.rotateX(a)
+        elif axis == 'Y':
+            R.rotateY(a)
+        else:
+            R.rotateZ(a)
+    m = M()
+    m.makeIdentity()
+    for op in n['xform_order'].value():
+        if op == 'T':
+            m = T * m
+        else:
+            m = P * (S if op == 'S' else R) * P.inverse() * m
+    return m
+t = nuke.frame()
+g = nuke.thisGroup()
+n = g.input(2)
+m = nuke.math.Matrix4()
+m.makeIdentity()
+r = 1.0
+while n is not None:
+    p = n.input(1) if n.Class() == 'TransformGeo' else None
+    if p is not None and p.knob('world_matrix'):
+        w = nuke.math.Matrix4()
+        for i in range(16):
+            w[(i % 4) * 4 + i // 4] = p['world_matrix'].getValueAt(t, i)
+        m = m * w
+    if n.knob('transform') and n['transform'].Class() == 'Axis_Knob':
+        m = m * local(n, t)
+    if n.Class() == 'Sphere':
+        r = n['radius'].getValueAt(t)
+        break
+    n = n.input(0)
+"""
+def _dome_expression(ret):
+    return "[python -execlocal {%sret = %s}]" % (_DOME_WALK, ret)
+
+
+def _add_dome_nodes(hdri):
+    """Re-map the HDRI to what the camera sees on the skydome, when one is connected."""
+    dome = nuke.nodes.BlinkScript(name="DomeRemap", xpos=150, ypos=-360)
+    dome.setInput(0, hdri)
+    dome.setInput(1, hdri)
+    _load_kernel(dome, "EzAtmosDome.blink")
+    for row in range(3):
+        for col in range(4):
+            _link(dome, "dome_row%d" % row, _dome_expression("m.inverse()[%d]" % (col * 4 + row)), col)
+    for k in range(3):
+        # The camera's position, or the dome's centre without a camera.
+        _link(dome, "eye", _dome_expression(
+            "g.input(3)['world_matrix'].getValueAt(t, %d) if g.input(3) is not None and g.input(3).knob('world_matrix') "
+            "else m[%d]" % (3 + 4 * k, 12 + k)), k)
+    _link(dome, "radius", _dome_expression("r"))
+    pick = nuke.nodes.Switch(name="UseDome", xpos=0, ypos=-340)
+    pick.setInput(0, hdri)
+    pick.setInput(1, dome)
+    pick["which"].setExpression("[exists parent.input2]")
+    return pick
+
+
 def build():
     for layer in LAYERS:
         nuke.Layer(layer, ["%s.red" % layer, "%s.green" % layer, "%s.blue" % layer])
@@ -442,6 +533,10 @@ def build():
     group.begin()
     hdri = nuke.nodes.Input(name="hdri", xpos=0, ypos=-400)
     axis = nuke.nodes.Input(name="sun", xpos=600, ypos=-400)
+    nuke.nodes.Input(name="dome", xpos=150, ypos=-440)
+    nuke.nodes.Input(name="camera", xpos=300, ypos=-440)
+    # From here on the HDRI is the one seen on the skydome, when there is one.
+    hdri = _add_dome_nodes(hdri)
 
     # Light measured from a small copy of the HDRI.
     proxy = nuke.nodes.Reformat(name="LightProxy", type="to box", box_width=512, box_height=256,
