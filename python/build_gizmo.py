@@ -269,14 +269,14 @@ def _upscale(node, hdri, name):
         up = nuke.nodes.Reformat(name="%s_%s_up" % (name, half), type="to box", box_fixed=True,
                                  resize="distort", filter="Cubic")
         up.setInput(0, cut)
-        up["box_width"].setExpression("hdri.width")
-        up["box_height"].setExpression("hdri.height")
+        up["box_width"].setExpression("HDRISource.width")
+        up["box_height"].setExpression("HDRISource.height")
         trim = nuke.nodes.Crop(name="%s_%s_trim" % (name, half))
         trim.setInput(0, up)
         trim["box"].setExpression("0", 0)
-        trim["box"].setExpression(lo.replace("input", "hdri"), 1)
-        trim["box"].setExpression("hdri.width", 2)
-        trim["box"].setExpression(hi.replace("input", "hdri"), 3)
+        trim["box"].setExpression(lo.replace("input", "HDRISource"), 1)
+        trim["box"].setExpression("HDRISource.width", 2)
+        trim["box"].setExpression(hi.replace("input", "HDRISource"), 3)
         halves.append(trim)
     joined = nuke.nodes.Merge2(name="%s_full" % name, operation="plus")
     joined.setInput(0, halves[0])
@@ -441,6 +441,15 @@ def build():
 
     group.begin()
     hdri = nuke.nodes.Input(name="hdri", xpos=0, ypos=-400)
+    # With nothing in the hdri input, a black 2:1 lat-long stands in (for self-lit), so the
+    # passes keep a lat-long shape instead of taking the script's format.
+    blank = nuke.nodes.Constant(name="BlankHDRI", xpos=-150, ypos=-400)
+    blank["format"].setValue(nuke.addFormat("2048 1024 1 EzAtmos_latlong_2k"))
+    hdri_source = nuke.nodes.Switch(name="HDRISource", xpos=0, ypos=-370)
+    hdri_source.setInput(0, hdri)
+    hdri_source.setInput(1, blank)
+    hdri_source["which"].setExpression("![exists parent.input0]")
+    hdri = hdri_source
     axis = nuke.nodes.Input(name="sun", xpos=600, ypos=-400)
 
     # Light measured from a small copy of the HDRI.
@@ -474,8 +483,8 @@ def build():
     low = nuke.nodes.Reformat(name="ScatterResolution", type="to box", box_fixed=True, resize="distort",
                               xpos=-300, ypos=-240)
     low.setInput(0, hdri)
-    low["box_width"].setExpression("max(floor(hdri.width * parent.scatter_scale + 0.5), 4)")
-    low["box_height"].setExpression("max(2 * floor(hdri.height * parent.scatter_scale / 2 + 0.5), 2)")
+    low["box_width"].setExpression("max(floor(HDRISource.width * parent.scatter_scale + 0.5), 4)")
+    low["box_height"].setExpression("max(2 * floor(HDRISource.height * parent.scatter_scale / 2 + 0.5), 2)")
 
     # Self-lit: with no HDRI, the sky light comes from this atmosphere's own sky. A small
     # Rayleigh + Mie render (always in Atmosphere mode, no sky light, so no loop) is
