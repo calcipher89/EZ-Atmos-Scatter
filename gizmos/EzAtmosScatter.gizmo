@@ -9,12 +9,19 @@ add_layer {atmos_haze_sun atmos_haze_sun.red atmos_haze_sun.green atmos_haze_sun
 add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky.blue}
 Gizmo {
  name EzAtmosScatter1
+ onCreate "g = nuke.thisNode()\nif g\['bake_first'].value() == 0 and g\['bake_last'].value() == 0:\n    g\['bake_first'].setValue(int(nuke.root()\['first_frame'].value()))\n    g\['bake_last'].setValue(int(nuke.root()\['last_frame'].value()))\ng = nuke.thisNode()\nif g.knob('bake_valid') is not None:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        if g.knob(n):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    import os, re\n    r = g.node('BakeRead')\n    p = (nuke.filename(r) or '') if r is not None else ''\n    fr = int(g\['baked_first'].value())\n    m = re.search('(#+)|%(0?\[0-9]*)d', p)\n    if m is not None:\n        width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n        p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n    ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n    if bool(g\['bake_valid'].value()) != ok:\n        g\['bake_valid'].setValue(ok)\n    status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n    if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n        g\['label'].setValue(status)\n"
+ knobChanged "if nuke.thisKnob().name() in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio', 'use_baked', 'bake_file', 'baked_hash', 'baked_first', 'inputChange']:\n    g = nuke.thisNode()\n    if g.knob('bake_valid') is not None:\n        import hashlib\n        s = \[]\n        for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n            if g.knob(n):\n                s.append((n, g\[n].toScript()))\n        # Where the skydome sits shapes the output too.\n        d = g.node('DomeRemap')\n        if d is not None and g.input(2) is not None:\n            for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n                s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n        h = hashlib.md5(repr(s).encode()).hexdigest()\n        import os, re\n        r = g.node('BakeRead')\n        p = (nuke.filename(r) or '') if r is not None else ''\n        fr = int(g\['baked_first'].value())\n        m = re.search('(#+)|%(0?\[0-9]*)d', p)\n        if m is not None:\n            width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n            p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n        ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n        if bool(g\['bake_valid'].value()) != ok:\n            g\['bake_valid'].setValue(ok)\n        status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n        if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n            g\['label'].setValue(status)\n"
  tile_color 0x4a7fb5ff
- label "\[python -execlocal \{g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\n# Where the skydome sits shapes the output too.\nd = g.node('DomeRemap')\nif d is not None and g.input(2) is not None:\n    for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n        s.append((k, repr(d\['EzAtmosDome_' + k].value())))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nimport os\nf = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\nok = g\['baked_hash'].value() == h and os.path.exists(f)\nret = '' if not g\['use_baked'].value() or not g\['baked_hash'].value() else ('baked' if ok else 'bake out of date: live')\n\}]"
  selected true
  addUserKnob {20 ezatmos l EzAtmosScatter}
  addUserKnob {4 view_output l "view output" t "What the main rgba shows. Every pass is also written to its own atmos_* layer." M {"Scatter Preview Comp" Scatter "Sky (Rayleigh)" "Haze (Mie)" "Sky Light (Ambient)" Transmittance "Haze Color" "Haze Preview"}}
  addUserKnob {4 passes t "Atmosphere: every ray runs through the whole sky down to the ground, as seen from the camera. Depth Haze: Scatter, Sky, Haze, Sky Light and Transmittance describe the haze around the camera out to 'haze distance', with no ground and no horizon line, for hazing a plate. Composite either with plate * transmittance + scatter." M {Atmosphere "Depth Haze"}}
+ passes "Depth Haze"
+ addUserKnob {26 analyze_divider l Analyze}
+ addUserKnob {22 analyze t "Looks at the camera, skydome and HDRI and sets the node up for depth hazing this shot: passes, camera height, haze distance (to the horizon), self-lit and where the sun comes from. Shows what it set, with warnings about the sun." -STARTLINE T "\"\"\"Analyze: set EzAtmosScatter up for depth hazing the shot in its inputs.\n\nbuild_gizmo.py embeds this file in the gizmo's \"analyze\" button, so Nuke needs no Python\nmodule at run time. It runs once when pressed and sets plain knob values:\n\n- passes: Depth Haze;\n- camera height: the camera's height above 'ground height', in metres;\n- haze distance: the distance to the horizon seen from that height;\n- self-lit with no HDRI; with one, the sun from the HDRI when it has a clear sun.\n\nIt then shows what it set, with warnings for a sun beside or behind the camera, a high\nsun, or a skydome without a camera.\n\nKept to top-level code with plain loops: Nuke runs button scripts with separate locals,\nwhich functions and comprehensions can't see.\n\"\"\"\nimport math\nimport nuke\n\ng = nuke.thisNode()\ndone = \[]\nwarn = \[]\n\n# The camera, through any Dots or NoOps in between.\ncam = g.input(3)\nwhile cam is not None and not cam.knob(\"world_matrix\"):\n    cam = cam.input(0) if cam.inputs() else None\nscale = g\[\"scene_scale\"].value()\nfwd = None\nif cam is not None:\n    wm = cam\[\"world_matrix\"]\n    height = max((wm.getValue(7) - g\[\"ground_height\"].value()) * scale, 1.0)\n    g\[\"camera_height\"].setValue(round(height, 1))\n    done.append(\"Camera height %.0f m (camera %s, units to metres %g).\" % (height, cam.name(), scale))\n    fwd = \[-wm.getValue(2), -wm.getValue(6), -wm.getValue(10)]\nelse:\n    height = g\[\"camera_height\"].value()\n    warn.append(\"No camera connected: kept camera height %.0f m. Connect the shot camera to 'camera'.\" % height)\n\nradius = g\[\"planet_radius\"].value()\nhorizon = math.sqrt((radius + height / 1000.0) ** 2 - radius ** 2)\ng\[\"haze_distance\"].setValue(round(horizon, 1))\ndone.append(\"Haze distance %.1f km: the horizon seen from %.0f m.\" % (horizon, height))\ng\[\"passes\"].setValue(\"Depth Haze\")\ndone.append(\"Passes: Depth Haze.\")\n\nsun = None\nif g.input(0) is None:\n    g\[\"self_lit\"].setValue(True)\n    if g\[\"sun_from\"].value() == \"Auto (HDRI)\":\n        g\[\"sun_from\"].setValue(\"Manual\")\n    done.append(\"No HDRI: self-lit on, sun from Manual.\")\nelse:\n    g\[\"self_lit\"].setValue(False)\n    with g:\n        light = nuke.toNode(\"Light\")\n        found = \[]\n        for c in (\"red\", \"green\", \"blue\"):\n            found.append(light.sample(c, 0.5, 0.5))\n        peak = light.sample(\"alpha\", 0.5, 0.5)\n        sky = 0.2126 * light.sample(\"red\", 2.5, 0.5) + 0.7152 * light.sample(\"green\", 2.5, 0.5) + \\\n            0.0722 * light.sample(\"blue\", 2.5, 0.5)\n        clipped = light.sample(\"alpha\", 1.5, 0.5) > 0.5\n    ratio = peak / max(sky, 1e-6)\n    # A clipped sun (LDR or a capped HDRI) stands out less, but its direction is still good.\n    if any(found) and (ratio > 4.0 or (clipped and ratio > 1.5)):\n        g\[\"sun_from\"].setValue(\"Auto (HDRI)\")\n        g\[\"light_from_hdri\"].setValue(True)\n        sun = found\n        if clipped:\n            done.append(\"Clipped sun found in the HDRI: sun from Auto; its brightness is rebuilt, tune 'sun boost'.\")\n        else:\n            done.append(\"Sun found in the HDRI (%.0fx the sky): sun from Auto, light from HDRI.\" % ratio)\n    else:\n        warn.append(\"No clear sun in the HDRI (overcast?): set 'sun from' to Manual or Axis yourself.\")\n\nif g.input(2) is not None:\n    if cam is None:\n        warn.append(\"A skydome is connected but no camera: the dome is seen from its centre.\")\n    else:\n        done.append(\"Skydome connected: the HDRI is re-mapped as the camera sees the dome.\")\n\nif sun is None and g\[\"sun_from\"].value() == \"Manual\":\n    sun = list(g\[\"sun_direction\"].value())\nif sun is not None:\n    ln = math.sqrt(sun\[0] ** 2 + sun\[1] ** 2 + sun\[2] ** 2) or 1.0\n    elev = math.degrees(math.asin(max(-1.0, min(1.0, sun\[1] / ln))))\n    if fwd is not None:\n        az = math.degrees(math.atan2(sun\[0], -sun\[2]) - math.atan2(fwd\[0], -fwd\[2]))\n        az = (az + 180.0) % 360.0 - 180.0\n        done.append(\"Sun %.0f deg up, %.0f deg %s of where the camera looks.\" % (elev, abs(az), \"right\" if az > 0 else \"left\"))\n        if abs(az) > 60.0:\n            warn.append(\"The sun is beside or behind the camera: backlit haze and shafts need it in front.\")\n    if elev > 20.0:\n        warn.append(\"The sun is high (%.0f deg): sunrise and golden hour looks need it under 10 deg.\" % elev)\n\nsummary = \"\\n\".join(done + (\[\"\"] + \[\"Note: \" + w for w in warn] if warn else \[]))\nif nuke.GUI:\n    nuke.message(\"EzAtmosScatter analyze\\n\\n\" + summary)\nelse:\n    print(summary)\n"}
+ addUserKnob {7 scene_scale l "units to metres" t "Scene units to metres for analyze, e.g. 0.1 for decimetres, 0.01 for centimetres." R 0.001 100}
+ scene_scale 1
+ addUserKnob {7 ground_height l "ground height" t "Height of the ground in scene units, so analyze measures the camera height above it."}
  addUserKnob {26 sun_divider l Sun}
  addUserKnob {4 sun_from l "sun from" t "Auto finds the sun in the HDRI. Axis points at the Axis node plugged into the 'sun' input (its world position). Manual uses 'sun direction'." M {"Auto (HDRI)" Axis Manual}}
  addUserKnob {13 sun_direction l "sun direction" t "Direction towards the sun, +Y up. Used when 'sun from' is Manual."}
@@ -47,7 +54,7 @@ Gizmo {
  addUserKnob {26 depth_haze_divider l "Depth Haze"}
  addUserKnob {18 haze_density l "haze density (1/m)" t "Read only. How much the air and haze at camera height dim light per metre. For depth hazing a plate: T = exp(-haze_density * depth_in_metres), then plate * T + atmos_haze_color * (1 - T)." +DISABLED}
  haze_density {{"(rayleigh_coefficients.x * sky_amount * exp(-camera_height / 1000 / rayleigh_scale_height) + mie_coefficient * haze_amount / 0.9 * exp(-camera_height / 1000 / haze_height)) / 1000"} {"(rayleigh_coefficients.y * sky_amount * exp(-camera_height / 1000 / rayleigh_scale_height) + mie_coefficient * haze_amount / 0.9 * exp(-camera_height / 1000 / haze_height)) / 1000"} {"(rayleigh_coefficients.z * sky_amount * exp(-camera_height / 1000 / rayleigh_scale_height) + mie_coefficient * haze_amount / 0.9 * exp(-camera_height / 1000 / haze_height)) / 1000"}}
- addUserKnob {7 haze_distance l "haze distance (km)" t "How far the depth haze reaches: used by the Haze Preview view and, with passes set to Depth Haze, by every pass. The haze thins with height along each ray." R 0 50}
+ addUserKnob {7 haze_distance l "haze distance (km)" t "How far the depth haze reaches: used by the Haze Preview view and, with passes set to Depth Haze, by every pass. The haze thins with height along each ray." R 0 300}
  haze_distance 5
  addUserKnob {4 quality t "Number of samples along each ray. Draft is about 4x faster than High." M {Draft Normal High}}
  quality Normal
@@ -78,14 +85,16 @@ Gizmo {
  addUserKnob {20 advanced_end n -1}
  addUserKnob {26 bake_divider l Bake}
  addUserKnob {2 bake_file l "bake file" t "Leave empty for the default: <script dir>/ezatmos_cache/<script>/<node>/<script>_<node>.####.exr, or \$EZATMOS_CACHE_DIR/<script>/<node>/... when that is set. Fill in to override."}
- addUserKnob {4 bake_range l "bake range" t "Current Frame: one frame, held for the whole shot (a sun that doesn't move). Script Range: every frame, for an animated sun or knobs." M {"Current Frame (hold)" "Script Range"}}
- addUserKnob {22 bake_now l "bake now" t "Writes all layers to the bake file here and now." -STARTLINE T "g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\n# Where the skydome sits shapes the output too.\nd = g.node('DomeRemap')\nif d is not None and g.input(2) is not None:\n    for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n        s.append((k, repr(d\['EzAtmosDome_' + k].value())))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nif g\['bake_range'].getValue() == 0:\n    first = last = nuke.frame()\nelse:\n    first, last = int(nuke.root()\['first_frame'].value()), int(nuke.root()\['last_frame'].value())\nuse = g\['use_baked'].value()\ng\['use_baked'].setValue(False)\ntry:\n    with g:\n        nuke.execute(nuke.toNode('BakeWrite'), first, last)\n    g\['baked_hash'].setValue(h)\n    g\['baked_first'].setValue(first)\n    g\['baked_last'].setValue(last)\nfinally:\n    g\['use_baked'].setValue(use)\n"}
- addUserKnob {22 bake_farm_write l "make farm bake Write" t "Adds a Write below this node with the bake path, to render on the farm before the comp." -STARTLINE T "g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\n# Where the skydome sits shapes the output too.\nd = g.node('DomeRemap')\nif d is not None and g.input(2) is not None:\n    for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n        s.append((k, repr(d\['EzAtmosDome_' + k].value())))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nif g\['bake_range'].getValue() == 0:\n    first = last = nuke.frame()\nelse:\n    first, last = int(nuke.root()\['first_frame'].value()), int(nuke.root()\['last_frame'].value())\npath = nuke.filename(g.node('BakeRead'))\nwith nuke.root():\n    w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n    w\['create_directories'].setValue(True)\n    w\['use_limit'].setValue(True)\n    w\['first'].setValue(first)\n    w\['last'].setValue(last)\n    w.setInput(0, g)\n    w.setXYpos(g.xpos(), g.ypos() + 80)\ng\['baked_hash'].setValue(h)\ng\['baked_first'].setValue(first)\ng\['baked_last'].setValue(last)\nif nuke.GUI:\n    nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n"}
- addUserKnob {6 use_baked l "use baked" t "Read the bake instead of computing, but only while it exists and these settings still match it; otherwise the node computes live and its label says the bake is out of date." +STARTLINE}
+ addUserKnob {3 bake_first l "bake range" t "First frame to bake. Set first and last to the same frame to bake one frame, held for the whole shot (a sun that doesn't move)."}
+ addUserKnob {3 bake_last l "" t "Last frame to bake." -STARTLINE}
+ addUserKnob {22 bake_now l "bake now" t "Writes all layers to the bake file here and now." T "g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\n# Where the skydome sits shapes the output too.\nd = g.node('DomeRemap')\nif d is not None and g.input(2) is not None:\n    for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n        s.append((k, repr(d\['EzAtmosDome_' + k].value())))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nfirst, last = int(g\['bake_first'].value()), int(g\['bake_last'].value())\nif last < first:\n    first, last = last, first\nuse = g\['use_baked'].value()\ng\['use_baked'].setValue(False)\ntry:\n    with g:\n        nuke.execute(nuke.toNode('BakeWrite'), first, last)\n    g\['baked_hash'].setValue(h)\n    g\['baked_first'].setValue(first)\n    g\['baked_last'].setValue(last)\nfinally:\n    g\['use_baked'].setValue(use)\ng = nuke.thisNode()\nif g.knob('bake_valid') is not None:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        if g.knob(n):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    import os, re\n    r = g.node('BakeRead')\n    p = (nuke.filename(r) or '') if r is not None else ''\n    fr = int(g\['baked_first'].value())\n    m = re.search('(#+)|%(0?\[0-9]*)d', p)\n    if m is not None:\n        width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n        p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n    ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n    if bool(g\['bake_valid'].value()) != ok:\n        g\['bake_valid'].setValue(ok)\n    status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n    if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n        g\['label'].setValue(status)\n" +STARTLINE}
+ addUserKnob {22 bake_farm_write l "make farm bake Write" t "Adds a Write below this node with the bake path, to render on the farm before the comp." -STARTLINE T "g = nuke.thisNode()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\n# Where the skydome sits shapes the output too.\nd = g.node('DomeRemap')\nif d is not None and g.input(2) is not None:\n    for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n        s.append((k, repr(d\['EzAtmosDome_' + k].value())))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nfirst, last = int(g\['bake_first'].value()), int(g\['bake_last'].value())\nif last < first:\n    first, last = last, first\npath = nuke.filename(g.node('BakeRead'))\nwith nuke.root():\n    w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n    w\['create_directories'].setValue(True)\n    w\['use_limit'].setValue(True)\n    w\['first'].setValue(first)\n    w\['last'].setValue(last)\n    w.setInput(0, g)\n    w.setXYpos(g.xpos(), g.ypos() + 80)\ng\['baked_hash'].setValue(h)\ng\['baked_first'].setValue(first)\ng\['baked_last'].setValue(last)\ng\['bake_valid'].setValue(True)\nif g\['label'].value() in ('', 'bake out of date: live'):\n    g\['label'].setValue('baked')\nif nuke.GUI:\n    nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n"}
+ addUserKnob {6 use_baked l "use baked" t "Read the bake instead of computing, but only while it exists and these settings still match it; otherwise the node computes live and its label says the bake is out of date. The check runs when a knob or input of this node changes and when the script opens; after moving the skydome upstream, bake again." +STARTLINE}
  use_baked true
  addUserKnob {1 baked_hash l "baked hash" +INVISIBLE}
  addUserKnob {3 baked_first +INVISIBLE}
  addUserKnob {3 baked_last +INVISIBLE}
+ addUserKnob {6 bake_valid l "bake valid" -STARTLINE +INVISIBLE}
 }
  Input {
   inputs 0
@@ -128,25 +137,25 @@ Gizmo {
   xpos 0
   ypos -370
  }
-set N333af00 [stack 0]
-push $N333af00
+set N2e95af00 [stack 0]
+push $N2e95af00
  BlinkScript {
   inputs 2
   recompileCount 2
   KernelDescription "3 \"EzAtmosDome\" iterate pixelWise b67eb6c2c3c5c033104968b81914a98e331d1e695630644a598eb061130f4605 3 \"ref\" Read Point \"src\" Read Random \"dst\" Write Point 5 \"dome_row0\" Float 4 AACAPwAAAAAAAAAAAAAAAA== \"dome_row1\" Float 4 AAAAAAAAgD8AAAAAAAAAAA== \"dome_row2\" Float 4 AAAAAAAAAAAAAIA/AAAAAA== \"eye\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"radius\" Float 1 AACAPw== 5 \"domeRow0\" 4 1 Default \"domeRow1\" 4 1 Default \"domeRow2\" 4 1 Default \"eye\" 3 1 Default \"radius\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
   kernelSource "// EzAtmosDome: re-maps an HDRI textured on a skydome Sphere to the lat-long seen from the\n// camera, in EzAtmosScatter's convention (centre column looks down -Z, top row up).\n//\n// For each output direction it follows the ray from the camera to the dome (the Sphere's\n// local space, after all of its transforms; `domeRow0..2` are the rows of the inverse of its\n// world matrix), and reads the HDRI where the ray hits, with Nuke's Sphere UV mapping. So a\n// dome that is rotated, moved off the camera or squashed shows the HDRI exactly where a\n// ScanlineRender of the dome does.\n\nkernel EzAtmosDome : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> ref;\n  Image<eRead, eAccessRandom, eEdgeClamped> src;\n  Image<eWrite> dst;\n\nparam:\n  float4 domeRow0;\n  float4 domeRow1;\n  float4 domeRow2;\n  float3 eye;\n  float radius;\n\nlocal:\n  float pi;\n\n  void define()\n  \{\n    defineParam(domeRow0, \"dome_row0\", float4(1.0f, 0.0f, 0.0f, 0.0f));\n    defineParam(domeRow1, \"dome_row1\", float4(0.0f, 1.0f, 0.0f, 0.0f));\n    defineParam(domeRow2, \"dome_row2\", float4(0.0f, 0.0f, 1.0f, 0.0f));\n    defineParam(eye, \"eye\", float3(0.0f, 0.0f, 0.0f));\n    defineParam(radius, \"radius\", 1.0f);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n  \}\n\n  float3 toLocal(float3 p, float w)\n  \{\n    float4 q = float4(p.x, p.y, p.z, w);\n    return float3(dot(domeRow0, q), dot(domeRow1, q), dot(domeRow2, q));\n  \}\n\n  float4 sampleWrapped(float x, float y)\n  \{\n    // Wrap around the seam so the two edges blend.\n    float w = src.bounds.width();\n    float fx = x - floor((x - src.bounds.x1) / w) * w;\n    return bilinear(src, fx, y);\n  \}\n\n  void process(int2 pos)\n  \{\n    float u = (pos.x - ref.bounds.x1 + 0.5f) / ref.bounds.width();\n    float v = (pos.y - ref.bounds.y1 + 0.5f) / ref.bounds.height();\n    float lon = (u - 0.5f) * 2.0f * pi;\n    float lat = (v - 0.5f) * pi;\n    float3 d = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n\n    float3 o = toLocal(eye, 1.0f);\n    float3 dl = toLocal(d, 0.0f);\n    float a = dot(dl, dl);\n    float b = 2.0f * dot(o, dl);\n    float c = dot(o, o) - radius * radius;\n    float disc = b * b - 4.0f * a * c;\n    if (disc < 0.0f || a <= 0.0f) \{\n      dst() = float4(0.0f);\n      return;\n    \}\n    float t = (-b + sqrt(disc)) / (2.0f * a);\n    if (t <= 0.0f) \{\n      dst() = float4(0.0f);\n      return;\n    \}\n    float3 p = normalize(o + dl * t);\n    // Nuke's Sphere UVs: u = 0.5 looks down -Z, u = 0.75 down -X; v = 1 at the top.\n    float su = 0.5f + atan2(-p.x, -p.z) / (2.0f * pi);\n    float sv = 0.5f + asin(clamp(p.y, -1.0f, 1.0f)) / pi;\n    dst() = sampleWrapped(src.bounds.x1 + su * src.bounds.width() - 0.5f,\n                          src.bounds.y1 + sv * src.bounds.height() - 0.5f);\n  \}\n\};\n"
   rebuild ""
-  EzAtmosDome_dome_row0 {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[0]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[4]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[8]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[12]\}]"}}
-  EzAtmosDome_dome_row1 {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[1]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[5]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[9]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[13]\}]"}}
-  EzAtmosDome_dome_row2 {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[2]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[6]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[10]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = m.inverse()\[14]\}]"}}
-  EzAtmosDome_eye {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = g.input(3)\['world_matrix'].getValueAt(t, 3) if g.input(3) is not None and g.input(3).knob('world_matrix') else m\[12]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = g.input(3)\['world_matrix'].getValueAt(t, 7) if g.input(3) is not None and g.input(3).knob('world_matrix') else m\[13]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = g.input(3)\['world_matrix'].getValueAt(t, 11) if g.input(3) is not None and g.input(3).knob('world_matrix') else m\[14]\}]"}}
-  EzAtmosDome_radius {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\nret = r\}]"}}
+  EzAtmosDome_dome_row0 {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[0]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[4]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[8]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[12]\}]"}}
+  EzAtmosDome_dome_row1 {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[1]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[5]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[9]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[13]\}]"}}
+  EzAtmosDome_dome_row2 {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[2]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[6]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[10]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[14]\}]"}}
+  EzAtmosDome_eye {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(t, 3) if c is not None else m\[12]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(t, 7) if c is not None else m\[13]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(t, 11) if c is not None else m\[14]\}]"}}
+  EzAtmosDome_radius {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = r\}]"}}
   rebuild_finalise ""
   name DomeRemap
   xpos 150
   ypos -360
  }
-push $N333af00
+push $N2e95af00
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -154,7 +163,7 @@ push $N333af00
   xpos 0
   ypos -340
  }
-set N333c300 [stack 0]
+set N2e95c300 [stack 0]
  Reformat {
   type "to box"
   box_width 256
@@ -179,9 +188,9 @@ set N333c300 [stack 0]
   xpos 450
   ypos -180
  }
-set N3379400 [stack 0]
-push $N3379400
-push $N333c300
+set N2e999400 [stack 0]
+push $N2e999400
+push $N2e95c300
  Reformat {
   type "to box"
   box_width 512
@@ -193,8 +202,8 @@ push $N333c300
   xpos 300
   ypos -300
  }
-set N3341800 [stack 0]
-push $N3341800
+set N2e961800 [stack 0]
+push $N2e961800
  Reformat {
   type "to box"
   box_width 4
@@ -205,7 +214,7 @@ push $N3341800
   xpos 300
   ypos -240
  }
-set N3378000 [stack 0]
+set N2e998000 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -220,8 +229,8 @@ set N3378000 [stack 0]
   xpos 300
   ypos -180
  }
-set N3378800 [stack 0]
-push $N333c300
+set N2e998800 [stack 0]
+push $N2e95c300
  Reformat {
   type "to box"
   box_width 512
@@ -232,7 +241,7 @@ push $N333c300
   xpos 600
   ypos -300
  }
-set N33a2000 [stack 0]
+set N2e9c2000 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -243,7 +252,7 @@ set N33a2000 [stack 0]
   AtmosScatter_depth_haze {{0}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
-  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
@@ -269,9 +278,9 @@ set N33a2000 [stack 0]
   xpos 720
   ypos -240
  }
-push $N3379400
-push $N3378800
-push $N33a2000
+push $N2e999400
+push $N2e998800
+push $N2e9c2000
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -282,7 +291,7 @@ push $N33a2000
   AtmosScatter_depth_haze {{0}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
-  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
@@ -316,7 +325,7 @@ push $N33a2000
   xpos 600
   ypos -200
  }
-push $N3378000
+push $N2e998000
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -331,7 +340,7 @@ push $N3378000
   xpos 600
   ypos -160
  }
-push $N3378800
+push $N2e998800
  Switch {
   inputs 2
   which {{parent.self_lit}}
@@ -339,8 +348,8 @@ push $N3378800
   xpos 450
   ypos -120
  }
-set N333c800 [stack 0]
-push $N333c300
+set N2e95c800 [stack 0]
+push $N2e95c300
  Reformat {
   type "to box"
   box_width {{"max(floor(HDRISource.width * parent.scatter_scale + 0.5), 4)"}}
@@ -351,7 +360,7 @@ push $N333c300
   xpos -300
   ypos -240
  }
-set N3379800 [stack 0]
+set N2e999800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -362,7 +371,7 @@ set N3379800 [stack 0]
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
-  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
@@ -388,7 +397,7 @@ set N3379800 [stack 0]
   xpos 600
   ypos -100
  }
-set N47b70800 [stack 0]
+set N4262800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -412,7 +421,7 @@ set N47b70800 [stack 0]
   xpos 600
   ypos 90
  }
-push $N47b70800
+push $N4262800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -442,7 +451,7 @@ push $N47b70800
   xpos 600
   ypos 120
  }
-push $N47b70800
+push $N4262800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -450,9 +459,9 @@ push $N47b70800
   xpos 600
   ypos 150
  }
-push $N3379400
-push $N3378800
-push $N3379800
+push $N2e999400
+push $N2e998800
+push $N2e999800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -463,7 +472,7 @@ push $N3379800
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
-  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
@@ -489,7 +498,7 @@ push $N3379800
   xpos 450
   ypos -100
  }
-set N47b3e000 [stack 0]
+set N422e000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -513,7 +522,7 @@ set N47b3e000 [stack 0]
   xpos 450
   ypos 90
  }
-push $N47b3e000
+push $N422e000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -543,7 +552,7 @@ push $N47b3e000
   xpos 450
   ypos 120
  }
-push $N47b3e000
+push $N422e000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -551,9 +560,9 @@ push $N47b3e000
   xpos 450
   ypos 150
  }
-push $N3379400
-push $N333c800
-push $N3379800
+push $N2e999400
+push $N2e95c800
+push $N2e999800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -564,7 +573,7 @@ push $N3379800
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
-  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
@@ -590,7 +599,7 @@ push $N3379800
   xpos 300
   ypos -100
  }
-set N47ac1800 [stack 0]
+set N41b1800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -614,7 +623,7 @@ set N47ac1800 [stack 0]
   xpos 300
   ypos 90
  }
-push $N47ac1800
+push $N41b1800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -644,7 +653,7 @@ push $N47ac1800
   xpos 300
   ypos 120
  }
-push $N47ac1800
+push $N41b1800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -652,10 +661,10 @@ push $N47ac1800
   xpos 300
   ypos 150
  }
-set N47ae8500 [stack 0]
-push $N3379400
-push $N3378800
-push $N3379800
+set N41d8500 [stack 0]
+push $N2e999400
+push $N2e998800
+push $N2e999800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -666,7 +675,7 @@ push $N3379800
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
-  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
@@ -692,7 +701,7 @@ push $N3379800
   xpos 0
   ypos -100
  }
-set N47a4a800 [stack 0]
+set N413c800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -716,7 +725,7 @@ set N47a4a800 [stack 0]
   xpos 0
   ypos 90
  }
-push $N47a4a800
+push $N413c800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -746,7 +755,7 @@ push $N47a4a800
   xpos 0
   ypos 120
  }
-push $N47a4a800
+push $N413c800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -754,10 +763,10 @@ push $N47a4a800
   xpos 0
   ypos 150
  }
-set N333d700 [stack 0]
-push $N3379400
-push $N333c800
-push $N3379800
+set N2e95d700 [stack 0]
+push $N2e999400
+push $N2e95c800
+push $N2e999800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -768,7 +777,7 @@ push $N3379800
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
-  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
@@ -794,7 +803,7 @@ push $N3379800
   xpos 150
   ypos -100
  }
-set N47a8b000 [stack 0]
+set N417b000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -818,7 +827,7 @@ set N47a8b000 [stack 0]
   xpos 150
   ypos 90
  }
-push $N47a8b000
+push $N417b000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -848,7 +857,7 @@ push $N47a8b000
   xpos 150
   ypos 120
  }
-push $N47a8b000
+push $N417b000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -856,10 +865,10 @@ push $N47a8b000
   xpos 150
   ypos 150
  }
-set N47ae8000 [stack 0]
-push $N3379400
-push $N3378800
-push $N3379800
+set N41d8000 [stack 0]
+push $N2e999400
+push $N2e998800
+push $N2e999800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -870,7 +879,7 @@ push $N3379800
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
-  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
@@ -896,7 +905,7 @@ push $N3379800
   xpos -150
   ypos -100
  }
-set N47a16000 [stack 0]
+set N4106000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -920,7 +929,7 @@ set N47a16000 [stack 0]
   xpos -150
   ypos 90
  }
-push $N47a16000
+push $N4106000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -950,7 +959,7 @@ push $N47a16000
   xpos -150
   ypos 120
  }
-push $N47a16000
+push $N4106000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -958,10 +967,10 @@ push $N47a16000
   xpos -150
   ypos 150
  }
-set N333d200 [stack 0]
-push $N3379400
-push $N3378800
-push $N3379800
+set N2e95d200 [stack 0]
+push $N2e999400
+push $N2e998800
+push $N2e999800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -972,7 +981,7 @@ push $N3379800
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
-  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
@@ -998,7 +1007,7 @@ push $N3379800
   xpos -300
   ypos -100
  }
-set N33a3800 [stack 0]
+set N2e9c3800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1022,7 +1031,7 @@ set N33a3800 [stack 0]
   xpos -300
   ypos 90
  }
-push $N33a3800
+push $N2e9c3800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1052,7 +1061,7 @@ push $N33a3800
   xpos -300
   ypos 120
  }
-push $N33a3800
+push $N2e9c3800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1060,10 +1069,10 @@ push $N33a3800
   xpos -300
   ypos 150
  }
-set N333cd00 [stack 0]
-push $N47ae8000
-push $N333d200
-push $N333cd00
+set N2e95cd00 [stack 0]
+push $N41d8000
+push $N2e95d200
+push $N2e95cd00
  Merge2 {
   inputs 2
   operation plus
@@ -1077,10 +1086,10 @@ push $N333cd00
   xpos -300
   ypos 60
  }
-set N47bebc00 [stack 0]
-push $N47bebc00
-push $N333d700
-push $N333c300
+set N42dbc00 [stack 0]
+push $N42dbc00
+push $N2e95d700
+push $N2e95c300
  Merge2 {
   inputs 2
   operation multiply
@@ -1096,10 +1105,10 @@ push $N333c300
   xpos 0
   ypos 60
  }
-set N47c28400 [stack 0]
-push $N3379400
-push $N3378800
-push $N3379800
+set N4318400 [stack 0]
+push $N2e999400
+push $N2e998800
+push $N2e999800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1110,7 +1119,7 @@ push $N3379800
   AtmosScatter_depth_haze {{parent.passes}}
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
-  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.3) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.7) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (parent.input1.world_matrix.11) : parent.sun_direction.z"}}
+  AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
   AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
@@ -1136,7 +1145,7 @@ push $N3379800
   xpos 750
   ypos -100
  }
-set N47baf000 [stack 0]
+set N429f000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1160,7 +1169,7 @@ set N47baf000 [stack 0]
   xpos 750
   ypos 90
  }
-push $N47baf000
+push $N429f000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1190,7 +1199,7 @@ push $N47baf000
   xpos 750
   ypos 120
  }
-push $N47baf000
+push $N429f000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1198,13 +1207,13 @@ push $N47baf000
   xpos 750
   ypos 150
  }
-set N47ae9400 [stack 0]
+set N41d9400 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 300
  }
-push $N47ae8500
+push $N41d8500
  Merge2 {
   inputs 2
   operation multiply
@@ -1213,8 +1222,8 @@ push $N47ae8500
   xpos 300
   ypos 60
  }
-push $N47ae9400
-push $N47c28400
+push $N41d9400
+push $N4318400
  Merge2 {
   inputs 2
   operation multiply
@@ -1237,13 +1246,13 @@ push $N47c28400
   xpos 150
   ypos 100
  }
-push $N47ae8500
-push $N333d700
-push $N47ae8000
-push $N333d200
-push $N333cd00
-push $N47bebc00
-push $N47c28400
+push $N41d8500
+push $N2e95d700
+push $N41d8000
+push $N2e95d200
+push $N2e95cd00
+push $N42dbc00
+push $N4318400
  Switch {
   inputs 8
   which {{parent.view_output}}
@@ -1251,7 +1260,7 @@ push $N47c28400
   xpos 0
   ypos 160
  }
-push $N333c300
+push $N2e95c300
  Copy {
   inputs 2
   channels rgb
@@ -1363,7 +1372,7 @@ add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky
   xpos 0
   ypos 720
  }
-set N47c7d800 [stack 0]
+set N436d800 [stack 0]
  Write {
   channels all
   file "\[if \{\[value parent.bake_file] != \"\"\} \{value parent.bake_file\} \{set d \[if \{\"\[python \{__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''\}]\" != \"\"\} \{set e \"\[python \{__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''\}]\"\} \{set e \[file dirname \[value root.name]]/ezatmos_cache\}]/\[file rootname \[file tail \[value root.name]]]/\[value parent.name]/\[file rootname \[file tail \[value root.name]]]_\[value parent.name].####.exr\}]"
@@ -1393,10 +1402,10 @@ set N47c7d800 [stack 0]
   xpos 200
   ypos 840
  }
-push $N47c7d800
+push $N436d800
  Switch {
   inputs 2
-  which {{"\[python -execlocal \{g = nuke.thisGroup()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\n# Where the skydome sits shapes the output too.\nd = g.node('DomeRemap')\nif d is not None and g.input(2) is not None:\n    for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n        s.append((k, repr(d\['EzAtmosDome_' + k].value())))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nimport os\nf = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\nret = 1 if g\['use_baked'].value() and g\['baked_hash'].value() == h and os.path.exists(f) else 0\n\}]"}}
+  which {{"parent.use_baked && parent.bake_valid"}}
   name UseBake
   xpos 0
   ypos 840
