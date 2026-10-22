@@ -132,6 +132,21 @@ upper hemisphere as the sky.
 
 Lat-long convention: the centre column looks down -Z, the top row is straight up.
 
+### Skydome
+
+When the HDRI is shown on a skydome in the comp (a Sphere, often under TransformGeos,
+rendered with ScanlineRender), plug the dome geometry into the **dome** input and the shot
+camera into **camera**. The node follows the chain from the dome input up to the Sphere,
+TransformGeos with their axis inputs included, and combines every transform at the frame
+being rendered. It then rebuilds the HDRI as seen from the camera: for each direction, where
+the ray from the camera hits the moved, rotated or squashed dome, using the Sphere's own
+UV mapping. The light, sun and haze then line up with the dome in the comp, and follow it
+when it is animated. Without a camera the dome's centre is used. *hdri rotation* still
+adds on top, so leave it at 0. Moving the dome marks a bake out of date.
+
+Checked against a ScanlineRender of a dome rotated, moved and scaled in Y twice (Sphere
+and TransformGeo) and seen from an offset camera: the HDRI lands within one pixel at 2K.
+
 ### Speed
 
 The haze is smooth, so it is computed at a reduced size and scaled back up, with the sky
