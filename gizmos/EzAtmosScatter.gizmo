@@ -108,14 +108,28 @@ Gizmo {
   ypos -440
   number 3
  }
+ Constant {
+  inputs 0
+  format "2048 1024 0 0 2048 1024 1 EzAtmos_latlong_2k"
+  name BlankHDRI
+  xpos -150
+  ypos -400
+ }
  Input {
   inputs 0
   name hdri
   xpos 0
   ypos -400
  }
-set N7c580000 [stack 0]
-push $N7c580000
+ Switch {
+  inputs 2
+  which {{"!\[exists parent.input0]"}}
+  name HDRISource
+  xpos 0
+  ypos -370
+ }
+set N3301af00 [stack 0]
+push $N3301af00
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -132,7 +146,7 @@ push $N7c580000
   xpos 150
   ypos -360
  }
-push $N7c580000
+push $N3301af00
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -140,7 +154,7 @@ push $N7c580000
   xpos 0
   ypos -340
  }
-set N7c57b900 [stack 0]
+set N3301c300 [stack 0]
  Reformat {
   type "to box"
   box_width 256
@@ -165,9 +179,9 @@ set N7c57b900 [stack 0]
   xpos 450
   ypos -180
  }
-set N7c5ab000 [stack 0]
-push $N7c5ab000
-push $N7c57b900
+set N33059400 [stack 0]
+push $N33059400
+push $N3301c300
  Reformat {
   type "to box"
   box_width 512
@@ -179,8 +193,8 @@ push $N7c57b900
   xpos 300
   ypos -300
  }
-set N7c581400 [stack 0]
-push $N7c581400
+set N33021800 [stack 0]
+push $N33021800
  Reformat {
   type "to box"
   box_width 4
@@ -191,7 +205,7 @@ push $N7c581400
   xpos 300
   ypos -240
  }
-set N7c581c00 [stack 0]
+set N33058000 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -206,8 +220,8 @@ set N7c581c00 [stack 0]
   xpos 300
   ypos -180
  }
-set N7c5aa400 [stack 0]
-push $N7c57b900
+set N33058800 [stack 0]
+push $N3301c300
  Reformat {
   type "to box"
   box_width 512
@@ -218,7 +232,7 @@ push $N7c57b900
   xpos 600
   ypos -300
  }
-set N7c5abc00 [stack 0]
+set N33082000 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -255,9 +269,9 @@ set N7c5abc00 [stack 0]
   xpos 720
   ypos -240
  }
-push $N7c5ab000
-push $N7c5aa400
-push $N7c5abc00
+push $N33059400
+push $N33058800
+push $N33082000
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -302,7 +316,7 @@ push $N7c5abc00
   xpos 600
   ypos -200
  }
-push $N7c581c00
+push $N33058000
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -317,7 +331,7 @@ push $N7c581c00
   xpos 600
   ypos -160
  }
-push $N7c5aa400
+push $N33058800
  Switch {
   inputs 2
   which {{parent.self_lit}}
@@ -325,19 +339,19 @@ push $N7c5aa400
   xpos 450
   ypos -120
  }
-set N7c57be00 [stack 0]
-push $N7c57b900
+set N3301c800 [stack 0]
+push $N3301c300
  Reformat {
   type "to box"
-  box_width {{"max(floor(hdri.width * parent.scatter_scale + 0.5), 4)"}}
-  box_height {{"max(2 * floor(hdri.height * parent.scatter_scale / 2 + 0.5), 2)"}}
+  box_width {{"max(floor(HDRISource.width * parent.scatter_scale + 0.5), 4)"}}
+  box_height {{"max(2 * floor(HDRISource.height * parent.scatter_scale / 2 + 0.5), 2)"}}
   box_fixed true
   resize distort
   name ScatterResolution
   xpos -300
   ypos -240
  }
-set N7c5ab400 [stack 0]
+set N33059800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -374,7 +388,7 @@ set N7c5ab400 [stack 0]
   xpos 600
   ypos -100
  }
-set N41168400 [stack 0]
+set N7f60800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -384,8 +398,8 @@ set N41168400 [stack 0]
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name haze_sky_ground_up
@@ -393,12 +407,12 @@ set N41168400 [stack 0]
   ypos 60
  }
  Crop {
-  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_sky_ground_trim
   xpos 600
   ypos 90
  }
-push $N41168400
+push $N7f60800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -408,8 +422,8 @@ push $N41168400
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name haze_sky_sky_up
@@ -417,7 +431,7 @@ push $N41168400
   ypos -30
  }
  Crop {
-  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_sky_sky_trim
   xpos 600
  }
@@ -428,7 +442,7 @@ push $N41168400
   xpos 600
   ypos 120
  }
-push $N41168400
+push $N7f60800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -436,9 +450,9 @@ push $N41168400
   xpos 600
   ypos 150
  }
-push $N7c5ab000
-push $N7c5aa400
-push $N7c5ab400
+push $N33059400
+push $N33058800
+push $N33059800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -475,7 +489,7 @@ push $N7c5ab400
   xpos 450
   ypos -100
  }
-set N41101c00 [stack 0]
+set N7f2e000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -485,8 +499,8 @@ set N41101c00 [stack 0]
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name haze_sun_ground_up
@@ -494,12 +508,12 @@ set N41101c00 [stack 0]
   ypos 60
  }
  Crop {
-  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_sun_ground_trim
   xpos 450
   ypos 90
  }
-push $N41101c00
+push $N7f2e000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -509,8 +523,8 @@ push $N41101c00
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name haze_sun_sky_up
@@ -518,7 +532,7 @@ push $N41101c00
   ypos -30
  }
  Crop {
-  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_sun_sky_trim
   xpos 450
  }
@@ -529,7 +543,7 @@ push $N41101c00
   xpos 450
   ypos 120
  }
-push $N41101c00
+push $N7f2e000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -537,9 +551,9 @@ push $N41101c00
   xpos 450
   ypos 150
  }
-push $N7c5ab000
-push $N7c57be00
-push $N7c5ab400
+push $N33059400
+push $N3301c800
+push $N33059800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -576,7 +590,7 @@ push $N7c5ab400
   xpos 300
   ypos -100
  }
-set N410bd400 [stack 0]
+set N7eb1800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -586,8 +600,8 @@ set N410bd400 [stack 0]
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name haze_color_ground_up
@@ -595,12 +609,12 @@ set N410bd400 [stack 0]
   ypos 60
  }
  Crop {
-  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_color_ground_trim
   xpos 300
   ypos 90
  }
-push $N410bd400
+push $N7eb1800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -610,8 +624,8 @@ push $N410bd400
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name haze_color_sky_up
@@ -619,7 +633,7 @@ push $N410bd400
   ypos -30
  }
  Crop {
-  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_color_sky_trim
   xpos 300
  }
@@ -630,7 +644,7 @@ push $N410bd400
   xpos 300
   ypos 120
  }
-push $N410bd400
+push $N7eb1800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -638,10 +652,10 @@ push $N410bd400
   xpos 300
   ypos 150
  }
-set N7c57d700 [stack 0]
-push $N7c5ab000
-push $N7c5aa400
-push $N7c5ab400
+set N7ed8500 [stack 0]
+push $N33059400
+push $N33058800
+push $N33059800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -678,7 +692,7 @@ push $N7c5ab400
   xpos 0
   ypos -100
  }
-set N41044400 [stack 0]
+set N7e3a800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -688,8 +702,8 @@ set N41044400 [stack 0]
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name transmittance_ground_up
@@ -697,12 +711,12 @@ set N41044400 [stack 0]
   ypos 60
  }
  Crop {
-  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name transmittance_ground_trim
   xpos 0
   ypos 90
  }
-push $N41044400
+push $N7e3a800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -712,8 +726,8 @@ push $N41044400
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name transmittance_sky_up
@@ -721,7 +735,7 @@ push $N41044400
   ypos -30
  }
  Crop {
-  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name transmittance_sky_trim
   xpos 0
  }
@@ -732,7 +746,7 @@ push $N41044400
   xpos 0
   ypos 120
  }
-push $N41044400
+push $N7e3a800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -740,10 +754,10 @@ push $N41044400
   xpos 0
   ypos 150
  }
-set N7c57cd00 [stack 0]
-push $N7c5ab000
-push $N7c57be00
-push $N7c5ab400
+set N3301d700 [stack 0]
+push $N33059400
+push $N3301c800
+push $N33059800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -780,7 +794,7 @@ push $N7c5ab400
   xpos 150
   ypos -100
  }
-set N4107ec00 [stack 0]
+set N7e7b000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -790,8 +804,8 @@ set N4107ec00 [stack 0]
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name ambient_ground_up
@@ -799,12 +813,12 @@ set N4107ec00 [stack 0]
   ypos 60
  }
  Crop {
-  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name ambient_ground_trim
   xpos 150
   ypos 90
  }
-push $N4107ec00
+push $N7e7b000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -814,8 +828,8 @@ push $N4107ec00
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name ambient_sky_up
@@ -823,7 +837,7 @@ push $N4107ec00
   ypos -30
  }
  Crop {
-  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name ambient_sky_trim
   xpos 150
  }
@@ -834,7 +848,7 @@ push $N4107ec00
   xpos 150
   ypos 120
  }
-push $N4107ec00
+push $N7e7b000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -842,10 +856,10 @@ push $N4107ec00
   xpos 150
   ypos 150
  }
-set N7c57d200 [stack 0]
-push $N7c5ab000
-push $N7c5aa400
-push $N7c5ab400
+set N7ed8000 [stack 0]
+push $N33059400
+push $N33058800
+push $N33059800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -882,7 +896,7 @@ push $N7c5ab400
   xpos -150
   ypos -100
  }
-set N7c62bc00 [stack 0]
+set N7e06000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -892,8 +906,8 @@ set N7c62bc00 [stack 0]
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name mie_ground_up
@@ -901,12 +915,12 @@ set N7c62bc00 [stack 0]
   ypos 60
  }
  Crop {
-  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name mie_ground_trim
   xpos -150
   ypos 90
  }
-push $N7c62bc00
+push $N7e06000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -916,8 +930,8 @@ push $N7c62bc00
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name mie_sky_up
@@ -925,7 +939,7 @@ push $N7c62bc00
   ypos -30
  }
  Crop {
-  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name mie_sky_trim
   xpos -150
  }
@@ -936,7 +950,7 @@ push $N7c62bc00
   xpos -150
   ypos 120
  }
-push $N7c62bc00
+push $N7e06000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -944,10 +958,10 @@ push $N7c62bc00
   xpos -150
   ypos 150
  }
-set N7c57c800 [stack 0]
-push $N7c5ab000
-push $N7c5aa400
-push $N7c5ab400
+set N3301d200 [stack 0]
+push $N33059400
+push $N33058800
+push $N33059800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -984,7 +998,7 @@ push $N7c5ab400
   xpos -300
   ypos -100
  }
-set N7c5d7400 [stack 0]
+set N33083800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -994,8 +1008,8 @@ set N7c5d7400 [stack 0]
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name rayleigh_ground_up
@@ -1003,12 +1017,12 @@ set N7c5d7400 [stack 0]
   ypos 60
  }
  Crop {
-  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name rayleigh_ground_trim
   xpos -300
   ypos 90
  }
-push $N7c5d7400
+push $N33083800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1018,8 +1032,8 @@ push $N7c5d7400
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name rayleigh_sky_up
@@ -1027,7 +1041,7 @@ push $N7c5d7400
   ypos -30
  }
  Crop {
-  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name rayleigh_sky_trim
   xpos -300
  }
@@ -1038,7 +1052,7 @@ push $N7c5d7400
   xpos -300
   ypos 120
  }
-push $N7c5d7400
+push $N33083800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1046,10 +1060,10 @@ push $N7c5d7400
   xpos -300
   ypos 150
  }
-set N7c57c300 [stack 0]
-push $N7c57d200
-push $N7c57c800
-push $N7c57c300
+set N3301cd00 [stack 0]
+push $N7ed8000
+push $N3301d200
+push $N3301cd00
  Merge2 {
   inputs 2
   operation plus
@@ -1063,10 +1077,10 @@ push $N7c57c300
   xpos -300
   ypos 60
  }
-set N411e5800 [stack 0]
-push $N411e5800
-push $N7c57cd00
-push $N7c57b900
+set N7fdbc00 [stack 0]
+push $N7fdbc00
+push $N3301d700
+push $N3301c300
  Merge2 {
   inputs 2
   operation multiply
@@ -1082,10 +1096,10 @@ push $N7c57b900
   xpos 0
   ypos 60
  }
-set N41228000 [stack 0]
-push $N7c5ab000
-push $N7c5aa400
-push $N7c5ab400
+set N8018400 [stack 0]
+push $N33059400
+push $N33058800
+push $N33059800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1122,7 +1136,7 @@ push $N7c5ab400
   xpos 750
   ypos -100
  }
-set N411a2c00 [stack 0]
+set N7f9f000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1132,8 +1146,8 @@ set N411a2c00 [stack 0]
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name haze_transmittance_ground_up
@@ -1141,12 +1155,12 @@ set N411a2c00 [stack 0]
   ypos 60
  }
  Crop {
-  box {{0} {0} {hdri.width} {"hdri.height / 2"}}
+  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_transmittance_ground_trim
   xpos 750
   ypos 90
  }
-push $N411a2c00
+push $N7f9f000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1156,8 +1170,8 @@ push $N411a2c00
  }
  Reformat {
   type "to box"
-  box_width {{hdri.width}}
-  box_height {{hdri.height}}
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
   box_fixed true
   resize distort
   name haze_transmittance_sky_up
@@ -1165,7 +1179,7 @@ push $N411a2c00
   ypos -30
  }
  Crop {
-  box {{0} {"hdri.height / 2"} {hdri.width} {hdri.height}}
+  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_transmittance_sky_trim
   xpos 750
  }
@@ -1176,7 +1190,7 @@ push $N411a2c00
   xpos 750
   ypos 120
  }
-push $N411a2c00
+push $N7f9f000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1184,13 +1198,13 @@ push $N411a2c00
   xpos 750
   ypos 150
  }
-set N41172a00 [stack 0]
+set N7ed9400 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 300
  }
-push $N7c57d700
+push $N7ed8500
  Merge2 {
   inputs 2
   operation multiply
@@ -1199,8 +1213,8 @@ push $N7c57d700
   xpos 300
   ypos 60
  }
-push $N41172a00
-push $N41228000
+push $N7ed9400
+push $N8018400
  Merge2 {
   inputs 2
   operation multiply
@@ -1223,13 +1237,13 @@ push $N41228000
   xpos 150
   ypos 100
  }
-push $N7c57d700
-push $N7c57cd00
-push $N7c57d200
-push $N7c57c800
-push $N7c57c300
-push $N411e5800
-push $N41228000
+push $N7ed8500
+push $N3301d700
+push $N7ed8000
+push $N3301d200
+push $N3301cd00
+push $N7fdbc00
+push $N8018400
  Switch {
   inputs 8
   which {{parent.view_output}}
@@ -1237,7 +1251,7 @@ push $N41228000
   xpos 0
   ypos 160
  }
-push $N7c57b900
+push $N3301c300
  Copy {
   inputs 2
   channels rgb
@@ -1349,7 +1363,7 @@ add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky
   xpos 0
   ypos 720
  }
-set N41279400 [stack 0]
+set N806d800 [stack 0]
  Write {
   channels all
   file "\[if \{\[value parent.bake_file] != \"\"\} \{value parent.bake_file\} \{set d \[if \{\"\[python \{__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''\}]\" != \"\"\} \{set e \"\[python \{__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''\}]\"\} \{set e \[file dirname \[value root.name]]/ezatmos_cache\}]/\[file rootname \[file tail \[value root.name]]]/\[value parent.name]/\[file rootname \[file tail \[value root.name]]]_\[value parent.name].####.exr\}]"
@@ -1379,7 +1393,7 @@ set N41279400 [stack 0]
   xpos 200
   ypos 840
  }
-push $N41279400
+push $N806d800
  Switch {
   inputs 2
   which {{"\[python -execlocal \{g = nuke.thisGroup()\nimport hashlib\ns = \[]\nfor n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n    if g.knob(n):\n        s.append((n, g\[n].toScript()))\n# Where the skydome sits shapes the output too.\nd = g.node('DomeRemap')\nif d is not None and g.input(2) is not None:\n    for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n        s.append((k, repr(d\['EzAtmosDome_' + k].value())))\nh = hashlib.md5(repr(s).encode()).hexdigest()\nimport os\nf = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\nret = 1 if g\['use_baked'].value() and g\['baked_hash'].value() == h and os.path.exists(f) else 0\n\}]"}}
