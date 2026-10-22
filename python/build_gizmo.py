@@ -47,7 +47,11 @@ PASSES = [("rayleigh", 1, "atmos_rayleigh"),
 HAZE_DENSITY = ("(rayleigh_coefficients.{c} * sky_amount * exp(-camera_height / 1000 / rayleigh_scale_height)"
                 " + mie_coefficient * haze_amount / 0.9 * exp(-camera_height / 1000 / haze_height)) / 1000")
 
-SUN_FROM_AXIS = "parent.input1.world_matrix.%d"
+# Position of the Axis in the sun input (through any Dots or NoOps), at the rendered frame.
+SUN_FROM_AXIS = ("[python -execlocal {n = nuke.thisGroup().input(1)\n"
+                 "while n is not None and not n.knob('world_matrix'):\n"
+                 "    n = n.input(0) if n.inputs() else None\n"
+                 "ret = n['world_matrix'].getValueAt(nuke.frame(), %d) if n is not None else 0}]")
 
 
 def _load_kernel(node, filename):
@@ -71,6 +75,12 @@ def _link(node, param, expression, channel=None):
 _USER_KNOBS = set()
 
 
+def _analyze_script():
+    """The analyze button's script: python/analyze_shot.py, embedded so no module is needed."""
+    with open(os.path.join(ROOT, "python", "analyze_shot.py")) as f:
+        return f.read()
+
+
 def _add_knobs(group):
     k = []
 
@@ -84,6 +94,19 @@ def _add_knobs(group):
                       "around the camera out to 'haze distance', with no ground and no horizon line, for hazing "
                       "a plate. Composite either with plate * transmittance + scatter.")
     k.append(passes)
+    k.append(nuke.Text_Knob("analyze_divider", "Analyze"))
+    analyze = nuke.PyScript_Knob("analyze", "analyze", _analyze_script())
+    analyze.setTooltip("Looks at the camera, skydome and HDRI and sets the node up for depth hazing this shot: "
+                       "passes, camera height, haze distance (to the horizon), self-lit and where the sun comes "
+                       "from. Shows what it set, with warnings about the sun.")
+    k.append(analyze)
+    unit = nuke.Double_Knob("scene_scale", "units to metres")
+    unit.setTooltip("Scene units to metres for analyze, e.g. 0.1 for decimetres, 0.01 for centimetres.")
+    unit.setRange(0.001, 100)
+    k.append(unit)
+    ground = nuke.Double_Knob("ground_height", "ground height")
+    ground.setTooltip("Height of the ground in scene units, so analyze measures the camera height above it.")
+    k.append(ground)
 
     k.append(nuke.Text_Knob("sun_divider", "Sun"))
     sun_from = nuke.Enumeration_Knob("sun_from", "sun from", ["Auto (HDRI)", "Axis", "Manual"])
@@ -154,7 +177,7 @@ def _add_knobs(group):
                        "plate * T + atmos_haze_color * (1 - T).")
     k.append(density)
     preview_distance = nuke.Double_Knob("haze_distance", "haze distance (km)")
-    preview_distance.setRange(0, 50)
+    preview_distance.setRange(0, 300)
     preview_distance.setTooltip("How far the depth haze reaches: used by the Haze Preview view and, with passes set to "
                                 "Depth Haze, by every pass. The haze thins with height along each ray.")
     k.append(preview_distance)
@@ -202,6 +225,8 @@ def _add_knobs(group):
     for knob in k:
         group.addKnob(knob)
     _USER_KNOBS.update(knob.name() for knob in k)
+    # Analyze only sets other knobs; its own settings don't shape the output.
+    _USER_KNOBS.difference_update(["analyze", "scene_scale", "ground_height"])
 
     defaults = {
         "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "sun_strength": 1.0, "sun_boost": 1.0,
@@ -211,7 +236,7 @@ def _add_knobs(group):
         "rayleigh_coefficients": [0.0052, 0.0121, 0.0296], "mie_coefficient": 0.021,
         "rayleigh_scale_height": 8.5, "haze_height": 1.2, "haze_distance": 5.0, "planet_radius": 6360.0,
         "atmosphere_thickness": 60.0, "manual_sun_brightness": 20.0, "clear_sky_ratio": 55.0,
-        "sun_search_cone": 6.0, "clip_ratio": 20.0,
+        "sun_search_cone": 6.0, "clip_ratio": 20.0, "passes": 1, "scene_scale": 1.0,
     }
     for name, value in defaults.items():
         group[name].setValue(value)
@@ -323,29 +348,50 @@ def _hash_code(names):
 
 
 def _range_code():
-    return ("if g['bake_range'].getValue() == 0:\n"
-            "    first = last = nuke.frame()\n"
-            "else:\n"
-            "    first, last = int(nuke.root()['first_frame'].value()), int(nuke.root()['last_frame'].value())\n")
+    return ("first, last = int(g['bake_first'].value()), int(g['bake_last'].value())\n"
+            "if last < first:\n"
+            "    first, last = last, first\n")
 
 
-def _use_baked_expression(names):
-    # 1 only when 'use baked' is on, the bake exists and the settings still match it.
-    code = ("g = nuke.thisGroup()\n" + _hash_code(names) +
-            "import os\n"
-            "f = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\n"
-            "ret = 1 if g['use_baked'].value() and g['baked_hash'].value() == h and os.path.exists(f) else 0\n")
-    return "[python -execlocal {%s}]" % code
+def _check_code(names):
+    """Python that decides whether the bake can be used: it exists for the first baked frame
+    and these settings still match it. Sets the hidden bake_valid knob the UseBake Switch
+    reads, and a status label. Run by knobChanged and onCreate, not by an expression, so
+    nothing re-evaluates while the node is copied or duplicated."""
+    body = (_hash_code(names) +
+            "import os, re\n"
+            "r = g.node('BakeRead')\n"
+            "p = (nuke.filename(r) or '') if r is not None else ''\n"
+            "fr = int(g['baked_first'].value())\n"
+            "m = re.search('(#+)|%(0?[0-9]*)d', p)\n"
+            "if m is not None:\n"
+            "    width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n"
+            "    p = p[:m.start()] + str(fr).zfill(width) + p[m.end():]\n"
+            "ok = bool(g['baked_hash'].value()) and g['baked_hash'].value() == h and os.path.exists(p)\n"
+            "if bool(g['bake_valid'].value()) != ok:\n"
+            "    g['bake_valid'].setValue(ok)\n"
+            "status = ('baked' if ok else 'bake out of date: live') if g['use_baked'].value() and g['baked_hash'].value() else ''\n"
+            "if g['label'].value() in ('', 'baked', 'bake out of date: live') and g['label'].value() != status:\n"
+            "    g['label'].setValue(status)\n")
+    # Skip while the node is still being built and its bake knobs don't exist yet.
+    return ("g = nuke.thisNode()\n"
+            "if g.knob('bake_valid') is not None:\n" +
+            "".join("    " + line + "\n" for line in body.splitlines()))
 
 
-def _label_expression(names):
-    code = ("g = nuke.thisNode()\n" + _hash_code(names) +
-            "import os\n"
-            "f = nuke.filename(g.node('BakeRead'), nuke.REPLACE) or ''\n"
-            "ok = g['baked_hash'].value() == h and os.path.exists(f)\n"
-            "ret = '' if not g['use_baked'].value() or not g['baked_hash'].value() else "
-            "('baked' if ok else 'bake out of date: live')\n")
-    return "[python -execlocal {%s}]" % code
+def _knob_changed_script(names):
+    # Re-check the bake when a setting, the inputs or the bake knobs change.
+    watched = list(names) + ["use_baked", "bake_file", "baked_hash", "baked_first", "inputChange"]
+    return ("if nuke.thisKnob().name() in %r:\n" % (watched,) +
+            "".join("    " + line + "\n" for line in _check_code(names).splitlines()))
+
+
+def _on_create_script(names):
+    # New nodes bake the script range by default; existing ones are re-checked on load.
+    return ("g = nuke.thisNode()\n"
+            "if g['bake_first'].value() == 0 and g['bake_last'].value() == 0:\n"
+            "    g['bake_first'].setValue(int(nuke.root()['first_frame'].value()))\n"
+            "    g['bake_last'].setValue(int(nuke.root()['last_frame'].value()))\n" + _check_code(names))
 
 
 def _bake_script(names):
@@ -359,11 +405,12 @@ def _bake_script(names):
             "    g['baked_first'].setValue(first)\n"
             "    g['baked_last'].setValue(last)\n"
             "finally:\n"
-            "    g['use_baked'].setValue(use)\n")
+            "    g['use_baked'].setValue(use)\n" + _check_code(names))
 
 
 def _farm_write_script(names):
-    # A top-level Write with the same path, for a farm job the comp renders depend on.
+    # A top-level Write with the same path, for a farm job the comp renders depend on. The
+    # farm bake's frames don't exist yet, so it is trusted until a setting changes.
     return ("g = nuke.thisNode()\n" + _hash_code(names) + _range_code() +
             "path = nuke.filename(g.node('BakeRead'))\n"
             "with nuke.root():\n"
@@ -377,6 +424,9 @@ def _farm_write_script(names):
             "g['baked_hash'].setValue(h)\n"
             "g['baked_first'].setValue(first)\n"
             "g['baked_last'].setValue(last)\n"
+            "g['bake_valid'].setValue(True)\n"
+            "if g['label'].value() in ('', 'bake out of date: live'):\n"
+            "    g['label'].setValue('baked')\n"
             "if nuke.GUI:\n"
             "    nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n")
 
@@ -387,19 +437,26 @@ def _add_bake_knobs(group, names):
     f.setTooltip("Leave empty for the default: <script dir>/ezatmos_cache/<script>/<node>/<script>_<node>.####.exr, "
                  "or $EZATMOS_CACHE_DIR/<script>/<node>/... when that is set. Fill in to override.")
     k.append(f)
-    rng = nuke.Enumeration_Knob("bake_range", "bake range", ["Current Frame (hold)", "Script Range"])
-    rng.setTooltip("Current Frame: one frame, held for the whole shot (a sun that doesn't move). "
-                   "Script Range: every frame, for an animated sun or knobs.")
-    k.append(rng)
+    first = nuke.Int_Knob("bake_first", "bake range")
+    first.setTooltip("First frame to bake. Set first and last to the same frame to bake one frame, held for "
+                     "the whole shot (a sun that doesn't move).")
+    k.append(first)
+    last = nuke.Int_Knob("bake_last", "")
+    last.clearFlag(nuke.STARTLINE)
+    last.setTooltip("Last frame to bake.")
+    k.append(last)
     now = nuke.PyScript_Knob("bake_now", "bake now", _bake_script(names))
     now.setTooltip("Writes all layers to the bake file here and now.")
+    now.setFlag(nuke.STARTLINE)
     k.append(now)
     farm = nuke.PyScript_Knob("bake_farm_write", "make farm bake Write", _farm_write_script(names))
     farm.setTooltip("Adds a Write below this node with the bake path, to render on the farm before the comp.")
     k.append(farm)
     use = nuke.Boolean_Knob("use_baked", "use baked")
     use.setTooltip("Read the bake instead of computing, but only while it exists and these settings still "
-                   "match it; otherwise the node computes live and its label says the bake is out of date.")
+                   "match it; otherwise the node computes live and its label says the bake is out of date. "
+                   "The check runs when a knob or input of this node changes and when the script opens; "
+                   "after moving the skydome upstream, bake again.")
     use.setFlag(nuke.STARTLINE)
     k.append(use)
     s = nuke.String_Knob("baked_hash", "baked hash")
@@ -409,10 +466,14 @@ def _add_bake_knobs(group, names):
         n = nuke.Int_Knob(name, name)
         n.setFlag(nuke.INVISIBLE)
         k.append(n)
+    valid = nuke.Boolean_Knob("bake_valid", "bake valid")
+    valid.setFlag(nuke.INVISIBLE)
+    k.append(valid)
     for knob in k:
         group.addKnob(knob)
     group["use_baked"].setValue(True)
-    group["label"].setValue(_label_expression(names))
+    group["knobChanged"].setValue(_knob_changed_script(names))
+    group["onCreate"].setValue(_on_create_script(names))
 
 
 def _add_bake_nodes(stream, names):
@@ -432,8 +493,10 @@ def _add_bake_nodes(stream, names):
     pick = nuke.nodes.Switch(name="UseBake", xpos=0, ypos=stream.ypos() + 120)
     pick.setInput(0, stream)
     pick.setInput(1, read)
-    pick["which"].setExpression(_use_baked_expression(names))
+    pick["which"].setExpression("parent.use_baked && parent.bake_valid")
     return pick
+
+
 
 
 # ---- Skydome ---------------------------------------------------------------------------
@@ -495,6 +558,10 @@ while n is not None:
         r = n['radius'].getValueAt(t)
         break
     n = n.input(0)
+# The camera, through any Dots or NoOps in between.
+c = g.input(3)
+while c is not None and not c.knob('world_matrix'):
+    c = c.input(0) if c.inputs() else None
 """
 def _dome_expression(ret):
     return "[python -execlocal {%sret = %s}]" % (_DOME_WALK, ret)
@@ -512,7 +579,7 @@ def _add_dome_nodes(hdri):
     for k in range(3):
         # The camera's position, or the dome's centre without a camera.
         _link(dome, "eye", _dome_expression(
-            "g.input(3)['world_matrix'].getValueAt(t, %d) if g.input(3) is not None and g.input(3).knob('world_matrix') "
+            "c['world_matrix'].getValueAt(t, %d) if c is not None "
             "else m[%d]" % (3 + 4 * k, 12 + k)), k)
     _link(dome, "radius", _dome_expression("r"))
     pick = nuke.nodes.Switch(name="UseDome", xpos=0, ypos=-340)

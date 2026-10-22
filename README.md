@@ -72,7 +72,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | Knob | Default | What it does |
 | --- | --- | --- |
 | view output | Scatter Preview Comp | What the main rgba shows |
-| passes | Atmosphere | *Atmosphere*: rays run through the whole sky down to the ground. *Depth Haze*: every pass describes the haze around the camera out to *haze distance*, with no ground and no horizon line |
+| passes | Depth Haze | *Atmosphere*: rays run through the whole sky down to the ground. *Depth Haze*: every pass describes the haze around the camera out to *haze distance*, with no ground and no horizon line |
 | sun from | Auto (HDRI) | Where the sun direction comes from: the HDRI, the Axis input or the manual knob |
 | sun direction | (0, 0.5, -1) | Manual sun direction, +Y up |
 | copy detected sun to manual | | Writes the sun found in the HDRI into *sun direction* |
@@ -90,13 +90,30 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | max distance (km) | 0 (off) | How far the haze reaches. Use it to add haze up to a set distance instead of a full sky |
 | haze height (km) | 1.2 | How quickly the haze thins with altitude (its scale height). Low keeps it near the ground |
 | haze density (1/m) | read only | Extinction per metre at camera height, for depth hazing in a comp |
-| haze distance (km) | 5 | How far the depth haze reaches, for the *Haze Preview* view and the *Depth Haze* passes |
+| haze distance (km) | 5 | How far the depth haze reaches, for the *Haze Preview* view and the *Depth Haze* passes. *analyze* sets it to the distance of the horizon |
 | quality | Normal | Samples per ray (Draft is about 4x faster than High) |
 | viewer resolution | Half | Resolution the haze is computed at in the Nuke GUI (Full / Half / Quarter) |
 | render resolution | Full | Resolution the haze is computed at in terminal and farm renders |
 
 The **Advanced** section holds the physical constants (scattering coefficients, scale
 heights, planet size) and the sun detection settings.
+
+### Analyze
+
+Connect the HDRI, the shot camera (and the skydome, if there is one), set **units to
+metres** (0.1 for a decimetre scene) and **ground height** (in scene units), and press
+**analyze**. It sets the node up for depth hazing that shot and tells you what it set:
+
+- *passes*: Depth Haze;
+- *camera height*: the camera's height above the ground, in metres;
+- *haze distance*: the distance to the horizon from that height (46 km from 166 m, 234 km
+  from 4.3 km), so the depth haze reaches the horizon line;
+- *self-lit* with no HDRI; with one, *sun from* Auto when the HDRI has a clear (or
+  clipped) sun.
+
+It also warns when the sun is beside or behind the camera or high in the sky, which the
+sunrise and golden hour looks don't expect. The camera, sun Axis and dome can come through
+Dots and NoOps.
 
 ### Depth haze
 
@@ -180,13 +197,17 @@ On the farm:
 The node's whole output (every layer) can be baked to EXRs and read back instead of being
 computed, which skips the kernels and their compile time on the farm.
 
-- **bake now** renders the bake here and now. **bake range** picks the current frame
-  (held for the whole shot, for a sun that doesn't move) or the script range.
+- **bake now** renders the bake here and now, over **bake range** (first and last frame;
+  it starts as the script range). Set both to the same frame to bake one frame, held for
+  the whole shot, for a sun that doesn't move.
 - **make farm bake Write** adds a top-level Write with the same path instead, to render as
   a farm job that the comp renders depend on.
 - **use baked** reads the bake, but only while the file exists and the settings still match
   the ones it was baked with. Otherwise the node computes live and its label reads
-  *bake out of date: live*; it reads *baked* while the bake is used.
+  *bake out of date: live*; it reads *baked* while the bake is used. The check runs when a
+  knob or input of the node changes and when the script opens (in knobChanged and
+  onCreate, not in an expression, so copying or duplicating the node can't break it). It
+  doesn't see changes upstream: after moving the skydome, bake again.
 
 The bake goes next to the script by default:
 
