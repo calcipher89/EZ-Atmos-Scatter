@@ -31,6 +31,12 @@ and brightness from the image, sky light). Depth-aware haze and multiple scatter
 
 ## Installing
 
+No install: `groups/EzAtmosScatter_group.nk` is the same node as a plain Group. Import it with
+**File > Import Script** (or paste its text into the node graph) and it works on its own,
+without the gizmo on the plugin path, so it can live in a shot script or a toolset.
+
+As a gizmo:
+
 Clone the repo into `~/.nuke/plugins/EzAtmosScatter` and add this line to `~/.nuke/init.py`:
 
 ```python
@@ -194,6 +200,8 @@ or type a path in *bake file* to override it for one node. Versioning the script
 a new cache folder, so bake again (or keep the old path in *bake file*).
 
 ## Rebuilding the gizmo
+
+The build writes both `gizmos/EzAtmosScatter.gizmo` and its Group version `groups/EzAtmosScatter_group.nk`.
 
 After changing a kernel, run
 
