@@ -702,6 +702,7 @@ def save_gizmo(group, path=GIZMO_PATH):
     with open(tmp) as f:
         body = f.read()
     os.remove(tmp)
+    group_body = body[body.index("Group {"):]
     body = body.replace("Group {", "Gizmo {", 1)
     header = "version %d.%d v%d\n" % (nuke.NUKE_VERSION_MAJOR, nuke.NUKE_VERSION_MINOR, nuke.NUKE_VERSION_RELEASE)
     for layer in LAYERS:
@@ -710,7 +711,14 @@ def save_gizmo(group, path=GIZMO_PATH):
         os.makedirs(os.path.dirname(path))
     with open(path, "w") as f:
         f.write(header + body[body.index("Gizmo {"):])
-    return path
+    # The same node as a plain Group, for studios that keep tools in scripts rather than
+    # on the plugin path: File > Import Script (or paste) it, no gizmo install needed.
+    group_path = os.path.join(ROOT, "groups", os.path.splitext(os.path.basename(path))[0] + "_group.nk")
+    if not os.path.isdir(os.path.dirname(group_path)):
+        os.makedirs(os.path.dirname(group_path))
+    with open(group_path, "w") as f:
+        f.write(header + group_body)
+    return path, group_path
 
 
 if __name__ == "__main__":
