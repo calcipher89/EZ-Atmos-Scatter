@@ -29,6 +29,12 @@ and brightness from the image, sky light). Depth-aware haze and multiple scatter
 
 ![Reference renders](docs/previews/contact_sheet.png)
 
+## Guide
+
+The illustrated artist guide to EzAtmosScatter and EzDepthHaze lives in the EzDepthHaze repo:
+[EZ_Haze_Field_Guide.pdf](https://github.com/calcipher89/EzDepthHaze/blob/main/docs/EZ_Haze_Field_Guide.pdf).
+Its demo scene is built by `examples/build_demo.py` there.
+
 ## Installing
 
 No install: `groups/EzAtmosScatter_group.nk` is the same node as a plain Group. Import it with
