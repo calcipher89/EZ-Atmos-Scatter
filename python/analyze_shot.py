@@ -5,7 +5,8 @@ module at run time. It runs once when pressed and sets plain knob values:
 
 - passes: Depth Haze;
 - camera height: the camera's height above 'ground height', in metres;
-- haze distance: the distance to the horizon seen from that height;
+- haze distance: the distance to the HDRI's own horizon line (from how far below level it
+  sits), or else to the horizon seen from the camera height;
 - self-lit with no HDRI; with one, the sun from the HDRI when it has a clear sun.
 
 It then shows what it set, with warnings for a sun beside or behind the camera, a high
@@ -39,8 +40,41 @@ else:
 
 radius = g["planet_radius"].value()
 horizon = math.sqrt((radius + height / 1000.0) ** 2 - radius ** 2)
-g["haze_distance"].setValue(round(horizon, 1))
-done.append("Haze distance %.1f km: the horizon seen from %.0f m." % (horizon, height))
+
+# The HDRI's own horizon line: the row edge below 0 deg (down to 10 deg) where the image drops most
+# from sky to ground (over 3 rows, by at least 1.5x), from the median brightness of 64 columns.
+# Its dip below 0 deg gives the distance to that horizon, so the depth haze reaches exactly the
+# line the HDRI shows.
+hdri = g.input(0)
+dip = None
+if hdri is not None:
+    w, h = hdri.width(), hdri.height()
+    rows = []
+    for r in range(0, max(int(h * 10.0 / 180.0), 4) + 2):
+        y = h * 0.5 - r - 0.5 + 1.0
+        vals = []
+        for i in range(64):
+            x = (i + 0.5) * w / 64.0
+            vals.append(0.2126 * hdri.sample("red", x, y) + 0.7152 * hdri.sample("green", x, y) +
+                        0.0722 * hdri.sample("blue", x, y))
+        vals.sort()
+        rows.append(vals[32])
+    best, best_r = 1.0, None
+    for r in range(len(rows) - 1):
+        drop = (rows[r] + 1e-4) / (rows[r + 1] + 1e-4)
+        span = (rows[max(r - 1, 0)] + 1e-4) / (rows[min(r + 2, len(rows) - 1)] + 1e-4)
+        if drop > best and span > 1.5:
+            best, best_r = drop, r
+    if best_r is not None:
+        dip = best_r * 180.0 / h
+if dip is not None and dip > 0.0:
+    horizon = radius * math.tan(math.radians(dip))
+    g["haze_distance"].setValue(round(horizon, 1))
+    done.append("Haze distance %.1f km: the HDRI's horizon line, %.2f deg below level." % (horizon, dip))
+else:
+    g["haze_distance"].setValue(round(horizon, 1))
+    done.append("Haze distance %.1f km: the horizon seen from %.0f m%s." % (
+        horizon, height, "" if hdri is None else " (no clear horizon line in the HDRI)"))
 g["passes"].setValue("Depth Haze")
 done.append("Passes: Depth Haze.")
 

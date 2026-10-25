@@ -54,6 +54,23 @@ SUN_FROM_AXIS = ("[python -execlocal {n = nuke.thisGroup().input(1)\n"
                  "ret = n['world_matrix'].getValueAt(nuke.frame(), %d) if n is not None else 0}]")
 
 
+# Button scripts, embedded so the gizmo and its Group need no Python module.
+COPY_DETECTED_SUN = """ez_atmos = nuke.thisNode()
+with ez_atmos:
+    light = nuke.toNode("Light")
+    found = [light.sample("red", 0.5, 0.5), light.sample("green", 0.5, 0.5), light.sample("blue", 0.5, 0.5)]
+if not any(found):
+    nuke.message("No sun found: is an HDRI connected?")
+else:
+    ez_atmos["sun_direction"].setValue(found)
+    ez_atmos["sun_from"].setValue("Manual")
+"""
+RESET_SUN = """ez_atmos = nuke.thisNode()
+ez_atmos["sun_from"].setValue("Auto (HDRI)")
+ez_atmos["sun_direction"].setValue([0.0, 0.5, -1.0])
+"""
+
+
 def _load_kernel(node, filename):
     # Setting kernelSource from Python does not rebuild the parameter knobs; loading the
     # file does. Clear the path afterwards so the gizmo carries its own copy of the source.
@@ -116,10 +133,18 @@ def _add_knobs(group):
     sun_dir = nuke.XYZ_Knob("sun_direction", "sun direction")
     sun_dir.setTooltip("Direction towards the sun, +Y up. Used when 'sun from' is Manual.")
     k.append(sun_dir)
-    grab = nuke.PyScript_Knob("use_detected_sun", "copy detected sun to manual",
-                              "import ezatmosscatter; ezatmosscatter.copy_detected_sun(nuke.thisNode())")
+    grab = nuke.PyScript_Knob("use_detected_sun", "copy detected sun to manual", COPY_DETECTED_SUN)
     grab.setTooltip("Writes the sun direction found in the HDRI into 'sun direction'.")
     k.append(grab)
+    reset = nuke.PyScript_Knob("reset_sun", "reset sun", RESET_SUN)
+    reset.setTooltip("Puts the sun back to its defaults: sun from Auto (HDRI), sun direction (0, 0.5, -1).")
+    k.append(reset)
+    in_use = nuke.XYZ_Knob("sun_in_use", "sun in use")
+    in_use.setTooltip("The sun direction the node is using, whichever 'sun from' is set: found in the HDRI, "
+                      "from the Axis, or the manual one. EzDepthHaze reads this. Read only.")
+    in_use.setFlag(nuke.READ_ONLY)
+    in_use.setFlag(nuke.STARTLINE)
+    k.append(in_use)
     rotation = nuke.Double_Knob("hdri_rotation", "hdri rotation")
     rotation.setRange(-180, 180)
     rotation.setTooltip("Rotates the lat-long mapping in degrees, if the HDRI's centre column does not look down -Z.")
@@ -226,7 +251,7 @@ def _add_knobs(group):
         group.addKnob(knob)
     _USER_KNOBS.update(knob.name() for knob in k)
     # Analyze only sets other knobs; its own settings don't shape the output.
-    _USER_KNOBS.difference_update(["analyze", "scene_scale", "ground_height"])
+    _USER_KNOBS.difference_update(["analyze", "scene_scale", "ground_height", "reset_sun", "sun_in_use"])
 
     defaults = {
         "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "sun_strength": 1.0, "sun_boost": 1.0,
@@ -245,6 +270,11 @@ def _add_knobs(group):
                                                               res % ("render_resolution", "render_resolution")))
     for i, c in enumerate("xyz"):
         group["haze_density"].setExpression(HAZE_DENSITY.format(c=c), i)
+    # The sun the kernels use: found in the HDRI (the Light node's first pixel), the Axis, or manual.
+    for i, (axis, channel) in enumerate(zip("xyz", ("red", "green", "blue"))):
+        group["sun_in_use"].setExpression(
+            "sun_from==0 ? [sample Light %s 0.5 0.5] : sun_from==1 && [exists input1] ? (%s) : sun_direction.%s"
+            % (channel, SUN_FROM_AXIS.replace("nuke.thisGroup()", "nuke.thisNode()") % (3 + 4 * i), axis), i)
 
 
 def _link_scatter(node, output):

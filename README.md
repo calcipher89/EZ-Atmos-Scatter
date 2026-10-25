@@ -22,7 +22,6 @@ and brightness from the image, sky light). Depth-aware haze and multiple scatter
 | `blink/EzAtmosLight.blink` | BlinkScript kernel: measures the sun and sky light in the HDRI |
 | `blink/EzAtmosTransmittanceLUT.blink` | BlinkScript kernel: precomputes the optical depth towards the sun as a 256x64 table |
 | `python/build_gizmo.py` | Rebuilds the gizmo after a kernel change |
-| `python/ezatmosscatter.py` | Helpers for the gizmo's buttons |
 | `init.py`, `menu.py` | Plugin path and the Nodes menu entry |
 | `reference/atmos_reference.py` | NumPy port of the scattering core for checking the math outside Nuke |
 | `docs/previews/contact_sheet.png` | Reference renders: inscatter, Mie and transmittance at 45°, 10°, 2° and -2° sun elevation |
@@ -82,6 +81,8 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | sun from | Auto (HDRI) | Where the sun direction comes from: the HDRI, the Axis input or the manual knob |
 | sun direction | (0, 0.5, -1) | Manual sun direction, +Y up |
 | copy detected sun to manual | | Writes the sun found in the HDRI into *sun direction* |
+| reset sun | | Puts the sun back to its defaults: *sun from* Auto (HDRI), *sun direction* (0, 0.5, -1) |
+| sun in use | read only | The sun direction the node is using, whichever *sun from* is set. EzDepthHaze follows this one |
 | hdri rotation | 0 | Rotates the lat-long mapping, in degrees |
 | self-lit (no HDRI) | off | For setups without an HDRI: sky light comes from this atmosphere's own sky, and the sun from *sun color* and *sun strength*. Replaces a second EzAtmosScatter used only as a sky. The hdri input can then be left empty: a black 2048x1024 lat-long stands in |
 | light from HDRI | on | Sun colour and brightness come from the HDRI. Off: *sun color* and *sun strength* set them |
@@ -112,8 +113,10 @@ metres** (0.1 for a decimetre scene) and **ground height** (in scene units), and
 
 - *passes*: Depth Haze;
 - *camera height*: the camera's height above the ground, in metres;
-- *haze distance*: the distance to the horizon from that height (46 km from 166 m, 234 km
-  from 4.3 km), so the depth haze reaches the horizon line;
+- *haze distance*: the distance to the HDRI's own horizon line, from how far below level it
+  sits in the image, so the depth haze reaches the line the HDRI shows; without a clear
+  line, the distance to the horizon from the camera height (46 km from 166 m, 234 km
+  from 4.3 km);
 - *self-lit* with no HDRI; with one, *sun from* Auto when the HDRI has a clear (or
   clipped) sun.
 
