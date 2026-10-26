@@ -451,6 +451,13 @@ _PATH_CHECK = ("import os\n"
                "path = nuke.filename(g.node('BakeRead')) or ''\n"
                "bad = '' if path and os.path.isabs(path) else ('the bake folder uses an environment variable that '\n"
                "    'isn\\'t set in Nuke' if path == '' else 'the bake path isn\\'t a full path: ' + path)\n"
+               "if not bad and not os.path.isdir(os.path.dirname(path)):\n"
+               "    # The Write's own 'create directories' doesn't always make deep new folders, so\n"
+               "    # make them here first.\n"
+               "    try:\n"
+               "        os.makedirs(os.path.dirname(path))\n"
+               "    except OSError as e:\n"
+               "        bad = 'can\\'t create ' + os.path.dirname(path) + ' (' + str(e.strerror or e) + ')'\n"
                "if bad:\n"
                "    nuke.message('Not baked: ' + bad + '.\\n\\nFolder: ' + (g['bake_file'].value() or g['bake_folder'].value()))\n")
 
