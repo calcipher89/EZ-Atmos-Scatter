@@ -250,7 +250,9 @@ local:
       if (od.x >= 0.0f)
         tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));
       float mu = dot(dir, sunDir);
-      float3 extinction = localR + float3(localMExtinction);
+      // Kept above zero: with no air and no haze (both amounts 0) there is nothing to scatter,
+      // and 0 / 0 would turn every pass into NaN.
+      float3 extinction = max(localR + float3(localMExtinction), float3(1e-12f));
       float3 sunPart = sun * tSun / extinction;
       float3 rayleighHaze = sunPart * localR * phaseRayleigh(mu);
       float3 mieHaze = sunPart * (localMScatter * phaseMie(mu));
