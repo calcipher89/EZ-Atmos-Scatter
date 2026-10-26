@@ -1,0 +1,69 @@
+// EzAtmosCameraUV: for each pixel of the shot camera's frame, the direction the camera looks
+// through it, and that direction's place in EzAtmosScatter's lat-long, as an ST map (red = u,
+// green = v). An STMap then turns every output layer into what a ScanlineRender of a skydome
+// textured with it shows through this camera: a sky plate in the shot's format.
+//
+// Inputs: `ref` sets the output size (the project format). `camRow0..2` are the rows of the
+// camera's world rotation, `focal`, `haperture` the lens, `winTranslate`, `winScale`, `winRoll`
+// its window, `pixelAspect` the format's pixel aspect.
+
+kernel EzAtmosCameraUV : ImageComputationKernel<ePixelWise>
+{
+  Image<eRead, eAccessPoint, eEdgeClamped> ref;
+  Image<eWrite> dst;
+
+param:
+  float3 camRow0;
+  float3 camRow1;
+  float3 camRow2;
+  float focal;
+  float haperture;
+  float2 winTranslate;
+  float2 winScale;
+  float winRoll;
+  float pixelAspect;
+
+local:
+  float pi;
+
+  void define()
+  {
+    defineParam(camRow0, "cam_row0", float3(1.0f, 0.0f, 0.0f));
+    defineParam(camRow1, "cam_row1", float3(0.0f, 1.0f, 0.0f));
+    defineParam(camRow2, "cam_row2", float3(0.0f, 0.0f, 1.0f));
+    defineParam(focal, "focal", 50.0f);
+    defineParam(haperture, "haperture", 24.576f);
+    defineParam(winTranslate, "win_translate", float2(0.0f, 0.0f));
+    defineParam(winScale, "win_scale", float2(1.0f, 1.0f));
+    defineParam(winRoll, "win_roll", 0.0f);
+    defineParam(pixelAspect, "pixel_aspect", 1.0f);
+  }
+
+  void init()
+  {
+    pi = 3.14159265358979f;
+  }
+
+  void process(int2 pos)
+  {
+    float w = ref.bounds.width();
+    float h = ref.bounds.height();
+    // Screen position, -1..1 across the width; the height in the same units (the format's
+    // aspect), as in Nuke's camera projection.
+    float sx = ((pos.x - ref.bounds.x1 + 0.5f) / w) * 2.0f - 1.0f;
+    float sy = (((pos.y - ref.bounds.y1 + 0.5f) / h) * 2.0f - 1.0f) * h / (w * pixelAspect);
+    // Undo the camera window the way Nuke applies it (nukescripts.snap3d.cameraProjectionMatrix):
+    // screen = roll * (projected - winTranslate) / winScale.
+    float cr = cos(-winRoll * pi / 180.0f);
+    float sn = sin(-winRoll * pi / 180.0f);
+    float rx = sx * cr - sy * sn;
+    float ry = sx * sn + sy * cr;
+    float spread = 0.5f * haperture / focal;
+    float3 ray = float3((rx * winScale.x + winTranslate.x) * spread, (ry * winScale.y + winTranslate.y) * spread, -1.0f);
+    float3 d = normalize(float3(dot(camRow0, ray), dot(camRow1, ray), dot(camRow2, ray)));
+    // EzAtmosScatter's lat-long: the centre column looks down -Z, the top row up.
+    float u = 0.5f + atan2(d.x, -d.z) / (2.0f * pi);
+    float v = 0.5f + asin(clamp(d.y, -1.0f, 1.0f)) / pi;
+    dst() = float4(u, v, 0.0f, 1.0f);
+  }
+};

@@ -20,7 +20,7 @@ and brightness from the image, sky light). Depth-aware haze and multiple scatter
 | `gizmos/EzAtmosScatter.gizmo` | The node artists use. Built from the kernels by `python/build_gizmo.py` |
 | `blink/AtmosScatter.blink` | BlinkScript kernel: Rayleigh + Mie single scattering per lat-long pixel |
 | `blink/EzAtmosLight.blink` | BlinkScript kernel: measures the sun and sky light in the HDRI |
-| `blink/EzAtmosDome.blink`, `blink/EzAtmosDomeUV.blink` | BlinkScript kernels: skydome texture to lat-long, and back (for *output as* Skydome) |
+| `blink/EzAtmosDome.blink`, `blink/EzAtmosDomeUV.blink`, `blink/EzAtmosCameraUV.blink` | BlinkScript kernels: skydome texture to lat-long and back, and lat-long to the camera view (for *output as* Skydome and Camera) |
 | `blink/EzAtmosTransmittanceLUT.blink` | BlinkScript kernel: precomputes the optical depth towards the sun as a 256x64 table |
 | `python/build_gizmo.py` | Rebuilds the gizmo after a kernel change |
 | `init.py`, `menu.py` | Plugin path and the Nodes menu entry |
@@ -79,7 +79,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | --- | --- | --- |
 | view output | Scatter Preview Comp | What the main rgba shows |
 | passes | Depth Haze | *Atmosphere*: rays run through the whole sky down to the ground. *Depth Haze*: every pass describes the haze around the camera out to *haze distance*, with no ground and no horizon line |
-| output as | Lat-long | *Skydome* lays every layer out as the texture of the dome in the `dome` input, so it goes back on the same Sphere (see Skydome below) |
+| output as | Lat-long | *Skydome* lays every layer out as the texture of the dome in the `dome` input, so it goes back on the same Sphere. *Camera* gives every layer as the shot camera sees it, at the project format: the sky plate a ScanlineRender of the skydome would give (see Skydome below) |
 | sun from | Auto (HDRI) | Where the sun direction comes from: the HDRI, the Axis input or the manual knob |
 | sun direction | (0, 0.5, -1) | Manual sun direction, +Y up |
 | copy detected sun to manual | | Writes the sun found in the HDRI into *sun direction* |
@@ -187,6 +187,12 @@ point of the moved, rotated or squashed dome. Put the output (or any of its `atm
 on the same Sphere in the comp and it lines up with the dome. It is applied after the bake, so
 switching it doesn't need a new bake. A round trip (dome texture to lat-long and back) matches
 the texture to within filtering.
+
+Set **output as** to *Camera* to skip the 3D setup: every layer comes out as the camera in
+the `camera` input sees the sky, at the project format and per frame, the same as a
+ScanlineRender of the dome textured with the *Skydome* output. It follows the camera's
+focal length, aperture and window (translate, scale and roll), and matches such a
+ScanlineRender to within filtering. Lens distortion is not applied.
 
 ### Speed
 

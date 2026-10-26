@@ -111,11 +111,13 @@ def _add_knobs(group):
                       "around the camera out to 'haze distance', with no ground and no horizon line, for hazing "
                       "a plate. Composite either with plate * transmittance + scatter.")
     k.append(passes)
-    mapping = nuke.Enumeration_Knob("output_mapping", "output as", ["Lat-long", "Skydome"])
+    mapping = nuke.Enumeration_Knob("output_mapping", "output as", ["Lat-long", "Skydome", "Camera"])
     mapping.setTooltip("Lat-long: every layer is a lat-long around the camera. Skydome (with a dome in the "
                        "'dome' input): every layer is laid out as the dome's own texture instead, through the "
                        "dome's transforms and seen from the camera, so it goes straight onto the same Sphere in "
-                       "the comp and lines up with it.")
+                       "the comp and lines up with it. Camera (with the shot camera in 'camera'): every layer as the "
+                       "camera sees the sky, at the project format, per frame: what a ScanlineRender of the "
+                       "skydome would give, without the 3D setup.")
     k.append(mapping)
     k.append(nuke.Text_Knob("analyze_divider", "Analyze"))
     analyze = nuke.PyScript_Knob("analyze", "analyze", _analyze_script())
@@ -691,10 +693,35 @@ def _add_dome_output(stream, hdri):
     stmap = nuke.nodes.STMap(name="ToDome", channels="all", uv="rgb", xpos=0, ypos=stream.ypos() + 40)
     stmap.setInput(0, stream)
     stmap.setInput(1, uv)
+    # Camera: what a ScanlineRender of the skydome shows through the shot camera, at the
+    # project format. The lat-long is already the view from the camera, so each pixel only needs
+    # its view direction.
+    frame = nuke.nodes.Reformat(name="CameraFormat", xpos=400, ypos=stream.ypos() + 20)
+    frame.setInput(0, hdri)
+    cam_uv = nuke.nodes.BlinkScript(name="CameraUV", xpos=400, ypos=stream.ypos() + 40)
+    cam_uv.setInput(0, frame)
+    _load_kernel(cam_uv, "EzAtmosCameraUV.blink")
+    for row in range(3):
+        for col in range(3):
+            _link(cam_uv, "cam_row%d" % row, _dome_expression(
+                "c['world_matrix'].getValueAt(t, %d) if c is not None else %d" % (row * 4 + col, int(row == col))), col)
+    for knob, default in (("focal", 50.0), ("haperture", 24.576)):
+        _link(cam_uv, knob, _dome_expression("c['%s'].getValueAt(t) if c is not None else %g" % (knob, default)))
+    _link(cam_uv, "win_roll", _dome_expression("c['winroll'].getValueAt(t) if c is not None else 0"))
+    for knob, default in (("win_translate", 0.0), ("win_scale", 1.0)):
+        for i in range(2):
+            _link(cam_uv, knob, _dome_expression("c['%s'].getValueAt(t, %d) if c is not None else %g"
+                                                 % (knob, i, default)), i)
+    _link(cam_uv, "pixel_aspect", "[python {nuke.root().format().pixelAspect()}]")
+    cam_map = nuke.nodes.STMap(name="ToCamera", channels="all", uv="rgb", xpos=300, ypos=stream.ypos() + 40)
+    cam_map.setInput(0, stream)
+    cam_map.setInput(1, cam_uv)
     pick = nuke.nodes.Switch(name="OutputAs", xpos=0, ypos=stream.ypos() + 80)
     pick.setInput(0, stream)
     pick.setInput(1, stmap)
-    pick["which"].setExpression("parent.output_mapping==1 && [exists parent.input2]")
+    pick.setInput(2, cam_map)
+    pick["which"].setExpression("parent.output_mapping==1 && [exists parent.input2] ? 1 : "
+                                "parent.output_mapping==2 && [exists parent.input3] ? 2 : 0")
     return pick
 
 
