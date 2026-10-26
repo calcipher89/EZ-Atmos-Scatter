@@ -20,6 +20,7 @@ and brightness from the image, sky light). Depth-aware haze and multiple scatter
 | `gizmos/EzAtmosScatter.gizmo` | The node artists use. Built from the kernels by `python/build_gizmo.py` |
 | `blink/AtmosScatter.blink` | BlinkScript kernel: Rayleigh + Mie single scattering per lat-long pixel |
 | `blink/EzAtmosLight.blink` | BlinkScript kernel: measures the sun and sky light in the HDRI |
+| `blink/EzAtmosDome.blink`, `blink/EzAtmosDomeUV.blink` | BlinkScript kernels: skydome texture to lat-long, and back (for *output as* Skydome) |
 | `blink/EzAtmosTransmittanceLUT.blink` | BlinkScript kernel: precomputes the optical depth towards the sun as a 256x64 table |
 | `python/build_gizmo.py` | Rebuilds the gizmo after a kernel change |
 | `init.py`, `menu.py` | Plugin path and the Nodes menu entry |
@@ -78,6 +79,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | --- | --- | --- |
 | view output | Scatter Preview Comp | What the main rgba shows |
 | passes | Depth Haze | *Atmosphere*: rays run through the whole sky down to the ground. *Depth Haze*: every pass describes the haze around the camera out to *haze distance*, with no ground and no horizon line |
+| output as | Lat-long | *Skydome* lays every layer out as the texture of the dome in the `dome` input, so it goes back on the same Sphere (see Skydome below) |
 | sun from | Auto (HDRI) | Where the sun direction comes from: the HDRI, the Axis input or the manual knob |
 | sun direction | (0, 0.5, -1) | Manual sun direction, +Y up |
 | copy detected sun to manual | | Writes the sun found in the HDRI into *sun direction* |
@@ -178,6 +180,13 @@ adds on top, so leave it at 0. Moving the dome marks a bake out of date.
 
 Checked against a ScanlineRender of a dome rotated, moved and scaled in Y twice (Sphere
 and TransformGeo) and seen from an offset camera: the HDRI lands within one pixel at 2K.
+
+Set **output as** to *Skydome* to get every layer back as the dome's own texture instead of a
+lat-long around the camera: each texel is the atmosphere seen from the camera towards that
+point of the moved, rotated or squashed dome. Put the output (or any of its `atmos_*` layers)
+on the same Sphere in the comp and it lines up with the dome. It is applied after the bake, so
+switching it doesn't need a new bake. A round trip (dome texture to lat-long and back) matches
+the texture to within filtering.
 
 ### Speed
 

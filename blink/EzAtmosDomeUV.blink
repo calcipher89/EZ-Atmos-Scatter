@@ -1,0 +1,60 @@
+// EzAtmosDomeUV: the other way round from EzAtmosDome. For each texel of the skydome's own
+// texture (Nuke's Sphere UV mapping) it finds where that point of the dome sits in the world,
+// after all of its transforms, and the direction the camera sees it in; it writes that
+// direction's place in EzAtmosScatter's lat-long as an ST map (red = u, green = v). An STMap
+// then turns every output layer into a texture that goes back on the dome, lined up with it.
+//
+// Inputs: `ref` sets the output size (the HDRI). `domeRow0..2` are the rows of the dome's
+// world matrix, `eye` the camera position, `radius` the Sphere's radius.
+
+kernel EzAtmosDomeUV : ImageComputationKernel<ePixelWise>
+{
+  Image<eRead, eAccessPoint, eEdgeClamped> ref;
+  Image<eWrite> dst;
+
+param:
+  float4 domeRow0;
+  float4 domeRow1;
+  float4 domeRow2;
+  float3 eye;
+  float radius;
+
+local:
+  float pi;
+
+  void define()
+  {
+    defineParam(domeRow0, "dome_row0", float4(1.0f, 0.0f, 0.0f, 0.0f));
+    defineParam(domeRow1, "dome_row1", float4(0.0f, 1.0f, 0.0f, 0.0f));
+    defineParam(domeRow2, "dome_row2", float4(0.0f, 0.0f, 1.0f, 0.0f));
+    defineParam(eye, "eye", float3(0.0f, 0.0f, 0.0f));
+    defineParam(radius, "radius", 1.0f);
+  }
+
+  void init()
+  {
+    pi = 3.14159265358979f;
+  }
+
+  void process(int2 pos)
+  {
+    float su = (pos.x - ref.bounds.x1 + 0.5f) / ref.bounds.width();
+    float sv = (pos.y - ref.bounds.y1 + 0.5f) / ref.bounds.height();
+    // Nuke's Sphere UVs: u = 0.5 looks down -Z, u = 0.75 down -X; v = 1 at the top.
+    float a = (su - 0.5f) * 2.0f * pi;
+    float lat = (sv - 0.5f) * pi;
+    float4 p = float4(-sin(a) * cos(lat) * radius, sin(lat) * radius, -cos(a) * cos(lat) * radius, 1.0f);
+    float3 world = float3(dot(domeRow0, p), dot(domeRow1, p), dot(domeRow2, p));
+    float3 d = world - eye;
+    float len = length(d);
+    if (len <= 0.0f) {
+      dst() = float4(0.5f, 0.5f, 0.0f, 1.0f);
+      return;
+    }
+    d /= len;
+    // EzAtmosScatter's lat-long: the centre column looks down -Z, the top row up.
+    float u = 0.5f + atan2(d.x, -d.z) / (2.0f * pi);
+    float v = 0.5f + asin(clamp(d.y, -1.0f, 1.0f)) / pi;
+    dst() = float4(u, v, 0.0f, 1.0f);
+  }
+};
