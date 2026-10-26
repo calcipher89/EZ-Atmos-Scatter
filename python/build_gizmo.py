@@ -111,6 +111,12 @@ def _add_knobs(group):
                       "around the camera out to 'haze distance', with no ground and no horizon line, for hazing "
                       "a plate. Composite either with plate * transmittance + scatter.")
     k.append(passes)
+    mapping = nuke.Enumeration_Knob("output_mapping", "output as", ["Lat-long", "Skydome"])
+    mapping.setTooltip("Lat-long: every layer is a lat-long around the camera. Skydome (with a dome in the "
+                       "'dome' input): every layer is laid out as the dome's own texture instead, through the "
+                       "dome's transforms and seen from the camera, so it goes straight onto the same Sphere in "
+                       "the comp and lines up with it.")
+    k.append(mapping)
     k.append(nuke.Text_Knob("analyze_divider", "Analyze"))
     analyze = nuke.PyScript_Knob("analyze", "analyze", _analyze_script())
     analyze.setTooltip("Looks at the camera, skydome and HDRI and sets the node up for depth hazing this shot: "
@@ -251,7 +257,9 @@ def _add_knobs(group):
         group.addKnob(knob)
     _USER_KNOBS.update(knob.name() for knob in k)
     # Analyze only sets other knobs; its own settings don't shape the output.
-    _USER_KNOBS.difference_update(["analyze", "scene_scale", "ground_height", "reset_sun", "sun_in_use"])
+    # The skydome output is applied after the bake, so it does not change what is baked.
+    _USER_KNOBS.difference_update(["analyze", "scene_scale", "ground_height", "reset_sun", "sun_in_use",
+                                   "output_mapping"])
 
     defaults = {
         "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "sun_strength": 1.0, "sun_boost": 1.0,
@@ -654,6 +662,30 @@ def _add_dome_nodes(hdri):
     return pick
 
 
+def _add_dome_output(stream, hdri):
+    """With 'output as' on Skydome and a dome connected, lay every layer out as the dome's own
+    texture: an ST map from EzAtmosDomeUV, read through an STMap on all channels."""
+    uv = nuke.nodes.BlinkScript(name="DomeUV", xpos=200, ypos=stream.ypos() + 40)
+    uv.setInput(0, hdri)
+    _load_kernel(uv, "EzAtmosDomeUV.blink")
+    for row in range(3):
+        for col in range(4):
+            _link(uv, "dome_row%d" % row, _dome_expression("m[%d]" % (col * 4 + row)), col)
+    for k in range(3):
+        _link(uv, "eye", _dome_expression(
+            "c['world_matrix'].getValueAt(t, %d) if c is not None "
+            "else m[%d]" % (3 + 4 * k, 12 + k)), k)
+    _link(uv, "radius", _dome_expression("r"))
+    stmap = nuke.nodes.STMap(name="ToDome", channels="all", uv="rgb", xpos=0, ypos=stream.ypos() + 40)
+    stmap.setInput(0, stream)
+    stmap.setInput(1, uv)
+    pick = nuke.nodes.Switch(name="OutputAs", xpos=0, ypos=stream.ypos() + 80)
+    pick.setInput(0, stream)
+    pick.setInput(1, stmap)
+    pick["which"].setExpression("parent.output_mapping==1 && [exists parent.input2]")
+    return pick
+
+
 def build():
     for layer in LAYERS:
         nuke.Layer(layer, ["%s.red" % layer, "%s.green" % layer, "%s.blue" % layer])
@@ -677,6 +709,7 @@ def build():
     nuke.nodes.Input(name="dome", xpos=150, ypos=-440)
     nuke.nodes.Input(name="camera", xpos=300, ypos=-440)
     # From here on the HDRI is the one seen on the skydome, when there is one.
+    hdri_source = hdri
     hdri = _add_dome_nodes(hdri)
 
     # Light measured from a small copy of the HDRI.
@@ -815,6 +848,7 @@ def build():
     names = [kn.name() for kn in group.allKnobs() if kn.Class() not in ("Tab_Knob", "Text_Knob", "PyScript_Knob")
              and kn.name() in _USER_KNOBS]
     stream = _add_bake_nodes(stream, names)
+    stream = _add_dome_output(stream, hdri_source)
     out = nuke.nodes.Output(xpos=0, ypos=stream.ypos() + 80)
     out.setInput(0, stream)
     group.end()
