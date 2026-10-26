@@ -349,15 +349,28 @@ def _upscale(node, hdri, name):
 
 # ---- Bake ----------------------------------------------------------------------------
 
-# Default cache path, next to the script (or under $EZATMOS_CACHE_DIR):
-#   <script dir>/ezatmos_cache/<script>/<node>/<script>_<node>.####.exr
-_SCRIPT = "[file rootname [file tail [value root.name]]]"
-_CACHE_ROOT = "[python {__import__('os').environ.get('EZATMOS_CACHE_DIR') or ''}]"
-BAKE_PATH = ("[if {[value parent.bake_file] != \"\"} {value parent.bake_file} "
-             "{set d [if {\"%(root)s\" != \"\"} {set e \"%(root)s\"} "
-             "{set e [file dirname [value root.name]]/ezatmos_cache}]/"
-             "%(script)s/[value parent.name]/%(script)s_[value parent.name].####.exr}]"
-             % {"root": _CACHE_ROOT, "script": _SCRIPT})
+# The bake path: 'bake file' when set, else <folder>/<script>/<node>/<script>_<node>.####.exr,
+# where <folder> is 'bake folder', else $EZATMOS_CACHE_DIR, else <script dir>/ezatmos_cache.
+# Both knobs may use $VAR, ${VAR} (environment variables) or Tcl such as [getenv JOB]. A path
+# with a variable that isn't set comes out empty, so nothing is written to a wrong place.
+# Python inside Tcl braces: no braces, double quotes or backslashes in it.
+BAKE_PATH = ("[python -execlocal {import os\n"
+             "g = nuke.thisGroup()\n"
+             "ready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\n"
+             "s = nuke.root().name()\n"
+             "base = os.path.splitext(os.path.basename(s))[0]\n"
+             "p = g['bake_file'].value().strip() if ready else ''\n"
+             "if not p:\n"
+             "    d = (g['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n"
+             "    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n"
+             "    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\n"
+             "p = os.path.expandvars(p)\n"
+             "if '[' in p:\n"
+             "    try:\n"
+             "        p = nuke.tcl('subst', p)\n"
+             "    except RuntimeError:\n"
+             "        p = ''\n"
+             "ret = '' if '$' in p or not ready else p.replace(chr(92), '/')}]")
 
 
 def _hash_code(names):
@@ -411,7 +424,7 @@ def _check_code(names):
 
 def _knob_changed_script(names):
     # Re-check the bake when a setting, the inputs or the bake knobs change.
-    watched = list(names) + ["use_baked", "bake_file", "baked_hash", "baked_first", "inputChange"]
+    watched = list(names) + ["use_baked", "bake_file", "bake_folder", "baked_hash", "baked_first", "inputChange"]
     return ("if nuke.thisKnob().name() in %r:\n" % (watched,) +
             "".join("    " + line + "\n" for line in _check_code(names).splitlines()))
 
@@ -424,25 +437,41 @@ def _on_create_script(names):
             "    g['bake_last'].setValue(int(nuke.root()['last_frame'].value()))\n" + _check_code(names))
 
 
+# Python that stops a bake whose path didn't resolve: an unset variable empties it, and a
+# relative path would land wherever Nuke was started.
+_PATH_CHECK = ("import os\n"
+               "path = nuke.filename(g.node('BakeRead')) or ''\n"
+               "bad = '' if path and os.path.isabs(path) else ('the bake folder uses an environment variable that '\n"
+               "    'isn\\'t set in Nuke' if path == '' else 'the bake path isn\\'t a full path: ' + path)\n"
+               "if bad:\n"
+               "    nuke.message('Not baked: ' + bad + '.\\n\\nFolder: ' + (g['bake_file'].value() or g['bake_folder'].value()))\n")
+
+
 def _bake_script(names):
-    return ("g = nuke.thisNode()\n" + _hash_code(names) + _range_code() +
-            "use = g['use_baked'].value()\n"
-            "g['use_baked'].setValue(False)\n"
-            "try:\n"
-            "    with g:\n"
-            "        nuke.execute(nuke.toNode('BakeWrite'), first, last)\n"
-            "    g['baked_hash'].setValue(h)\n"
-            "    g['baked_first'].setValue(first)\n"
-            "    g['baked_last'].setValue(last)\n"
-            "finally:\n"
-            "    g['use_baked'].setValue(use)\n" + _check_code(names))
+    return ("g = nuke.thisNode()\n" + _PATH_CHECK +
+            "if not bad:\n" + "".join("    " + line + "\n" for line in (
+                _hash_code(names) + _range_code() +
+                "use = g['use_baked'].value()\n"
+                "g['use_baked'].setValue(False)\n"
+                "try:\n"
+                "    with g:\n"
+                "        nuke.execute(nuke.toNode('BakeWrite'), first, last)\n"
+                "    g['baked_hash'].setValue(h)\n"
+                "    g['baked_first'].setValue(first)\n"
+                "    g['baked_last'].setValue(last)\n"
+                "finally:\n"
+                "    g['use_baked'].setValue(use)\n" + _check_code(names)).splitlines()))
 
 
 def _farm_write_script(names):
     # A top-level Write with the same path, for a farm job the comp renders depend on. The
     # farm bake's frames don't exist yet, so it is trusted until a setting changes.
-    return ("g = nuke.thisNode()\n" + _hash_code(names) + _range_code() +
-            "path = nuke.filename(g.node('BakeRead'))\n"
+    return ("g = nuke.thisNode()\n" + _PATH_CHECK +
+            "if not bad:\n" + "".join("    " + line + "\n" for line in _farm_write_body(names).splitlines()))
+
+
+def _farm_write_body(names):
+    return (_hash_code(names) + _range_code() +
             "with nuke.root():\n"
             "    w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n"
             "    w['create_directories'].setValue(True)\n"
@@ -463,9 +492,15 @@ def _farm_write_script(names):
 
 def _add_bake_knobs(group, names):
     k = [nuke.Text_Knob("bake_divider", "Bake")]
+    folder = nuke.File_Knob("bake_folder", "bake folder")
+    folder.setTooltip("Where bakes go, for example on the job so the farm can read them: "
+                      "/data/jobs/[getenv JOB]/cache/ezAtmosScatter (or $JOB). Each script and node gets its own "
+                      "subfolder: <folder>/<script>/<node>/<script>_<node>.####.exr. Empty: $EZATMOS_CACHE_DIR "
+                      "when set, else <script dir>/ezatmos_cache. Missing folders are created when baking.")
+    k.append(folder)
     f = nuke.File_Knob("bake_file", "bake file")
-    f.setTooltip("Leave empty for the default: <script dir>/ezatmos_cache/<script>/<node>/<script>_<node>.####.exr, "
-                 "or $EZATMOS_CACHE_DIR/<script>/<node>/... when that is set. Fill in to override.")
+    f.setTooltip("Leave empty to use 'bake folder'. Fill in a full file path (with ####) to override it for "
+                 "this node. $VAR and [getenv VAR] work here too.")
     k.append(f)
     first = nuke.Int_Knob("bake_first", "bake range")
     first.setTooltip("First frame to bake. Set first and last to the same frame to bake one frame, held for "

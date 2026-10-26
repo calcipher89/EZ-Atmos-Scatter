@@ -225,9 +225,14 @@ The bake goes next to the script by default:
 /shows/abc/seq010/comp/ezatmos_cache/sh010_comp_v003/EzAtmosScatter1/sh010_comp_v003_EzAtmosScatter1.0001.exr
 ```
 
-Set `EZATMOS_CACHE_DIR` to put it somewhere else (it replaces `<script dir>/ezatmos_cache`),
-or type a path in *bake file* to override it for one node. Versioning the script up starts
-a new cache folder, so bake again (or keep the old path in *bake file*).
+To put it somewhere the farm can read, set **bake folder** on the node (it replaces
+`<script dir>/ezatmos_cache`), for example `/data/jobs/[getenv JOB]/cache/ezAtmosScatter`.
+It can use environment variables as `[getenv JOB]`, `$JOB` or `${JOB}`, so a studio can set it
+once in its saved Group or toolset with no `init.py`. Empty, `EZATMOS_CACHE_DIR` is used when
+set. *bake file* overrides the whole path for one node. Baking creates missing folders, and
+refuses (saying why) a path that uses a variable not set in Nuke or isn't a full path.
+Versioning the script up starts a new cache folder, so bake again (or keep the old path in
+*bake file*).
 
 ## Rebuilding the gizmo
 
