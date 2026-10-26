@@ -92,8 +92,8 @@ Gizmo {
  addUserKnob {2 bake_file l "bake file" t "Leave empty to use 'bake folder'. Fill in a full file path (with ####) to override it for this node. \$VAR and \[getenv VAR] work here too."}
  addUserKnob {3 bake_first l "bake range" t "First frame to bake. Set first and last to the same frame to bake one frame, held for the whole shot (a sun that doesn't move)."}
  addUserKnob {3 bake_last l "" t "Last frame to bake." -STARTLINE}
- addUserKnob {22 bake_now l "bake now" t "Writes all layers to the bake file here and now." T "g = nuke.thisNode()\nimport os\npath = nuke.filename(g.node('BakeRead')) or ''\nbad = '' if path and os.path.isabs(path) else ('the bake folder uses an environment variable that '\n    'isn\\'t set in Nuke' if path == '' else 'the bake path isn\\'t a full path: ' + path)\nif not bad and not os.path.isdir(os.path.dirname(path)):\n    # The Write's own 'create directories' doesn't always make deep new folders, so\n    # make them here first.\n    try:\n        os.makedirs(os.path.dirname(path))\n    except OSError as e:\n        bad = 'can\\'t create ' + os.path.dirname(path) + ' (' + str(e.strerror or e) + ')'\nif bad:\n    nuke.message('Not baked: ' + bad + '.\\n\\nFolder: ' + (g\['bake_file'].value() or g\['bake_folder'].value()))\nif not bad:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        if g.knob(n):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    first, last = int(g\['bake_first'].value()), int(g\['bake_last'].value())\n    if last < first:\n        first, last = last, first\n    use = g\['use_baked'].value()\n    g\['use_baked'].setValue(False)\n    try:\n        with g:\n            nuke.execute(nuke.toNode('BakeWrite'), first, last)\n        g\['baked_hash'].setValue(h)\n        g\['baked_first'].setValue(first)\n        g\['baked_last'].setValue(last)\n    finally:\n        g\['use_baked'].setValue(use)\n    g = nuke.thisNode()\n    if g.knob('bake_valid') is not None:\n        import hashlib\n        s = \[]\n        for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n            if g.knob(n):\n                s.append((n, g\[n].toScript()))\n        # Where the skydome sits shapes the output too.\n        d = g.node('DomeRemap')\n        if d is not None and g.input(2) is not None:\n            for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n                s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n        h = hashlib.md5(repr(s).encode()).hexdigest()\n        import os, re\n        r = g.node('BakeRead')\n        p = (nuke.filename(r) or '') if r is not None else ''\n        fr = int(g\['baked_first'].value())\n        m = re.search('(#+)|%(0?\[0-9]*)d', p)\n        if m is not None:\n            width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n            p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n        ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n        if bool(g\['bake_valid'].value()) != ok:\n            g\['bake_valid'].setValue(ok)\n        status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n        if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n            g\['label'].setValue(status)\n" +STARTLINE}
- addUserKnob {22 bake_farm_write l "make farm bake Write" t "Adds a Write below this node with the bake path, to render on the farm before the comp." -STARTLINE T "g = nuke.thisNode()\nimport os\npath = nuke.filename(g.node('BakeRead')) or ''\nbad = '' if path and os.path.isabs(path) else ('the bake folder uses an environment variable that '\n    'isn\\'t set in Nuke' if path == '' else 'the bake path isn\\'t a full path: ' + path)\nif not bad and not os.path.isdir(os.path.dirname(path)):\n    # The Write's own 'create directories' doesn't always make deep new folders, so\n    # make them here first.\n    try:\n        os.makedirs(os.path.dirname(path))\n    except OSError as e:\n        bad = 'can\\'t create ' + os.path.dirname(path) + ' (' + str(e.strerror or e) + ')'\nif bad:\n    nuke.message('Not baked: ' + bad + '.\\n\\nFolder: ' + (g\['bake_file'].value() or g\['bake_folder'].value()))\nif not bad:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        if g.knob(n):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    first, last = int(g\['bake_first'].value()), int(g\['bake_last'].value())\n    if last < first:\n        first, last = last, first\n    with nuke.root():\n        w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n        w\['create_directories'].setValue(True)\n        w\['use_limit'].setValue(True)\n        w\['first'].setValue(first)\n        w\['last'].setValue(last)\n        w.setInput(0, g)\n        w.setXYpos(g.xpos(), g.ypos() + 80)\n    g\['baked_hash'].setValue(h)\n    g\['baked_first'].setValue(first)\n    g\['baked_last'].setValue(last)\n    g\['bake_valid'].setValue(True)\n    if g\['label'].value() in ('', 'bake out of date: live'):\n        g\['label'].setValue('baked')\n    if nuke.GUI:\n        nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n"}
+ addUserKnob {22 bake_now l "bake now" t "Writes all layers to the bake file here and now." T "g = nuke.thisNode()\nimport os\npath = nuke.filename(g.node('BakeRead')) or ''\nbad = '' if path and os.path.isabs(path) else ('the bake folder uses an environment variable that '\n    'isn\\'t set in Nuke' if path == '' else 'the bake path isn\\'t a full path: ' + path)\nif not bad and not path.lower().endswith('.exr'):\n    # A folder typed into 'bake file' (which is the whole file name) would make Nuke\n    # write a frame named like the folder.\n    bad = ('\\'bake file\\' is a folder, not a file name like name.####.exr. Put the folder in '\n           '\\'bake folder\\' and leave \\'bake file\\' empty')\nif not bad and not os.path.isdir(os.path.dirname(path)):\n    # The Write's own 'create directories' doesn't always make deep new folders, so\n    # make them here first.\n    try:\n        os.makedirs(os.path.dirname(path))\n    except OSError as e:\n        bad = 'can\\'t create ' + os.path.dirname(path) + ' (' + str(e.strerror or e) + ')'\nif bad:\n    nuke.message('Not baked: ' + bad + '.\\n\\nFolder: ' + (g\['bake_file'].value() or g\['bake_folder'].value()))\nif not bad:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        if g.knob(n):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    first, last = int(g\['bake_first'].value()), int(g\['bake_last'].value())\n    if last < first:\n        first, last = last, first\n    use = g\['use_baked'].value()\n    g\['use_baked'].setValue(False)\n    try:\n        with g:\n            nuke.execute(nuke.toNode('BakeWrite'), first, last)\n        g\['baked_hash'].setValue(h)\n        g\['baked_first'].setValue(first)\n        g\['baked_last'].setValue(last)\n    finally:\n        g\['use_baked'].setValue(use)\n    g = nuke.thisNode()\n    if g.knob('bake_valid') is not None:\n        import hashlib\n        s = \[]\n        for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n            if g.knob(n):\n                s.append((n, g\[n].toScript()))\n        # Where the skydome sits shapes the output too.\n        d = g.node('DomeRemap')\n        if d is not None and g.input(2) is not None:\n            for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n                s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n        h = hashlib.md5(repr(s).encode()).hexdigest()\n        import os, re\n        r = g.node('BakeRead')\n        p = (nuke.filename(r) or '') if r is not None else ''\n        fr = int(g\['baked_first'].value())\n        m = re.search('(#+)|%(0?\[0-9]*)d', p)\n        if m is not None:\n            width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n            p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n        ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n        if bool(g\['bake_valid'].value()) != ok:\n            g\['bake_valid'].setValue(ok)\n        status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n        if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n            g\['label'].setValue(status)\n" +STARTLINE}
+ addUserKnob {22 bake_farm_write l "make farm bake Write" t "Adds a Write below this node with the bake path, to render on the farm before the comp." -STARTLINE T "g = nuke.thisNode()\nimport os\npath = nuke.filename(g.node('BakeRead')) or ''\nbad = '' if path and os.path.isabs(path) else ('the bake folder uses an environment variable that '\n    'isn\\'t set in Nuke' if path == '' else 'the bake path isn\\'t a full path: ' + path)\nif not bad and not path.lower().endswith('.exr'):\n    # A folder typed into 'bake file' (which is the whole file name) would make Nuke\n    # write a frame named like the folder.\n    bad = ('\\'bake file\\' is a folder, not a file name like name.####.exr. Put the folder in '\n           '\\'bake folder\\' and leave \\'bake file\\' empty')\nif not bad and not os.path.isdir(os.path.dirname(path)):\n    # The Write's own 'create directories' doesn't always make deep new folders, so\n    # make them here first.\n    try:\n        os.makedirs(os.path.dirname(path))\n    except OSError as e:\n        bad = 'can\\'t create ' + os.path.dirname(path) + ' (' + str(e.strerror or e) + ')'\nif bad:\n    nuke.message('Not baked: ' + bad + '.\\n\\nFolder: ' + (g\['bake_file'].value() or g\['bake_folder'].value()))\nif not bad:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        if g.knob(n):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    first, last = int(g\['bake_first'].value()), int(g\['bake_last'].value())\n    if last < first:\n        first, last = last, first\n    with nuke.root():\n        w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n        w\['create_directories'].setValue(True)\n        w\['use_limit'].setValue(True)\n        w\['first'].setValue(first)\n        w\['last'].setValue(last)\n        w.setInput(0, g)\n        w.setXYpos(g.xpos(), g.ypos() + 80)\n    g\['baked_hash'].setValue(h)\n    g\['baked_first'].setValue(first)\n    g\['baked_last'].setValue(last)\n    g\['bake_valid'].setValue(True)\n    if g\['label'].value() in ('', 'bake out of date: live'):\n        g\['label'].setValue('baked')\n    if nuke.GUI:\n        nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n"}
  addUserKnob {6 use_baked l "use baked" t "Read the bake instead of computing, but only while it exists and these settings still match it; otherwise the node computes live and its label says the bake is out of date. The check runs when a knob or input of this node changes and when the script opens; after moving the skydome upstream, bake again." +STARTLINE}
  use_baked true
  addUserKnob {1 baked_hash l "baked hash" +INVISIBLE}
@@ -142,8 +142,8 @@ Gizmo {
   xpos 0
   ypos -370
  }
-set N3e6daf00 [stack 0]
-push $N3e6daf00
+set N469aaf00 [stack 0]
+push $N469aaf00
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -160,7 +160,7 @@ push $N3e6daf00
   xpos 150
   ypos -360
  }
-push $N3e6daf00
+push $N469aaf00
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -168,7 +168,7 @@ push $N3e6daf00
   xpos 0
   ypos -340
  }
-set N3e6dc300 [stack 0]
+set N469ac300 [stack 0]
  Reformat {
   type "to box"
   box_width 256
@@ -193,9 +193,9 @@ set N3e6dc300 [stack 0]
   xpos 450
   ypos -180
  }
-set N3e719400 [stack 0]
-push $N3e719400
-push $N3e6dc300
+set N469e9400 [stack 0]
+push $N469e9400
+push $N469ac300
  Reformat {
   type "to box"
   box_width 512
@@ -207,8 +207,8 @@ push $N3e6dc300
   xpos 300
   ypos -300
  }
-set N3e6e1800 [stack 0]
-push $N3e6e1800
+set N469b1800 [stack 0]
+push $N469b1800
  Reformat {
   type "to box"
   box_width 4
@@ -219,7 +219,7 @@ push $N3e6e1800
   xpos 300
   ypos -240
  }
-set N3e718000 [stack 0]
+set N469e8000 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -234,8 +234,8 @@ set N3e718000 [stack 0]
   xpos 300
   ypos -180
  }
-set N3e718800 [stack 0]
-push $N3e6dc300
+set N469e8800 [stack 0]
+push $N469ac300
  Reformat {
   type "to box"
   box_width 512
@@ -246,7 +246,7 @@ push $N3e6dc300
   xpos 600
   ypos -300
  }
-set N3e742000 [stack 0]
+set N46a12000 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -283,9 +283,9 @@ set N3e742000 [stack 0]
   xpos 720
   ypos -240
  }
-push $N3e719400
-push $N3e718800
-push $N3e742000
+push $N469e9400
+push $N469e8800
+push $N46a12000
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -330,7 +330,7 @@ push $N3e742000
   xpos 600
   ypos -200
  }
-push $N3e718000
+push $N469e8000
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -345,7 +345,7 @@ push $N3e718000
   xpos 600
   ypos -160
  }
-push $N3e718800
+push $N469e8800
  Switch {
   inputs 2
   which {{parent.self_lit}}
@@ -353,8 +353,8 @@ push $N3e718800
   xpos 450
   ypos -120
  }
-set N3e6dc800 [stack 0]
-push $N3e6dc300
+set N469ac800 [stack 0]
+push $N469ac300
  Reformat {
   type "to box"
   box_width {{"max(floor(HDRISource.width * parent.scatter_scale + 0.5), 4)"}}
@@ -365,7 +365,7 @@ push $N3e6dc300
   xpos -300
   ypos -240
  }
-set N3e719800 [stack 0]
+set N469e9800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -402,7 +402,7 @@ set N3e719800 [stack 0]
   xpos 600
   ypos -100
  }
-set N257d2800 [stack 0]
+set Nc192800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -426,7 +426,7 @@ set N257d2800 [stack 0]
   xpos 600
   ypos 90
  }
-push $N257d2800
+push $Nc192800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -456,7 +456,7 @@ push $N257d2800
   xpos 600
   ypos 120
  }
-push $N257d2800
+push $Nc192800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -464,9 +464,9 @@ push $N257d2800
   xpos 600
   ypos 150
  }
-push $N3e719400
-push $N3e718800
-push $N3e719800
+push $N469e9400
+push $N469e8800
+push $N469e9800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -503,7 +503,7 @@ push $N3e719800
   xpos 450
   ypos -100
  }
-set N2579e000 [stack 0]
+set Nc15e000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -527,7 +527,7 @@ set N2579e000 [stack 0]
   xpos 450
   ypos 90
  }
-push $N2579e000
+push $Nc15e000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -557,7 +557,7 @@ push $N2579e000
   xpos 450
   ypos 120
  }
-push $N2579e000
+push $Nc15e000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -565,9 +565,9 @@ push $N2579e000
   xpos 450
   ypos 150
  }
-push $N3e719400
-push $N3e6dc800
-push $N3e719800
+push $N469e9400
+push $N469ac800
+push $N469e9800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -604,7 +604,7 @@ push $N3e719800
   xpos 300
   ypos -100
  }
-set N25721800 [stack 0]
+set Nc0e1800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -628,7 +628,7 @@ set N25721800 [stack 0]
   xpos 300
   ypos 90
  }
-push $N25721800
+push $Nc0e1800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -658,7 +658,7 @@ push $N25721800
   xpos 300
   ypos 120
  }
-push $N25721800
+push $Nc0e1800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -666,10 +666,10 @@ push $N25721800
   xpos 300
   ypos 150
  }
-set N25748500 [stack 0]
-push $N3e719400
-push $N3e718800
-push $N3e719800
+set Nc108500 [stack 0]
+push $N469e9400
+push $N469e8800
+push $N469e9800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -706,7 +706,7 @@ push $N3e719800
   xpos 0
   ypos -100
  }
-set N256ac800 [stack 0]
+set Nc06c800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -730,7 +730,7 @@ set N256ac800 [stack 0]
   xpos 0
   ypos 90
  }
-push $N256ac800
+push $Nc06c800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -760,7 +760,7 @@ push $N256ac800
   xpos 0
   ypos 120
  }
-push $N256ac800
+push $Nc06c800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -768,10 +768,10 @@ push $N256ac800
   xpos 0
   ypos 150
  }
-set N3e6dd700 [stack 0]
-push $N3e719400
-push $N3e6dc800
-push $N3e719800
+set N469ad700 [stack 0]
+push $N469e9400
+push $N469ac800
+push $N469e9800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -808,7 +808,7 @@ push $N3e719800
   xpos 150
   ypos -100
  }
-set N256eb000 [stack 0]
+set Nc0ab000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -832,7 +832,7 @@ set N256eb000 [stack 0]
   xpos 150
   ypos 90
  }
-push $N256eb000
+push $Nc0ab000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -862,7 +862,7 @@ push $N256eb000
   xpos 150
   ypos 120
  }
-push $N256eb000
+push $Nc0ab000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -870,10 +870,10 @@ push $N256eb000
   xpos 150
   ypos 150
  }
-set N25748000 [stack 0]
-push $N3e719400
-push $N3e718800
-push $N3e719800
+set Nc108000 [stack 0]
+push $N469e9400
+push $N469e8800
+push $N469e9800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -910,7 +910,7 @@ push $N3e719800
   xpos -150
   ypos -100
  }
-set N25676000 [stack 0]
+set Nc036000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -934,7 +934,7 @@ set N25676000 [stack 0]
   xpos -150
   ypos 90
  }
-push $N25676000
+push $Nc036000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -964,7 +964,7 @@ push $N25676000
   xpos -150
   ypos 120
  }
-push $N25676000
+push $Nc036000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -972,10 +972,10 @@ push $N25676000
   xpos -150
   ypos 150
  }
-set N3e6dd200 [stack 0]
-push $N3e719400
-push $N3e718800
-push $N3e719800
+set N469ad200 [stack 0]
+push $N469e9400
+push $N469e8800
+push $N469e9800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1012,7 +1012,7 @@ push $N3e719800
   xpos -300
   ypos -100
  }
-set N3e743800 [stack 0]
+set N46a13800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1036,7 +1036,7 @@ set N3e743800 [stack 0]
   xpos -300
   ypos 90
  }
-push $N3e743800
+push $N46a13800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1066,7 +1066,7 @@ push $N3e743800
   xpos -300
   ypos 120
  }
-push $N3e743800
+push $N46a13800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1074,10 +1074,10 @@ push $N3e743800
   xpos -300
   ypos 150
  }
-set N3e6dcd00 [stack 0]
-push $N25748000
-push $N3e6dd200
-push $N3e6dcd00
+set N469acd00 [stack 0]
+push $Nc108000
+push $N469ad200
+push $N469acd00
  Merge2 {
   inputs 2
   operation plus
@@ -1091,10 +1091,10 @@ push $N3e6dcd00
   xpos -300
   ypos 60
  }
-set N2584dc00 [stack 0]
-push $N2584dc00
-push $N3e6dd700
-push $N3e6dc300
+set Nc20dc00 [stack 0]
+push $Nc20dc00
+push $N469ad700
+push $N469ac300
  Merge2 {
   inputs 2
   operation multiply
@@ -1110,10 +1110,10 @@ push $N3e6dc300
   xpos 0
   ypos 60
  }
-set N2588a400 [stack 0]
-push $N3e719400
-push $N3e718800
-push $N3e719800
+set Nc24a400 [stack 0]
+push $N469e9400
+push $N469e8800
+push $N469e9800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1150,7 +1150,7 @@ push $N3e719800
   xpos 750
   ypos -100
  }
-set N25811000 [stack 0]
+set Nc1d1000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1174,7 +1174,7 @@ set N25811000 [stack 0]
   xpos 750
   ypos 90
  }
-push $N25811000
+push $Nc1d1000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1204,7 +1204,7 @@ push $N25811000
   xpos 750
   ypos 120
  }
-push $N25811000
+push $Nc1d1000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1212,13 +1212,13 @@ push $N25811000
   xpos 750
   ypos 150
  }
-set N25749400 [stack 0]
+set Nc109400 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 300
  }
-push $N25748500
+push $Nc108500
  Merge2 {
   inputs 2
   operation multiply
@@ -1227,8 +1227,8 @@ push $N25748500
   xpos 300
   ypos 60
  }
-push $N25749400
-push $N2588a400
+push $Nc109400
+push $Nc24a400
  Merge2 {
   inputs 2
   operation multiply
@@ -1251,13 +1251,13 @@ push $N2588a400
   xpos 150
   ypos 100
  }
-push $N25748500
-push $N3e6dd700
-push $N25748000
-push $N3e6dd200
-push $N3e6dcd00
-push $N2584dc00
-push $N2588a400
+push $Nc108500
+push $N469ad700
+push $Nc108000
+push $N469ad200
+push $N469acd00
+push $Nc20dc00
+push $Nc24a400
  Switch {
   inputs 8
   which {{parent.view_output}}
@@ -1265,7 +1265,7 @@ push $N2588a400
   xpos 0
   ypos 160
  }
-push $N3e6dc300
+push $N469ac300
  Copy {
   inputs 2
   channels rgb
@@ -1377,7 +1377,7 @@ add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky
   xpos 0
   ypos 720
  }
-set N258df800 [stack 0]
+set Nc29f800 [stack 0]
  Write {
   channels all
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -1393,7 +1393,7 @@ set N258df800 [stack 0]
   xpos 200
   ypos 780
  }
-push $N3e6daf00
+push $N469aaf00
  BlinkScript {
   recompileCount 2
   KernelDescription "3 \"EzAtmosDomeUV\" iterate pixelWise 6a5689d7e5b0345c745bac7d4be5aa48831996ed9720a217afcc7d5bbbcd27e1 2 \"ref\" Read Point \"dst\" Write Point 5 \"dome_row0\" Float 4 AACAPwAAAAAAAAAAAAAAAA== \"dome_row1\" Float 4 AAAAAAAAgD8AAAAAAAAAAA== \"dome_row2\" Float 4 AAAAAAAAAAAAAIA/AAAAAA== \"eye\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"radius\" Float 1 AACAPw== 5 \"domeRow0\" 4 1 Default \"domeRow1\" 4 1 Default \"domeRow2\" 4 1 Default \"eye\" 3 1 Default \"radius\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
@@ -1423,7 +1423,7 @@ push $N3e6daf00
   xpos 200
   ypos 840
  }
-push $N258df800
+push $Nc29f800
  Switch {
   inputs 2
   which {{"parent.use_baked && parent.bake_valid"}}
@@ -1431,7 +1431,7 @@ push $N258df800
   xpos 0
   ypos 840
  }
-set N2574a300 [stack 0]
+set Nc10a300 [stack 0]
  STMap {
   inputs 2
   uv rgb
@@ -1439,7 +1439,7 @@ set N2574a300 [stack 0]
   xpos 0
   ypos 880
  }
-push $N2574a300
+push $Nc10a300
  Switch {
   inputs 2
   which {{"parent.output_mapping==1 && \[exists parent.input2]"}}
