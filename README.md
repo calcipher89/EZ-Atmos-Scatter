@@ -111,7 +111,10 @@ heights, planet size) and the sun detection settings.
 
 Connect the HDRI, the shot camera (and the skydome, if there is one), set **units to
 metres** (0.1 for a decimetre scene) and **ground height** (in scene units), and press
-**analyze**. It sets the node up for depth hazing that shot and tells you what it set:
+**analyze**. It sets the node up for depth hazing that shot and tells you what it set. If
+*units to metres* is still 1, it first asks once which units the scene is in (Metres,
+Decimetres, Centimetres, Millimetres, Feet or Inches, each with the camera height it would
+give), since nothing in the scene says so:
 
 - *passes*: Depth Haze;
 - *camera height*: the camera's height above the ground, in metres;

@@ -129,6 +129,10 @@ def _add_knobs(group):
     unit.setTooltip("Scene units to metres for analyze, e.g. 0.1 for decimetres, 0.01 for centimetres.")
     unit.setRange(0.001, 100)
     k.append(unit)
+    confirmed = nuke.Boolean_Knob("units_confirmed", "units confirmed")
+    confirmed.setTooltip("Set when the scene units were picked in analyze, so it doesn't ask again.")
+    confirmed.setFlag(nuke.INVISIBLE)
+    k.append(confirmed)
     ground = nuke.Double_Knob("ground_height", "ground height")
     ground.setTooltip("Height of the ground in scene units, so analyze measures the camera height above it.")
     k.append(ground)
@@ -260,7 +264,7 @@ def _add_knobs(group):
     _USER_KNOBS.update(knob.name() for knob in k)
     # Analyze only sets other knobs; its own settings don't shape the output.
     # The skydome output is applied after the bake, so it does not change what is baked.
-    _USER_KNOBS.difference_update(["analyze", "scene_scale", "ground_height", "reset_sun", "sun_in_use",
+    _USER_KNOBS.difference_update(["analyze", "scene_scale", "ground_height", "reset_sun", "sun_in_use", "units_confirmed",
                                    "output_mapping"])
 
     defaults = {
