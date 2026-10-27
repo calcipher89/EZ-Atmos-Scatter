@@ -27,6 +27,24 @@ cam = g.input(3)
 while cam is not None and not cam.knob("world_matrix"):
     cam = cam.input(0) if cam.inputs() else None
 scale = g["scene_scale"].value()
+# Nothing in the scene says what its units are, so ask once per node (when it is still at 1),
+# showing the camera height each choice would give.
+if nuke.GUI and abs(scale - 1.0) < 1e-9 and not g["units_confirmed"].value():
+    units = [("Metres", 1.0), ("Decimetres", 0.1), ("Centimetres", 0.01), ("Millimetres", 0.001),
+             ("Feet", 0.3048), ("Inches", 0.0254)]
+    raw = cam["world_matrix"].getValue(7) - g["ground_height"].value() if cam is not None else None
+    options = []
+    for label, m in units:
+        options.append(label if raw is None else "%s: camera %.4g m up" % (label, raw * m))
+    try:
+        pick = nuke.choice("EzAtmosScatter analyze", "What units is the scene in?", options, 0)
+    except Exception:
+        pick = None
+    if pick is not None and pick >= 0:
+        scale = units[pick][1]
+        g["scene_scale"].setValue(scale)
+        g["units_confirmed"].setValue(True)
+        done.append("Units to metres %g: the scene is in %s (you picked it)." % (scale, units[pick][0].lower()))
 fwd = None
 if cam is not None:
     wm = cam["world_matrix"]

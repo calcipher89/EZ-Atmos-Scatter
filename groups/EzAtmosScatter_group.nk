@@ -19,9 +19,10 @@ Group {
  passes "Depth Haze"
  addUserKnob {4 output_mapping l "output as" t "Lat-long: every layer is a lat-long around the camera. Skydome (with a dome in the 'dome' input): every layer is laid out as the dome's own texture instead, through the dome's transforms and seen from the camera, so it goes straight onto the same Sphere in the comp and lines up with it. Camera (with the shot camera in 'camera'): every layer as the camera sees the sky, at the project format, per frame: what a ScanlineRender of the skydome would give, without the 3D setup." M {Lat-long Skydome Camera}}
  addUserKnob {26 analyze_divider l Analyze}
- addUserKnob {22 analyze t "Looks at the camera, skydome and HDRI and sets the node up for depth hazing this shot: passes, camera height, haze distance (to the horizon), self-lit and where the sun comes from. Shows what it set, with warnings about the sun." -STARTLINE T "\"\"\"Analyze: set EzAtmosScatter up for depth hazing the shot in its inputs.\n\nbuild_gizmo.py embeds this file in the gizmo's \"analyze\" button, so Nuke needs no Python\nmodule at run time. It runs once when pressed and sets plain knob values:\n\n- passes: Depth Haze;\n- camera height: the camera's height above 'ground height', in metres;\n- haze distance: the distance to the HDRI's own horizon line (from how far below level it\n  sits), or else to the horizon seen from the camera height;\n- self-lit with no HDRI; with one, the sun from the HDRI when it has a clear sun.\n\nIt then shows what it set, with warnings for a sun beside or behind the camera, a high\nsun, or a skydome without a camera.\n\nKept to top-level code with plain loops: Nuke runs button scripts with separate locals,\nwhich functions and comprehensions can't see.\n\"\"\"\nimport math\nimport nuke\n\ng = nuke.thisNode()\ndone = \[]\nwarn = \[]\n\n# The camera, through any Dots or NoOps in between.\ncam = g.input(3)\nwhile cam is not None and not cam.knob(\"world_matrix\"):\n    cam = cam.input(0) if cam.inputs() else None\nscale = g\[\"scene_scale\"].value()\nfwd = None\nif cam is not None:\n    wm = cam\[\"world_matrix\"]\n    height = max((wm.getValue(7) - g\[\"ground_height\"].value()) * scale, 1.0)\n    g\[\"camera_height\"].setValue(round(height, 1))\n    done.append(\"Camera height %.0f m (camera %s, units to metres %g).\" % (height, cam.name(), scale))\n    fwd = \[-wm.getValue(2), -wm.getValue(6), -wm.getValue(10)]\nelse:\n    height = g\[\"camera_height\"].value()\n    warn.append(\"No camera connected: kept camera height %.0f m. Connect the shot camera to 'camera'.\" % height)\n\nradius = g\[\"planet_radius\"].value()\nhorizon = math.sqrt((radius + height / 1000.0) ** 2 - radius ** 2)\n\n# The HDRI's own horizon line: the row edge below 0 deg (down to 10 deg) where the image drops most\n# from sky to ground (over 3 rows, by at least 1.5x), from the median brightness of 64 columns.\n# Its dip below 0 deg gives the distance to that horizon, so the depth haze reaches exactly the\n# line the HDRI shows.\nhdri = g.input(0)\ndip = None\nif hdri is not None:\n    w, h = hdri.width(), hdri.height()\n    rows = \[]\n    for r in range(0, max(int(h * 10.0 / 180.0), 4) + 2):\n        y = h * 0.5 - r - 0.5 + 1.0\n        vals = \[]\n        for i in range(64):\n            x = (i + 0.5) * w / 64.0\n            vals.append(0.2126 * hdri.sample(\"red\", x, y) + 0.7152 * hdri.sample(\"green\", x, y) +\n                        0.0722 * hdri.sample(\"blue\", x, y))\n        vals.sort()\n        rows.append(vals\[32])\n    best, best_r = 1.0, None\n    for r in range(len(rows) - 1):\n        drop = (rows\[r] + 1e-4) / (rows\[r + 1] + 1e-4)\n        span = (rows\[max(r - 1, 0)] + 1e-4) / (rows\[min(r + 2, len(rows) - 1)] + 1e-4)\n        if drop > best and span > 1.5:\n            best, best_r = drop, r\n    if best_r is not None:\n        dip = best_r * 180.0 / h\nif dip is not None and dip > 0.0:\n    horizon = radius * math.tan(math.radians(dip))\n    g\[\"haze_distance\"].setValue(round(horizon, 1))\n    done.append(\"Haze distance %.1f km: the HDRI's horizon line, %.2f deg below level.\" % (horizon, dip))\nelse:\n    g\[\"haze_distance\"].setValue(round(horizon, 1))\n    done.append(\"Haze distance %.1f km: the horizon seen from %.0f m%s.\" % (\n        horizon, height, \"\" if hdri is None else \" (no clear horizon line in the HDRI)\"))\ng\[\"passes\"].setValue(\"Depth Haze\")\ndone.append(\"Passes: Depth Haze.\")\n\nsun = None\nif g.input(0) is None:\n    g\[\"self_lit\"].setValue(True)\n    if g\[\"sun_from\"].value() == \"Auto (HDRI)\":\n        g\[\"sun_from\"].setValue(\"Manual\")\n    done.append(\"No HDRI: self-lit on, sun from Manual.\")\nelse:\n    g\[\"self_lit\"].setValue(False)\n    with g:\n        light = nuke.toNode(\"Light\")\n        found = \[]\n        for c in (\"red\", \"green\", \"blue\"):\n            found.append(light.sample(c, 0.5, 0.5))\n        peak = light.sample(\"alpha\", 0.5, 0.5)\n        sky = 0.2126 * light.sample(\"red\", 2.5, 0.5) + 0.7152 * light.sample(\"green\", 2.5, 0.5) + \\\n            0.0722 * light.sample(\"blue\", 2.5, 0.5)\n        clipped = light.sample(\"alpha\", 1.5, 0.5) > 0.5\n    ratio = peak / max(sky, 1e-6)\n    # A clipped sun (LDR or a capped HDRI) stands out less, but its direction is still good.\n    if any(found) and (ratio > 4.0 or (clipped and ratio > 1.5)):\n        g\[\"sun_from\"].setValue(\"Auto (HDRI)\")\n        g\[\"light_from_hdri\"].setValue(True)\n        sun = found\n        if clipped:\n            done.append(\"Clipped sun found in the HDRI: sun from Auto; its brightness is rebuilt, tune 'sun boost'.\")\n        else:\n            done.append(\"Sun found in the HDRI (%.0fx the sky): sun from Auto, light from HDRI.\" % ratio)\n    else:\n        warn.append(\"No clear sun in the HDRI (overcast?): set 'sun from' to Manual or Axis yourself.\")\n\nif g.input(2) is not None:\n    if cam is None:\n        warn.append(\"A skydome is connected but no camera: the dome is seen from its centre.\")\n    else:\n        done.append(\"Skydome connected: the HDRI is re-mapped as the camera sees the dome.\")\n\nif sun is None and g\[\"sun_from\"].value() == \"Manual\":\n    sun = list(g\[\"sun_direction\"].value())\nif sun is not None:\n    ln = math.sqrt(sun\[0] ** 2 + sun\[1] ** 2 + sun\[2] ** 2) or 1.0\n    elev = math.degrees(math.asin(max(-1.0, min(1.0, sun\[1] / ln))))\n    if fwd is not None:\n        az = math.degrees(math.atan2(sun\[0], -sun\[2]) - math.atan2(fwd\[0], -fwd\[2]))\n        az = (az + 180.0) % 360.0 - 180.0\n        done.append(\"Sun %.0f deg up, %.0f deg %s of where the camera looks.\" % (elev, abs(az), \"right\" if az > 0 else \"left\"))\n        if abs(az) > 60.0:\n            warn.append(\"The sun is beside or behind the camera: backlit haze and shafts need it in front.\")\n    if elev > 20.0:\n        warn.append(\"The sun is high (%.0f deg): sunrise and golden hour looks need it under 10 deg.\" % elev)\n\nsummary = \"\\n\".join(done + (\[\"\"] + \[\"Note: \" + w for w in warn] if warn else \[]))\nif nuke.GUI:\n    nuke.message(\"EzAtmosScatter analyze\\n\\n\" + summary)\nelse:\n    print(summary)\n"}
+ addUserKnob {22 analyze t "Looks at the camera, skydome and HDRI and sets the node up for depth hazing this shot: passes, camera height, haze distance (to the horizon), self-lit and where the sun comes from. Shows what it set, with warnings about the sun." -STARTLINE T "\"\"\"Analyze: set EzAtmosScatter up for depth hazing the shot in its inputs.\n\nbuild_gizmo.py embeds this file in the gizmo's \"analyze\" button, so Nuke needs no Python\nmodule at run time. It runs once when pressed and sets plain knob values:\n\n- passes: Depth Haze;\n- camera height: the camera's height above 'ground height', in metres;\n- haze distance: the distance to the HDRI's own horizon line (from how far below level it\n  sits), or else to the horizon seen from the camera height;\n- self-lit with no HDRI; with one, the sun from the HDRI when it has a clear sun.\n\nIt then shows what it set, with warnings for a sun beside or behind the camera, a high\nsun, or a skydome without a camera.\n\nKept to top-level code with plain loops: Nuke runs button scripts with separate locals,\nwhich functions and comprehensions can't see.\n\"\"\"\nimport math\nimport nuke\n\ng = nuke.thisNode()\ndone = \[]\nwarn = \[]\n\n# The camera, through any Dots or NoOps in between.\ncam = g.input(3)\nwhile cam is not None and not cam.knob(\"world_matrix\"):\n    cam = cam.input(0) if cam.inputs() else None\nscale = g\[\"scene_scale\"].value()\n# Nothing in the scene says what its units are, so ask once per node (when it is still at 1),\n# showing the camera height each choice would give.\nif nuke.GUI and abs(scale - 1.0) < 1e-9 and not g\[\"units_confirmed\"].value():\n    units = \[(\"Metres\", 1.0), (\"Decimetres\", 0.1), (\"Centimetres\", 0.01), (\"Millimetres\", 0.001),\n             (\"Feet\", 0.3048), (\"Inches\", 0.0254)]\n    raw = cam\[\"world_matrix\"].getValue(7) - g\[\"ground_height\"].value() if cam is not None else None\n    options = \[]\n    for label, m in units:\n        options.append(label if raw is None else \"%s: camera %.4g m up\" % (label, raw * m))\n    try:\n        pick = nuke.choice(\"EzAtmosScatter analyze\", \"What units is the scene in?\", options, 0)\n    except Exception:\n        pick = None\n    if pick is not None and pick >= 0:\n        scale = units\[pick]\[1]\n        g\[\"scene_scale\"].setValue(scale)\n        g\[\"units_confirmed\"].setValue(True)\n        done.append(\"Units to metres %g: the scene is in %s (you picked it).\" % (scale, units\[pick]\[0].lower()))\nfwd = None\nif cam is not None:\n    wm = cam\[\"world_matrix\"]\n    height = max((wm.getValue(7) - g\[\"ground_height\"].value()) * scale, 1.0)\n    g\[\"camera_height\"].setValue(round(height, 1))\n    done.append(\"Camera height %.0f m (camera %s, units to metres %g).\" % (height, cam.name(), scale))\n    fwd = \[-wm.getValue(2), -wm.getValue(6), -wm.getValue(10)]\nelse:\n    height = g\[\"camera_height\"].value()\n    warn.append(\"No camera connected: kept camera height %.0f m. Connect the shot camera to 'camera'.\" % height)\n\nradius = g\[\"planet_radius\"].value()\nhorizon = math.sqrt((radius + height / 1000.0) ** 2 - radius ** 2)\n\n# The HDRI's own horizon line: the row edge below 0 deg (down to 10 deg) where the image drops most\n# from sky to ground (over 3 rows, by at least 1.5x), from the median brightness of 64 columns.\n# Its dip below 0 deg gives the distance to that horizon, so the depth haze reaches exactly the\n# line the HDRI shows.\nhdri = g.input(0)\ndip = None\nif hdri is not None:\n    w, h = hdri.width(), hdri.height()\n    rows = \[]\n    for r in range(0, max(int(h * 10.0 / 180.0), 4) + 2):\n        y = h * 0.5 - r - 0.5 + 1.0\n        vals = \[]\n        for i in range(64):\n            x = (i + 0.5) * w / 64.0\n            vals.append(0.2126 * hdri.sample(\"red\", x, y) + 0.7152 * hdri.sample(\"green\", x, y) +\n                        0.0722 * hdri.sample(\"blue\", x, y))\n        vals.sort()\n        rows.append(vals\[32])\n    best, best_r = 1.0, None\n    for r in range(len(rows) - 1):\n        drop = (rows\[r] + 1e-4) / (rows\[r + 1] + 1e-4)\n        span = (rows\[max(r - 1, 0)] + 1e-4) / (rows\[min(r + 2, len(rows) - 1)] + 1e-4)\n        if drop > best and span > 1.5:\n            best, best_r = drop, r\n    if best_r is not None:\n        dip = best_r * 180.0 / h\nif dip is not None and dip > 0.0:\n    horizon = radius * math.tan(math.radians(dip))\n    g\[\"haze_distance\"].setValue(round(horizon, 1))\n    done.append(\"Haze distance %.1f km: the HDRI's horizon line, %.2f deg below level.\" % (horizon, dip))\nelse:\n    g\[\"haze_distance\"].setValue(round(horizon, 1))\n    done.append(\"Haze distance %.1f km: the horizon seen from %.0f m%s.\" % (\n        horizon, height, \"\" if hdri is None else \" (no clear horizon line in the HDRI)\"))\ng\[\"passes\"].setValue(\"Depth Haze\")\ndone.append(\"Passes: Depth Haze.\")\n\nsun = None\nif g.input(0) is None:\n    g\[\"self_lit\"].setValue(True)\n    if g\[\"sun_from\"].value() == \"Auto (HDRI)\":\n        g\[\"sun_from\"].setValue(\"Manual\")\n    done.append(\"No HDRI: self-lit on, sun from Manual.\")\nelse:\n    g\[\"self_lit\"].setValue(False)\n    with g:\n        light = nuke.toNode(\"Light\")\n        found = \[]\n        for c in (\"red\", \"green\", \"blue\"):\n            found.append(light.sample(c, 0.5, 0.5))\n        peak = light.sample(\"alpha\", 0.5, 0.5)\n        sky = 0.2126 * light.sample(\"red\", 2.5, 0.5) + 0.7152 * light.sample(\"green\", 2.5, 0.5) + \\\n            0.0722 * light.sample(\"blue\", 2.5, 0.5)\n        clipped = light.sample(\"alpha\", 1.5, 0.5) > 0.5\n    ratio = peak / max(sky, 1e-6)\n    # A clipped sun (LDR or a capped HDRI) stands out less, but its direction is still good.\n    if any(found) and (ratio > 4.0 or (clipped and ratio > 1.5)):\n        g\[\"sun_from\"].setValue(\"Auto (HDRI)\")\n        g\[\"light_from_hdri\"].setValue(True)\n        sun = found\n        if clipped:\n            done.append(\"Clipped sun found in the HDRI: sun from Auto; its brightness is rebuilt, tune 'sun boost'.\")\n        else:\n            done.append(\"Sun found in the HDRI (%.0fx the sky): sun from Auto, light from HDRI.\" % ratio)\n    else:\n        warn.append(\"No clear sun in the HDRI (overcast?): set 'sun from' to Manual or Axis yourself.\")\n\nif g.input(2) is not None:\n    if cam is None:\n        warn.append(\"A skydome is connected but no camera: the dome is seen from its centre.\")\n    else:\n        done.append(\"Skydome connected: the HDRI is re-mapped as the camera sees the dome.\")\n\nif sun is None and g\[\"sun_from\"].value() == \"Manual\":\n    sun = list(g\[\"sun_direction\"].value())\nif sun is not None:\n    ln = math.sqrt(sun\[0] ** 2 + sun\[1] ** 2 + sun\[2] ** 2) or 1.0\n    elev = math.degrees(math.asin(max(-1.0, min(1.0, sun\[1] / ln))))\n    if fwd is not None:\n        az = math.degrees(math.atan2(sun\[0], -sun\[2]) - math.atan2(fwd\[0], -fwd\[2]))\n        az = (az + 180.0) % 360.0 - 180.0\n        done.append(\"Sun %.0f deg up, %.0f deg %s of where the camera looks.\" % (elev, abs(az), \"right\" if az > 0 else \"left\"))\n        if abs(az) > 60.0:\n            warn.append(\"The sun is beside or behind the camera: backlit haze and shafts need it in front.\")\n    if elev > 20.0:\n        warn.append(\"The sun is high (%.0f deg): sunrise and golden hour looks need it under 10 deg.\" % elev)\n\nsummary = \"\\n\".join(done + (\[\"\"] + \[\"Note: \" + w for w in warn] if warn else \[]))\nif nuke.GUI:\n    nuke.message(\"EzAtmosScatter analyze\\n\\n\" + summary)\nelse:\n    print(summary)\n"}
  addUserKnob {7 scene_scale l "units to metres" t "Scene units to metres for analyze, e.g. 0.1 for decimetres, 0.01 for centimetres." R 0.001 100}
  scene_scale 1
+ addUserKnob {6 units_confirmed l "units confirmed" t "Set when the scene units were picked in analyze, so it doesn't ask again." -STARTLINE +INVISIBLE}
  addUserKnob {7 ground_height l "ground height" t "Height of the ground in scene units, so analyze measures the camera height above it."}
  addUserKnob {26 sun_divider l Sun}
  addUserKnob {4 sun_from l "sun from" t "Auto finds the sun in the HDRI. Axis points at the Axis node plugged into the 'sun' input (its world position). Manual uses 'sun direction'." M {"Auto (HDRI)" Axis Manual}}
@@ -142,8 +143,8 @@ Group {
   xpos 0
   ypos -370
  }
-set Na2d3af00 [stack 0]
-push $Na2d3af00
+set N2f7eaf00 [stack 0]
+push $N2f7eaf00
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -160,7 +161,7 @@ push $Na2d3af00
   xpos 150
   ypos -360
  }
-push $Na2d3af00
+push $N2f7eaf00
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -168,7 +169,7 @@ push $Na2d3af00
   xpos 0
   ypos -340
  }
-set Na2d3c300 [stack 0]
+set N2f7ec300 [stack 0]
  Reformat {
   type "to box"
   box_width 256
@@ -193,9 +194,9 @@ set Na2d3c300 [stack 0]
   xpos 450
   ypos -180
  }
-set Na2d79400 [stack 0]
-push $Na2d79400
-push $Na2d3c300
+set N2f829400 [stack 0]
+push $N2f829400
+push $N2f7ec300
  Reformat {
   type "to box"
   box_width 512
@@ -207,8 +208,8 @@ push $Na2d3c300
   xpos 300
   ypos -300
  }
-set Na2d41800 [stack 0]
-push $Na2d41800
+set N2f7f1800 [stack 0]
+push $N2f7f1800
  Reformat {
   type "to box"
   box_width 4
@@ -219,7 +220,7 @@ push $Na2d41800
   xpos 300
   ypos -240
  }
-set Na2d78000 [stack 0]
+set N2f828000 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -234,8 +235,8 @@ set Na2d78000 [stack 0]
   xpos 300
   ypos -180
  }
-set Na2d78800 [stack 0]
-push $Na2d3c300
+set N2f828800 [stack 0]
+push $N2f7ec300
  Reformat {
   type "to box"
   box_width 512
@@ -246,7 +247,7 @@ push $Na2d3c300
   xpos 600
   ypos -300
  }
-set Na2da2000 [stack 0]
+set N2f852000 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -283,9 +284,9 @@ set Na2da2000 [stack 0]
   xpos 720
   ypos -240
  }
-push $Na2d79400
-push $Na2d78800
-push $Na2da2000
+push $N2f829400
+push $N2f828800
+push $N2f852000
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -330,7 +331,7 @@ push $Na2da2000
   xpos 600
   ypos -200
  }
-push $Na2d78000
+push $N2f828000
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -345,7 +346,7 @@ push $Na2d78000
   xpos 600
   ypos -160
  }
-push $Na2d78800
+push $N2f828800
  Switch {
   inputs 2
   which {{parent.self_lit}}
@@ -353,8 +354,8 @@ push $Na2d78800
   xpos 450
   ypos -120
  }
-set Na2d3c800 [stack 0]
-push $Na2d3c300
+set N2f7ec800 [stack 0]
+push $N2f7ec300
  Reformat {
   type "to box"
   box_width {{"max(floor(HDRISource.width * parent.scatter_scale + 0.5), 4)"}}
@@ -365,7 +366,7 @@ push $Na2d3c300
   xpos -300
   ypos -240
  }
-set Na2d79800 [stack 0]
+set N2f829800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -402,7 +403,7 @@ set Na2d79800 [stack 0]
   xpos 600
   ypos -100
  }
-set Ne7972800 [stack 0]
+set N6e62800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -426,7 +427,7 @@ set Ne7972800 [stack 0]
   xpos 600
   ypos 90
  }
-push $Ne7972800
+push $N6e62800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -456,7 +457,7 @@ push $Ne7972800
   xpos 600
   ypos 120
  }
-push $Ne7972800
+push $N6e62800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -464,9 +465,9 @@ push $Ne7972800
   xpos 600
   ypos 150
  }
-push $Na2d79400
-push $Na2d78800
-push $Na2d79800
+push $N2f829400
+push $N2f828800
+push $N2f829800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -503,7 +504,7 @@ push $Na2d79800
   xpos 450
   ypos -100
  }
-set Ne793e000 [stack 0]
+set N6e2e000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -527,7 +528,7 @@ set Ne793e000 [stack 0]
   xpos 450
   ypos 90
  }
-push $Ne793e000
+push $N6e2e000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -557,7 +558,7 @@ push $Ne793e000
   xpos 450
   ypos 120
  }
-push $Ne793e000
+push $N6e2e000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -565,9 +566,9 @@ push $Ne793e000
   xpos 450
   ypos 150
  }
-push $Na2d79400
-push $Na2d3c800
-push $Na2d79800
+push $N2f829400
+push $N2f7ec800
+push $N2f829800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -604,7 +605,7 @@ push $Na2d79800
   xpos 300
   ypos -100
  }
-set Ne78c1800 [stack 0]
+set N6db1800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -628,7 +629,7 @@ set Ne78c1800 [stack 0]
   xpos 300
   ypos 90
  }
-push $Ne78c1800
+push $N6db1800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -658,7 +659,7 @@ push $Ne78c1800
   xpos 300
   ypos 120
  }
-push $Ne78c1800
+push $N6db1800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -666,10 +667,10 @@ push $Ne78c1800
   xpos 300
   ypos 150
  }
-set Ne78e8500 [stack 0]
-push $Na2d79400
-push $Na2d78800
-push $Na2d79800
+set N6dd8500 [stack 0]
+push $N2f829400
+push $N2f828800
+push $N2f829800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -706,7 +707,7 @@ push $Na2d79800
   xpos 0
   ypos -100
  }
-set Ne784c800 [stack 0]
+set N6d3c800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -730,7 +731,7 @@ set Ne784c800 [stack 0]
   xpos 0
   ypos 90
  }
-push $Ne784c800
+push $N6d3c800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -760,7 +761,7 @@ push $Ne784c800
   xpos 0
   ypos 120
  }
-push $Ne784c800
+push $N6d3c800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -768,10 +769,10 @@ push $Ne784c800
   xpos 0
   ypos 150
  }
-set Na2d3d700 [stack 0]
-push $Na2d79400
-push $Na2d3c800
-push $Na2d79800
+set N2f7ed700 [stack 0]
+push $N2f829400
+push $N2f7ec800
+push $N2f829800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -808,7 +809,7 @@ push $Na2d79800
   xpos 150
   ypos -100
  }
-set Ne788b000 [stack 0]
+set N6d7b000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -832,7 +833,7 @@ set Ne788b000 [stack 0]
   xpos 150
   ypos 90
  }
-push $Ne788b000
+push $N6d7b000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -862,7 +863,7 @@ push $Ne788b000
   xpos 150
   ypos 120
  }
-push $Ne788b000
+push $N6d7b000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -870,10 +871,10 @@ push $Ne788b000
   xpos 150
   ypos 150
  }
-set Ne78e8000 [stack 0]
-push $Na2d79400
-push $Na2d78800
-push $Na2d79800
+set N6dd8000 [stack 0]
+push $N2f829400
+push $N2f828800
+push $N2f829800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -910,7 +911,7 @@ push $Na2d79800
   xpos -150
   ypos -100
  }
-set Ne7816000 [stack 0]
+set N6d06000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -934,7 +935,7 @@ set Ne7816000 [stack 0]
   xpos -150
   ypos 90
  }
-push $Ne7816000
+push $N6d06000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -964,7 +965,7 @@ push $Ne7816000
   xpos -150
   ypos 120
  }
-push $Ne7816000
+push $N6d06000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -972,10 +973,10 @@ push $Ne7816000
   xpos -150
   ypos 150
  }
-set Na2d3d200 [stack 0]
-push $Na2d79400
-push $Na2d78800
-push $Na2d79800
+set N2f7ed200 [stack 0]
+push $N2f829400
+push $N2f828800
+push $N2f829800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1012,7 +1013,7 @@ push $Na2d79800
   xpos -300
   ypos -100
  }
-set Na2da3800 [stack 0]
+set N2f853800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1036,7 +1037,7 @@ set Na2da3800 [stack 0]
   xpos -300
   ypos 90
  }
-push $Na2da3800
+push $N2f853800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1066,7 +1067,7 @@ push $Na2da3800
   xpos -300
   ypos 120
  }
-push $Na2da3800
+push $N2f853800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1074,10 +1075,10 @@ push $Na2da3800
   xpos -300
   ypos 150
  }
-set Na2d3cd00 [stack 0]
-push $Ne78e8000
-push $Na2d3d200
-push $Na2d3cd00
+set N2f7ecd00 [stack 0]
+push $N6dd8000
+push $N2f7ed200
+push $N2f7ecd00
  Merge2 {
   inputs 2
   operation plus
@@ -1091,10 +1092,10 @@ push $Na2d3cd00
   xpos -300
   ypos 60
  }
-set Ne79edc00 [stack 0]
-push $Ne79edc00
-push $Na2d3d700
-push $Na2d3c300
+set N6eddc00 [stack 0]
+push $N6eddc00
+push $N2f7ed700
+push $N2f7ec300
  Merge2 {
   inputs 2
   operation multiply
@@ -1110,10 +1111,10 @@ push $Na2d3c300
   xpos 0
   ypos 60
  }
-set Ne7a2a400 [stack 0]
-push $Na2d79400
-push $Na2d78800
-push $Na2d79800
+set N6f1a400 [stack 0]
+push $N2f829400
+push $N2f828800
+push $N2f829800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1150,7 +1151,7 @@ push $Na2d79800
   xpos 750
   ypos -100
  }
-set Ne79b1000 [stack 0]
+set N6ea1000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1174,7 +1175,7 @@ set Ne79b1000 [stack 0]
   xpos 750
   ypos 90
  }
-push $Ne79b1000
+push $N6ea1000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1204,7 +1205,7 @@ push $Ne79b1000
   xpos 750
   ypos 120
  }
-push $Ne79b1000
+push $N6ea1000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1212,13 +1213,13 @@ push $Ne79b1000
   xpos 750
   ypos 150
  }
-set Ne78e9400 [stack 0]
+set N6dd9400 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 300
  }
-push $Ne78e8500
+push $N6dd8500
  Merge2 {
   inputs 2
   operation multiply
@@ -1227,8 +1228,8 @@ push $Ne78e8500
   xpos 300
   ypos 60
  }
-push $Ne78e9400
-push $Ne7a2a400
+push $N6dd9400
+push $N6f1a400
  Merge2 {
   inputs 2
   operation multiply
@@ -1251,13 +1252,13 @@ push $Ne7a2a400
   xpos 150
   ypos 100
  }
-push $Ne78e8500
-push $Na2d3d700
-push $Ne78e8000
-push $Na2d3d200
-push $Na2d3cd00
-push $Ne79edc00
-push $Ne7a2a400
+push $N6dd8500
+push $N2f7ed700
+push $N6dd8000
+push $N2f7ed200
+push $N2f7ecd00
+push $N6eddc00
+push $N6f1a400
  Switch {
   inputs 8
   which {{parent.view_output}}
@@ -1265,7 +1266,7 @@ push $Ne7a2a400
   xpos 0
   ypos 160
  }
-push $Na2d3c300
+push $N2f7ec300
  Copy {
   inputs 2
   channels rgb
@@ -1377,7 +1378,7 @@ add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky
   xpos 0
   ypos 720
  }
-set Ne7a7f800 [stack 0]
+set N6f6f800 [stack 0]
  Write {
   channels all
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -1393,7 +1394,7 @@ set Ne7a7f800 [stack 0]
   xpos 200
   ypos 780
  }
-push $Na2d3af00
+push $N2f7eaf00
  Reformat {
   name CameraFormat
   xpos 400
@@ -1418,8 +1419,8 @@ push $Na2d3af00
   xpos 400
   ypos 880
  }
-set Ne7b29800 [stack 0]
-push $Ne7b29800
+set N701b800 [stack 0]
+push $N701b800
  Read {
   inputs 0
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -1434,7 +1435,7 @@ push $Ne7b29800
   xpos 200
   ypos 840
  }
-push $Ne7a7f800
+push $N6f6f800
  Switch {
   inputs 2
   which {{"parent.use_baked && parent.bake_valid"}}
@@ -1442,7 +1443,7 @@ push $Ne7a7f800
   xpos 0
   ypos 840
  }
-set Ne78ea300 [stack 0]
+set N6dda300 [stack 0]
  STMap {
   inputs 2
   uv rgb
@@ -1450,7 +1451,7 @@ set Ne78ea300 [stack 0]
   xpos 300
   ypos 880
  }
-push $Ne7b29800
+push $N701b800
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
@@ -1459,7 +1460,7 @@ push $Ne7b29800
   xpos 400
   ypos 860
  }
-push $Ne78ea300
+push $N6dda300
  Crop {
   box {{input.width/2} {0} {input.width} {input.height}}
   name RollRightCrop
@@ -1473,7 +1474,7 @@ push $Ne78ea300
   xpos -300
   ypos 860
  }
-push $Ne78ea300
+push $N6dda300
  Crop {
   box {{0} {0} {input.width/2} {input.height}}
   name RollLeftCrop
@@ -1495,7 +1496,7 @@ push $Ne78ea300
   xpos -150
   ypos 880
  }
-set Ne7abfc00 [stack 0]
+set N6fafc00 [stack 0]
  STMap {
   inputs 2
   uv rgb
@@ -1509,7 +1510,7 @@ set Ne7abfc00 [stack 0]
   xpos 300
   ypos 900
  }
-push $Na2d3af00
+push $N2f7eaf00
  BlinkScript {
   recompileCount 2
   KernelDescription "3 \"EzAtmosDomeUV\" iterate pixelWise 37e4f8031dadbe05054e12de6d0bd18cd608f8656abb24698d0e1f2da23c61f8 2 \"ref\" Read Point \"dst\" Write Point 5 \"dome_row0\" Float 4 AACAPwAAAAAAAAAAAAAAAA== \"dome_row1\" Float 4 AAAAAAAAgD8AAAAAAAAAAA== \"dome_row2\" Float 4 AAAAAAAAAAAAAIA/AAAAAA== \"eye\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"radius\" Float 1 AACAPw== 5 \"domeRow0\" 4 1 Default \"domeRow1\" 4 1 Default \"domeRow2\" 4 1 Default \"eye\" 3 1 Default \"radius\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
@@ -1525,9 +1526,9 @@ push $Na2d3af00
   xpos 200
   ypos 880
  }
-set Ne7abe800 [stack 0]
-push $Ne7abe800
-push $Ne78ea300
+set N6fae800 [stack 0]
+push $N6fae800
+push $N6dda300
  STMap {
   inputs 2
   uv rgb
@@ -1535,7 +1536,7 @@ push $Ne78ea300
   xpos 0
   ypos 880
  }
-push $Ne7abe800
+push $N6fae800
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
@@ -1544,7 +1545,7 @@ push $Ne7abe800
   xpos 100
   ypos 860
  }
-push $Ne7abfc00
+push $N6fafc00
  STMap {
   inputs 2
   uv rgb
@@ -1558,7 +1559,7 @@ push $Ne7abfc00
   xpos 0
   ypos 900
  }
-push $Ne78ea300
+push $N6dda300
  Switch {
   inputs 3
   which {{"parent.output_mapping==1 && \[exists parent.input2] ? 1 : parent.output_mapping==2 && \[exists parent.input3] ? 2 : 0"}}
