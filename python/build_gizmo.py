@@ -324,7 +324,8 @@ def _link_scatter(node, output):
 
 def _upscale(node, hdri, name):
     """Scale a pass back to the HDRI size, sky and ground halves apart so the hard
-    horizon line does not get filtered across."""
+    horizon line does not get filtered across. Mitchell, not Cubic: Cubic left every other row
+    step bigger, which showed as horizontal banding in smooth gradients."""
     halves = []
     for half, (lo, hi) in (("sky", ("input.height / 2", "input.height")), ("ground", ("0", "input.height / 2"))):
         x, y = node.xpos(), node.ypos() + 60
@@ -336,7 +337,7 @@ def _upscale(node, hdri, name):
         cut["box"].setExpression("input.width", 2)
         cut["box"].setExpression(hi, 3)
         up = nuke.nodes.Reformat(name="%s_%s_up" % (name, half), type="to box", box_fixed=True,
-                                 resize="distort", filter="Cubic")
+                                 resize="distort", filter="Mitchell")
         up.setInput(0, cut)
         up["box_width"].setExpression("HDRISource.width")
         up["box_height"].setExpression("HDRISource.height")
