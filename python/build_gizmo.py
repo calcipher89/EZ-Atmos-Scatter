@@ -676,6 +676,50 @@ def _add_dome_nodes(hdri):
     return pick
 
 
+def _rolled(stream):
+    """The lat-long turned half way round (all channels): its left and right halves swapped."""
+    pieces = []
+    for side, box, shift in (("Left", "0 0 input.width/2 input.height", "input.width/2"),
+                             ("Right", "input.width/2 0 input.width input.height", "-input.width/2")):
+        crop = nuke.nodes.Crop(name="Roll%sCrop" % side, xpos=-300, ypos=stream.ypos())
+        crop.setInput(0, stream)
+        for i, expr in enumerate(box.split(" ")):
+            crop["box"].setExpression(expr, i)
+        crop["reformat"].setValue(False)
+        move = nuke.nodes.Transform(name="Roll%sMove" % side, xpos=-300, ypos=stream.ypos() + 20)
+        move.setInput(0, crop)
+        move["translate"].setExpression(shift, 0)
+        move["filter"].setValue("Impulse")
+        pieces.append(move)
+    rolled = nuke.nodes.Merge2(name="Rolled", operation="plus", xpos=-150, ypos=stream.ypos() + 40)
+    rolled["also_merge"].setValue("all")
+    rolled.setInput(0, pieces[0])
+    rolled.setInput(1, pieces[1])
+    return rolled
+
+
+def _seamless_stmap(name, stream, rolled, uv, x):
+    """Read the lat-long through an ST map without the dark line an STMap leaves where u wraps
+    from 1 to 0 (it can't filter across the image edge). The ST map's blue holds u for the
+    half-turned lat-long and its alpha is 1 away from the seam: away from it the plain lat-long
+    is read, near it the turned one, where the same directions sit in the middle."""
+    plain = nuke.nodes.STMap(name=name, channels="all", uv="rgb", xpos=x, ypos=stream.ypos() + 40)
+    plain.setInput(0, stream)
+    plain.setInput(1, uv)
+    turn_uv = nuke.nodes.Shuffle2(name=name + "TurnedUV", xpos=x + 100, ypos=stream.ypos() + 20)
+    turn_uv.setInput(0, uv)
+    turn_uv["mappings"].setValue([("rgba.blue", "rgba.red"), ("rgba.green", "rgba.green"), ("rgba.blue", "rgba.blue")])
+    turned = nuke.nodes.STMap(name=name + "Turned", channels="all", uv="rgb", xpos=x + 100, ypos=stream.ypos() + 40)
+    turned.setInput(0, rolled)
+    turned.setInput(1, turn_uv)
+    pick = nuke.nodes.Keymix(name=name + "Seam", channels="all", xpos=x, ypos=stream.ypos() + 60)
+    pick.setInput(0, turned)
+    pick.setInput(1, plain)
+    pick.setInput(2, uv)
+    pick["maskChannel"].setValue("rgba.alpha")
+    return pick
+
+
 def _add_dome_output(stream, hdri):
     """With 'output as' on Skydome and a dome connected, lay every layer out as the dome's own
     texture: an ST map from EzAtmosDomeUV, read through an STMap on all channels."""
@@ -690,9 +734,8 @@ def _add_dome_output(stream, hdri):
             "c['world_matrix'].getValueAt(t, %d) if c is not None "
             "else m[%d]" % (3 + 4 * k, 12 + k)), k)
     _link(uv, "radius", _dome_expression("r"))
-    stmap = nuke.nodes.STMap(name="ToDome", channels="all", uv="rgb", xpos=0, ypos=stream.ypos() + 40)
-    stmap.setInput(0, stream)
-    stmap.setInput(1, uv)
+    rolled = _rolled(stream)
+    stmap = _seamless_stmap("ToDome", stream, rolled, uv, 0)
     # Camera: what a ScanlineRender of the skydome shows through the shot camera, at the
     # project format. The lat-long is already the view from the camera, so each pixel only needs
     # its view direction.
@@ -713,9 +756,7 @@ def _add_dome_output(stream, hdri):
             _link(cam_uv, knob, _dome_expression("c['%s'].getValueAt(t, %d) if c is not None else %g"
                                                  % (knob, i, default)), i)
     _link(cam_uv, "pixel_aspect", "[python {nuke.root().format().pixelAspect()}]")
-    cam_map = nuke.nodes.STMap(name="ToCamera", channels="all", uv="rgb", xpos=300, ypos=stream.ypos() + 40)
-    cam_map.setInput(0, stream)
-    cam_map.setInput(1, cam_uv)
+    cam_map = _seamless_stmap("ToCamera", stream, rolled, cam_uv, 300)
     pick = nuke.nodes.Switch(name="OutputAs", xpos=0, ypos=stream.ypos() + 80)
     pick.setInput(0, stream)
     pick.setInput(1, stmap)

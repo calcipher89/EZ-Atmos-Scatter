@@ -64,6 +64,9 @@ local:
     // EzAtmosScatter's lat-long: the centre column looks down -Z, the top row up.
     float u = 0.5f + atan2(d.x, -d.z) / (2.0f * pi);
     float v = 0.5f + asin(clamp(d.y, -1.0f, 1.0f)) / pi;
-    dst() = float4(u, v, 0.0f, 1.0f);
+    // Blue: u for the lat-long turned half way round; alpha: 1 away from the 0/1 seam, where
+    // the plain lat-long can be read (see _seamless_stmap in build_gizmo.py).
+    float turned = u + 0.5f - floor(u + 0.5f);
+    dst() = float4(u, v, turned, u > 0.1f && u < 0.9f ? 1.0f : 0.0f);
   }
 };
