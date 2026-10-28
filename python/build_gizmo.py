@@ -16,6 +16,8 @@ import nuke
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLINK = os.path.join(ROOT, "blink")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzAtmosScatter.gizmo")
+# Shown on the node; bump it with each tagged release.
+VERSION = "1.0.0"
 
 LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
           "atmos_haze_color", "atmos_haze_sun", "atmos_haze_sky"]
@@ -561,6 +563,8 @@ def _add_bake_knobs(group, names):
     valid = nuke.Boolean_Knob("bake_valid", "bake valid")
     valid.setFlag(nuke.INVISIBLE)
     k.append(valid)
+    k.append(nuke.Text_Knob("version_divider", ""))
+    k.append(nuke.Text_Knob("version", "version", "EzAtmosScatter v" + VERSION))
     for knob in k:
         group.addKnob(knob)
     group["use_baked"].setValue(True)
