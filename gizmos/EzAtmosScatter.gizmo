@@ -7,6 +7,7 @@ add_layer {atmos_transmittance atmos_transmittance.red atmos_transmittance.green
 add_layer {atmos_haze_color atmos_haze_color.red atmos_haze_color.green atmos_haze_color.blue}
 add_layer {atmos_haze_sun atmos_haze_sun.red atmos_haze_sun.green atmos_haze_sun.blue}
 add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky.blue}
+add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue atmos_clouds.alpha}
 Gizmo {
  name EzAtmosScatter1
  onCreate "g = nuke.thisNode()\nif g\['bake_first'].value() == 0 and g\['bake_last'].value() == 0:\n    g\['bake_first'].setValue(int(nuke.root()\['first_frame'].value()))\n    g\['bake_last'].setValue(int(nuke.root()\['last_frame'].value()))\ng = nuke.thisNode()\nif g.knob('bake_valid') is not None:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        if g.knob(n):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    import os, re\n    r = g.node('BakeRead')\n    p = (nuke.filename(r) or '') if r is not None else ''\n    fr = int(g\['baked_first'].value())\n    m = re.search('(#+)|%(0?\[0-9]*)d', p)\n    if m is not None:\n        width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n        p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n    ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n    if bool(g\['bake_valid'].value()) != ok:\n        g\['bake_valid'].setValue(ok)\n    status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n    if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n        g\['label'].setValue(status)\n"
@@ -145,8 +146,8 @@ Gizmo {
   xpos 0
   ypos -370
  }
-set N6a28af00 [stack 0]
-push $N6a28af00
+set Nbb13af00 [stack 0]
+push $Nbb13af00
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -163,7 +164,7 @@ push $N6a28af00
   xpos 150
   ypos -360
  }
-push $N6a28af00
+push $Nbb13af00
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -171,7 +172,8 @@ push $N6a28af00
   xpos 0
   ypos -340
  }
-set N6a28c300 [stack 0]
+set Nbb13c300 [stack 0]
+push $Nbb13c300
  Reformat {
   type "to box"
   box_width 256
@@ -196,9 +198,9 @@ set N6a28c300 [stack 0]
   xpos 450
   ypos -180
  }
-set N6a2c9400 [stack 0]
-push $N6a2c9400
-push $N6a28c300
+set Nbb179400 [stack 0]
+push $Nbb179400
+push $Nbb13c300
  Reformat {
   type "to box"
   box_width 512
@@ -210,8 +212,8 @@ push $N6a28c300
   xpos 300
   ypos -300
  }
-set N6a291800 [stack 0]
-push $N6a291800
+set Nbb141800 [stack 0]
+push $Nbb141800
  Reformat {
   type "to box"
   box_width 4
@@ -222,7 +224,7 @@ push $N6a291800
   xpos 300
   ypos -240
  }
-set N6a2c8000 [stack 0]
+set Nbb178000 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -237,8 +239,8 @@ set N6a2c8000 [stack 0]
   xpos 300
   ypos -180
  }
-set N6a2c8800 [stack 0]
-push $N6a28c300
+set Nbb178800 [stack 0]
+push $Nbb13c300
  Reformat {
   type "to box"
   box_width 512
@@ -249,7 +251,7 @@ push $N6a28c300
   xpos 600
   ypos -300
  }
-set N6a2f2000 [stack 0]
+set Nbb1a2000 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -286,9 +288,9 @@ set N6a2f2000 [stack 0]
   xpos 720
   ypos -240
  }
-push $N6a2c9400
-push $N6a2c8800
-push $N6a2f2000
+push $Nbb179400
+push $Nbb178800
+push $Nbb1a2000
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -333,7 +335,7 @@ push $N6a2f2000
   xpos 600
   ypos -200
  }
-push $N6a2c8000
+push $Nbb178000
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -348,7 +350,7 @@ push $N6a2c8000
   xpos 600
   ypos -160
  }
-push $N6a2c8800
+push $Nbb178800
  Switch {
   inputs 2
   which {{parent.self_lit}}
@@ -356,8 +358,8 @@ push $N6a2c8800
   xpos 450
   ypos -120
  }
-set N6a28c800 [stack 0]
-push $N6a28c300
+set Nbb13c800 [stack 0]
+push $Nbb13c300
  Reformat {
   type "to box"
   box_width {{"max(floor(HDRISource.width * parent.scatter_scale + 0.5), 4)"}}
@@ -368,7 +370,7 @@ push $N6a28c300
   xpos -300
   ypos -240
  }
-set N6a2c9800 [stack 0]
+set Nbb179800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -405,7 +407,7 @@ set N6a2c9800 [stack 0]
   xpos 600
   ypos -100
  }
-set N44982800 [stack 0]
+set N9e9f2800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -430,7 +432,7 @@ set N44982800 [stack 0]
   xpos 600
   ypos 90
  }
-push $N44982800
+push $N9e9f2800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -461,7 +463,7 @@ push $N44982800
   xpos 600
   ypos 120
  }
-push $N44982800
+push $N9e9f2800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -469,9 +471,9 @@ push $N44982800
   xpos 600
   ypos 150
  }
-push $N6a2c9400
-push $N6a2c8800
-push $N6a2c9800
+push $Nbb179400
+push $Nbb178800
+push $Nbb179800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -508,7 +510,7 @@ push $N6a2c9800
   xpos 450
   ypos -100
  }
-set N4494e000 [stack 0]
+set N9e9be000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -533,7 +535,7 @@ set N4494e000 [stack 0]
   xpos 450
   ypos 90
  }
-push $N4494e000
+push $N9e9be000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -564,7 +566,7 @@ push $N4494e000
   xpos 450
   ypos 120
  }
-push $N4494e000
+push $N9e9be000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -572,9 +574,9 @@ push $N4494e000
   xpos 450
   ypos 150
  }
-push $N6a2c9400
-push $N6a28c800
-push $N6a2c9800
+push $Nbb179400
+push $Nbb13c800
+push $Nbb179800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -611,7 +613,7 @@ push $N6a2c9800
   xpos 300
   ypos -100
  }
-set N448d1800 [stack 0]
+set N9e941800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -636,7 +638,7 @@ set N448d1800 [stack 0]
   xpos 300
   ypos 90
  }
-push $N448d1800
+push $N9e941800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -667,7 +669,7 @@ push $N448d1800
   xpos 300
   ypos 120
  }
-push $N448d1800
+push $N9e941800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -675,10 +677,10 @@ push $N448d1800
   xpos 300
   ypos 150
  }
-set N448f8500 [stack 0]
-push $N6a2c9400
-push $N6a2c8800
-push $N6a2c9800
+set N9e968500 [stack 0]
+push $Nbb179400
+push $Nbb178800
+push $Nbb179800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -715,7 +717,7 @@ push $N6a2c9800
   xpos 0
   ypos -100
  }
-set N4485c800 [stack 0]
+set N9e8cc800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -740,7 +742,7 @@ set N4485c800 [stack 0]
   xpos 0
   ypos 90
  }
-push $N4485c800
+push $N9e8cc800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -771,7 +773,7 @@ push $N4485c800
   xpos 0
   ypos 120
  }
-push $N4485c800
+push $N9e8cc800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -779,10 +781,10 @@ push $N4485c800
   xpos 0
   ypos 150
  }
-set N6a28d700 [stack 0]
-push $N6a2c9400
-push $N6a28c800
-push $N6a2c9800
+set Nbb13d700 [stack 0]
+push $Nbb179400
+push $Nbb13c800
+push $Nbb179800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -819,7 +821,7 @@ push $N6a2c9800
   xpos 150
   ypos -100
  }
-set N4489b000 [stack 0]
+set N9e90b000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -844,7 +846,7 @@ set N4489b000 [stack 0]
   xpos 150
   ypos 90
  }
-push $N4489b000
+push $N9e90b000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -875,7 +877,7 @@ push $N4489b000
   xpos 150
   ypos 120
  }
-push $N4489b000
+push $N9e90b000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -883,10 +885,10 @@ push $N4489b000
   xpos 150
   ypos 150
  }
-set N448f8000 [stack 0]
-push $N6a2c9400
-push $N6a2c8800
-push $N6a2c9800
+set N9e968000 [stack 0]
+push $Nbb179400
+push $Nbb178800
+push $Nbb179800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -923,7 +925,7 @@ push $N6a2c9800
   xpos -150
   ypos -100
  }
-set N44826000 [stack 0]
+set N9e896000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -948,7 +950,7 @@ set N44826000 [stack 0]
   xpos -150
   ypos 90
  }
-push $N44826000
+push $N9e896000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -979,7 +981,7 @@ push $N44826000
   xpos -150
   ypos 120
  }
-push $N44826000
+push $N9e896000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -987,10 +989,10 @@ push $N44826000
   xpos -150
   ypos 150
  }
-set N6a28d200 [stack 0]
-push $N6a2c9400
-push $N6a2c8800
-push $N6a2c9800
+set Nbb13d200 [stack 0]
+push $Nbb179400
+push $Nbb178800
+push $Nbb179800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1027,7 +1029,7 @@ push $N6a2c9800
   xpos -300
   ypos -100
  }
-set N6a2f3800 [stack 0]
+set Nbb1a3800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1052,7 +1054,7 @@ set N6a2f3800 [stack 0]
   xpos -300
   ypos 90
  }
-push $N6a2f3800
+push $Nbb1a3800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1083,7 +1085,7 @@ push $N6a2f3800
   xpos -300
   ypos 120
  }
-push $N6a2f3800
+push $Nbb1a3800
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1091,10 +1093,10 @@ push $N6a2f3800
   xpos -300
   ypos 150
  }
-set N6a28cd00 [stack 0]
-push $N448f8000
-push $N6a28d200
-push $N6a28cd00
+set Nbb13cd00 [stack 0]
+push $N9e968000
+push $Nbb13d200
+push $Nbb13cd00
  Merge2 {
   inputs 2
   operation plus
@@ -1108,10 +1110,10 @@ push $N6a28cd00
   xpos -300
   ypos 60
  }
-set N449fdc00 [stack 0]
-push $N449fdc00
-push $N6a28d700
-push $N6a28c300
+set N9ea6dc00 [stack 0]
+push $N9ea6dc00
+push $Nbb13d700
+push $Nbb13c300
  Merge2 {
   inputs 2
   operation multiply
@@ -1127,10 +1129,10 @@ push $N6a28c300
   xpos 0
   ypos 60
  }
-set N44a3a400 [stack 0]
-push $N6a2c9400
-push $N6a2c8800
-push $N6a2c9800
+set N9eaaa400 [stack 0]
+push $Nbb179400
+push $Nbb178800
+push $Nbb179800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1167,7 +1169,7 @@ push $N6a2c9800
   xpos 750
   ypos -100
  }
-set N449c1000 [stack 0]
+set N9ea31000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1192,7 +1194,7 @@ set N449c1000 [stack 0]
   xpos 750
   ypos 90
  }
-push $N449c1000
+push $N9ea31000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1223,7 +1225,7 @@ push $N449c1000
   xpos 750
   ypos 120
  }
-push $N449c1000
+push $N9ea31000
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1231,13 +1233,13 @@ push $N449c1000
   xpos 750
   ypos 150
  }
-set N448f9400 [stack 0]
+set N9e969400 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 300
  }
-push $N448f8500
+push $N9e968500
  Merge2 {
   inputs 2
   operation multiply
@@ -1246,8 +1248,8 @@ push $N448f8500
   xpos 300
   ypos 60
  }
-push $N448f9400
-push $N44a3a400
+push $N9e969400
+push $N9eaaa400
  Merge2 {
   inputs 2
   operation multiply
@@ -1270,13 +1272,13 @@ push $N44a3a400
   xpos 150
   ypos 100
  }
-push $N448f8500
-push $N6a28d700
-push $N448f8000
-push $N6a28d200
-push $N6a28cd00
-push $N449fdc00
-push $N44a3a400
+push $N9e968500
+push $Nbb13d700
+push $N9e968000
+push $Nbb13d200
+push $Nbb13cd00
+push $N9ea6dc00
+push $N9eaaa400
  Switch {
   inputs 8
   which {{parent.view_output}}
@@ -1284,7 +1286,7 @@ push $N44a3a400
   xpos 0
   ypos 160
  }
-push $N6a28c300
+push $Nbb13c300
  Copy {
   inputs 2
   channels rgb
@@ -1396,7 +1398,22 @@ add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky
   xpos 0
   ypos 720
  }
-set N44a8f800 [stack 0]
+add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue atmos_clouds.alpha}
+ Copy {
+  inputs 2
+  from0 rgba.red
+  to0 atmos_clouds.red
+  from1 rgba.green
+  to1 atmos_clouds.green
+  from2 rgba.blue
+  to2 atmos_clouds.blue
+  from3 rgba.alpha
+  to3 atmos_clouds.alpha
+  name Layer_atmos_clouds
+  xpos 0
+  ypos 780
+ }
+set N9eaffc00 [stack 0]
  Write {
   channels all
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -1410,13 +1427,13 @@ set N44a8f800 [stack 0]
   view sRGB
   name BakeWrite
   xpos 200
-  ypos 780
+  ypos 840
  }
-push $N6a28af00
+push $Nbb13af00
  Reformat {
   name CameraFormat
   xpos 400
-  ypos 860
+  ypos 920
  }
  BlinkScript {
   recompileCount 2
@@ -1435,10 +1452,10 @@ push $N6a28af00
   rebuild_finalise ""
   name CameraUV
   xpos 400
-  ypos 880
+  ypos 940
  }
-set N44b8b800 [stack 0]
-push $N44b8b800
+set N9ebfbc00 [stack 0]
+push $N9ebfbc00
  Read {
   inputs 0
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -1451,60 +1468,60 @@ push $N44b8b800
   out_colorspace scene_linear
   name BakeRead
   xpos 200
-  ypos 840
+  ypos 900
  }
-push $N44a8f800
+push $N9eaffc00
  Switch {
   inputs 2
   which {{"parent.use_baked && parent.bake_valid"}}
   name UseBake
   xpos 0
-  ypos 840
+  ypos 900
  }
-set N448fa300 [stack 0]
+set N9e96a300 [stack 0]
  STMap {
   inputs 2
   uv rgb
   name ToCamera
   xpos 300
-  ypos 880
+  ypos 940
  }
-push $N44b8b800
+push $N9ebfbc00
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
   mappings "4 rgba.blue 0 2 rgba.red 0 0 rgba.green 0 1 rgba.green 0 1 rgba.blue 0 2 rgba.blue 0 2 rgba.alpha 0 3 rgba.alpha 0 3"
   name ToCameraTurnedUV
   xpos 400
-  ypos 860
+  ypos 920
  }
-push $N448fa300
+push $N9e96a300
  Crop {
   box {{input.width/2} {0} {input.width} {input.height}}
   name RollRightCrop
   xpos -300
-  ypos 840
+  ypos 900
  }
  Transform {
   translate {{-input.width/2} 0}
   filter impulse
   name RollRightMove
   xpos -300
-  ypos 860
+  ypos 920
  }
-push $N448fa300
+push $N9e96a300
  Crop {
   box {{0} {0} {input.width/2} {input.height}}
   name RollLeftCrop
   xpos -300
-  ypos 840
+  ypos 900
  }
  Transform {
   translate {{input.width/2} 0}
   filter impulse
   name RollLeftMove
   xpos -300
-  ypos 860
+  ypos 920
  }
  Merge2 {
   inputs 2
@@ -1512,23 +1529,23 @@ push $N448fa300
   also_merge all
   name Rolled
   xpos -150
-  ypos 880
+  ypos 940
  }
-set N44acfc00 [stack 0]
+set N9ebfa000 [stack 0]
  STMap {
   inputs 2
   uv rgb
   name ToCameraTurned
   xpos 400
-  ypos 880
+  ypos 940
  }
  Keymix {
   inputs 3
   name ToCameraSeam
   xpos 300
-  ypos 900
+  ypos 960
  }
-push $N6a28af00
+push $Nbb13af00
  BlinkScript {
   recompileCount 2
   KernelDescription "3 \"EzAtmosDomeUV\" iterate pixelWise 37e4f8031dadbe05054e12de6d0bd18cd608f8656abb24698d0e1f2da23c61f8 2 \"ref\" Read Point \"dst\" Write Point 5 \"dome_row0\" Float 4 AACAPwAAAAAAAAAAAAAAAA== \"dome_row1\" Float 4 AAAAAAAAgD8AAAAAAAAAAA== \"dome_row2\" Float 4 AAAAAAAAAAAAAIA/AAAAAA== \"eye\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"radius\" Float 1 AACAPw== 5 \"domeRow0\" 4 1 Default \"domeRow1\" 4 1 Default \"domeRow2\" 4 1 Default \"eye\" 3 1 Default \"radius\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
@@ -1542,52 +1559,52 @@ push $N6a28af00
   rebuild_finalise ""
   name DomeUV
   xpos 200
-  ypos 880
+  ypos 940
  }
-set N44ace800 [stack 0]
-push $N44ace800
-push $N448fa300
+set N9eb44c00 [stack 0]
+push $N9eb44c00
+push $N9e96a300
  STMap {
   inputs 2
   uv rgb
   name ToDome
   xpos 0
-  ypos 880
+  ypos 940
  }
-push $N44ace800
+push $N9eb44c00
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
   mappings "4 rgba.blue 0 2 rgba.red 0 0 rgba.green 0 1 rgba.green 0 1 rgba.blue 0 2 rgba.blue 0 2 rgba.alpha 0 3 rgba.alpha 0 3"
   name ToDomeTurnedUV
   xpos 100
-  ypos 860
+  ypos 920
  }
-push $N44acfc00
+push $N9ebfa000
  STMap {
   inputs 2
   uv rgb
   name ToDomeTurned
   xpos 100
-  ypos 880
+  ypos 940
  }
  Keymix {
   inputs 3
   name ToDomeSeam
   xpos 0
-  ypos 900
+  ypos 960
  }
-push $N448fa300
+push $N9e96a300
  Switch {
   inputs 3
   which {{"parent.output_mapping==1 && \[exists parent.input2] ? 1 : parent.output_mapping==2 && \[exists parent.input3] ? 2 : 0"}}
   name OutputAs
   xpos 0
-  ypos 920
+  ypos 980
  }
  Output {
   name Output1
   xpos 0
-  ypos 1000
+  ypos 1060
  }
 end_group

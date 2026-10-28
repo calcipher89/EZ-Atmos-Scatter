@@ -21,6 +21,9 @@ VERSION = "1.0.0"
 
 LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
           "atmos_haze_color", "atmos_haze_sun", "atmos_haze_sky"]
+# The HDRI as the passes see it (through the skydome's transforms when there is one), alpha
+# included, so EzDepthHaze can use its clouds for cloud gaps without a second HDRI input.
+CLOUDS_LAYER = "atmos_clouds"
 
 VIEW_OUTPUTS = [
     # (menu label, node feeding the main rgba)
@@ -778,6 +781,7 @@ def _add_dome_output(stream, hdri):
 def build():
     for layer in LAYERS:
         nuke.Layer(layer, ["%s.red" % layer, "%s.green" % layer, "%s.blue" % layer])
+    nuke.Layer(CLOUDS_LAYER, ["%s.%s" % (CLOUDS_LAYER, c) for c in ("red", "green", "blue", "alpha")])
 
     group = nuke.nodes.Group(name="EzAtmosScatter1")
     group["tile_color"].setValue(0x4a7fb5ff)
@@ -932,6 +936,13 @@ def build():
             copy["from%d" % c].setValue("rgba." + channel)
             copy["to%d" % c].setValue("%s.%s" % (layer, channel))
         stream = copy
+    clouds = nuke.nodes.Copy(name="Layer_" + CLOUDS_LAYER, xpos=0, ypos=300 + 60 * len(LAYERS))
+    clouds.setInput(0, stream)
+    clouds.setInput(1, hdri)
+    for c, channel in enumerate(("red", "green", "blue", "alpha")):
+        clouds["from%d" % c].setValue("rgba." + channel)
+        clouds["to%d" % c].setValue("%s.%s" % (CLOUDS_LAYER, channel))
+    stream = clouds
 
     # Every user knob shapes the output, so the bake fingerprint covers them all.
     names = [kn.name() for kn in group.allKnobs() if kn.Class() not in ("Tab_Knob", "Text_Knob", "PyScript_Knob")
@@ -962,6 +973,7 @@ def save_gizmo(group, path=GIZMO_PATH):
     header = "version %d.%d v%d\n" % (nuke.NUKE_VERSION_MAJOR, nuke.NUKE_VERSION_MINOR, nuke.NUKE_VERSION_RELEASE)
     for layer in LAYERS:
         header += "add_layer {%s %s.red %s.green %s.blue}\n" % (layer, layer, layer, layer)
+    header += "add_layer {%s %s.red %s.green %s.blue %s.alpha}\n" % ((CLOUDS_LAYER,) * 5)
     if not os.path.isdir(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path))
     with open(path, "w") as f:
