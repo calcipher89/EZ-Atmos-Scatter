@@ -52,6 +52,10 @@ PASSES = [("rayleigh", 1, "atmos_rayleigh"),
 HAZE_DENSITY = ("(rayleigh_coefficients.{c} * sky_amount * exp(-camera_height / 1000 / rayleigh_scale_height)"
                 " + mie_coefficient * haze_amount / 0.9 * exp(-camera_height / 1000 / haze_height)) / 1000")
 
+# The most the passes may be computed at for 'downscale': 1024 or 512 pixels wide (1K, 0.5K),
+# never more than the HDRI itself. Tcl [value] because the group's own knob reads a node inside it.
+DOWNSCALE = ("(downscale==0 ? 1 : min(1, (downscale==1 ? 1024 : 512) / max([value HDRISource.width], 1)))")
+
 # Position of the Axis in the sun input (through any Dots or NoOps), at the rendered frame.
 SUN_FROM_AXIS = ("[python -execlocal {n = nuke.thisGroup().input(1)\n"
                  "while n is not None and not n.knob('world_matrix'):\n"
@@ -227,6 +231,13 @@ def _add_knobs(group):
     quality = nuke.Enumeration_Knob("quality", "quality", ["Draft", "Normal", "High"])
     quality.setTooltip("Number of samples along each ray. Draft is about 4x faster than High.")
     k.append(quality)
+    downscale = nuke.Enumeration_Knob("downscale", "downscale", ["Full", "1K", "0.5K"])
+    downscale.setTooltip("Computes the passes at most 1024 (1K) or 512 (0.5K) pixels wide, whatever the HDRI's "
+                         "size, keeping its aspect, then scales them back up to the HDRI's format. Applies in the "
+                         "viewer and in renders; viewer and render resolution only go lower than this. An HDRI "
+                         "already narrower is left as it is. The atmos_clouds layer and the HDRI under the preview "
+                         "comp stay at full resolution.")
+    k.append(downscale)
     for name, label, tip in [
             ("viewer_resolution", "viewer resolution",
              "Resolution the haze is computed at while you work in the Nuke GUI. It is smooth, so Half "
@@ -237,7 +248,7 @@ def _add_knobs(group):
         knob.setTooltip(tip)
         k.append(knob)
     # Scale the passes are computed at: the viewer setting in the GUI, the render setting
-    # in terminal renders ($gui is 0 there).
+    # in terminal renders ($gui is 0 there), capped by downscale.
     scale = nuke.Double_Knob("scatter_scale", "scatter scale")
     scale.setFlag(nuke.INVISIBLE)
     k.append(scale)
@@ -285,8 +296,9 @@ def _add_knobs(group):
     for name, value in defaults.items():
         group[name].setValue(value)
     res = "(%s==0 ? 1 : %s==1 ? 0.5 : 0.25)"
-    group["scatter_scale"].setExpression("$gui ? %s : %s" % (res % ("viewer_resolution", "viewer_resolution"),
-                                                              res % ("render_resolution", "render_resolution")))
+    group["scatter_scale"].setExpression("min($gui ? %s : %s, %s)" % (res % ("viewer_resolution", "viewer_resolution"),
+                                                                       res % ("render_resolution", "render_resolution"),
+                                                                       DOWNSCALE))
     for i, c in enumerate("xyz"):
         group["haze_density"].setExpression(HAZE_DENSITY.format(c=c), i)
     # The sun the kernels use: found in the HDRI (the Light node's first pixel), the Axis, or manual.
@@ -399,7 +411,8 @@ def _hash_code(names):
     return ("import hashlib\n"
             "s = []\n"
             "for n in %r:\n"
-            "    if g.knob(n):\n"
+            "    # downscale left at Full keeps bakes made before it existed.\n"
+            "    if g.knob(n) and not (n == 'downscale' and int(g[n].getValue()) == 0):\n"
             "        s.append((n, g[n].toScript()))\n"
             "# Where the skydome sits shapes the output too.\n"
             "d = g.node('DomeRemap')\n"
