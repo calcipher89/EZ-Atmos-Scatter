@@ -342,11 +342,10 @@ def _link_scatter(node, output):
     _link(node, "view_samples", "parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32")
 
 
-def _upscale(node, hdri, name, target="HDRISource", needed="parent.scatter_scale < 1", layers=False):
-    """Scale a pass back to the size of `target`, sky and ground halves apart so the hard
+def _upscale(node, hdri, name):
+    """Scale a pass back to the HDRI size, sky and ground halves apart so the hard
     horizon line does not get filtered across. Mitchell, not Cubic: Cubic left every other row
-    step bigger, which showed as horizontal banding in smooth gradients. `needed` says when the
-    round trip is needed at all; `layers` joins the halves of every layer, not just rgba."""
+    step bigger, which showed as horizontal banding in smooth gradients."""
     halves = []
     for half, (lo, hi) in (("sky", ("input.height / 2", "input.height")), ("ground", ("0", "input.height / 2"))):
         x, y = node.xpos(), node.ypos() + 60
@@ -360,28 +359,39 @@ def _upscale(node, hdri, name, target="HDRISource", needed="parent.scatter_scale
         up = nuke.nodes.Reformat(name="%s_%s_up" % (name, half), type="to box", box_fixed=True,
                                  resize="distort", filter="Mitchell")
         up.setInput(0, cut)
-        up["box_width"].setExpression(target + ".width")
-        up["box_height"].setExpression(target + ".height")
+        up["box_width"].setExpression("HDRISource.width")
+        up["box_height"].setExpression("HDRISource.height")
         trim = nuke.nodes.Crop(name="%s_%s_trim" % (name, half))
         trim.setInput(0, up)
         trim["box"].setExpression("0", 0)
-        trim["box"].setExpression(lo.replace("input", target), 1)
-        trim["box"].setExpression(target + ".width", 2)
-        trim["box"].setExpression(hi.replace("input", target), 3)
+        trim["box"].setExpression(lo.replace("input", "HDRISource"), 1)
+        trim["box"].setExpression("HDRISource.width", 2)
+        trim["box"].setExpression(hi.replace("input", "HDRISource"), 3)
         halves.append(trim)
     joined = nuke.nodes.Merge2(name="%s_full" % name, operation="plus")
-    if layers:
-        joined["also_merge"].setValue("all")
     joined.setInput(0, halves[0])
     joined.setInput(1, halves[1])
     # At full resolution skip the round trip altogether.
     pick = nuke.nodes.Switch(name="%s_resolution" % name)
     pick.setInput(0, node)
     pick.setInput(1, joined)
-    pick["which"].setExpression(needed)
+    pick["which"].setExpression("parent.scatter_scale < 1")
     for i, n in enumerate([halves[0].input(0).input(0), halves[0].input(0), halves[0],
                            halves[1].input(0).input(0), halves[1].input(0), halves[1], joined, pick]):
         n.setXYpos(node.xpos() + (i // 3) * 0, node.ypos() + 40 + 30 * i)
+    return pick
+
+
+def _add_output_upscale(stream):
+    up = nuke.nodes.Reformat(name="OutputUpscale", type="to box", box_fixed=True, resize="distort",
+                             filter="Mitchell", xpos=150, ypos=stream.ypos() + 30)
+    up.setInput(0, stream)
+    up["box_width"].setExpression("HDRIInput.width")
+    up["box_height"].setExpression("HDRIInput.height")
+    pick = nuke.nodes.Switch(name="OutputResolution", xpos=0, ypos=stream.ypos() + 60)
+    pick.setInput(0, stream)
+    pick.setInput(1, up)
+    pick["which"].setExpression("HDRISource.width < HDRIInput.width")
     return pick
 
 
@@ -1008,8 +1018,10 @@ def build():
     names = [kn.name() for kn in group.allKnobs() if kn.Class() not in ("Tab_Knob", "Text_Knob", "PyScript_Knob")
              and kn.name() in _USER_KNOBS]
     stream = _add_bake_nodes(stream, names)
-    # Back up to the size the HDRI came in at, every layer at once.
-    stream = _upscale(stream, None, "output", "HDRIInput", "HDRISource.width < HDRIInput.width", layers=True)
+    # Back up to the size the HDRI came in at, every layer at once, in one piece like a Reformat
+    # after the node: the HDRI's own picture runs across the horizon, so splitting it there
+    # (as the passes are) left a seam.
+    stream = _add_output_upscale(stream)
     stream = _add_dome_output(stream, hdri_input)
     out = nuke.nodes.Output(xpos=0, ypos=stream.ypos() + 80)
     out.setInput(0, stream)

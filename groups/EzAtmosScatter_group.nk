@@ -1538,13 +1538,6 @@ push $N9eaffc00
   ypos 900
  }
 set Nfe1d0021 [stack 0]
- Crop {
-  box {{0} {0} {input.width} {"input.height / 2"}}
-  crop false
-  name output_ground_cut
-  xpos 0
-  ypos 1030
- }
  Reformat {
   type "to box"
   box_width {{HDRIInput.width}}
@@ -1552,56 +1545,17 @@ set Nfe1d0021 [stack 0]
   box_fixed true
   resize distort
   filter Mitchell
-  name output_ground_up
-  xpos 0
-  ypos 1060
- }
- Crop {
-  box {{0} {0} {HDRIInput.width} {"HDRIInput.height / 2"}}
-  name output_ground_trim
-  xpos 0
-  ypos 1090
- }
-push $Nfe1d0021
- Crop {
-  box {{0} {"input.height / 2"} {input.width} {input.height}}
-  crop false
-  name output_sky_cut
-  xpos 0
-  ypos 940
- }
- Reformat {
-  type "to box"
-  box_width {{HDRIInput.width}}
-  box_height {{HDRIInput.height}}
-  box_fixed true
-  resize distort
-  filter Mitchell
-  name output_sky_up
-  xpos 0
-  ypos 970
- }
- Crop {
-  box {{0} {"HDRIInput.height / 2"} {HDRIInput.width} {HDRIInput.height}}
-  name output_sky_trim
-  xpos 0
-  ypos 1000
- }
- Merge2 {
-  inputs 2
-  operation plus
-  also_merge all
-  name output_full
-  xpos 0
-  ypos 1120
+  name OutputUpscale
+  xpos 150
+  ypos 930
  }
 push $Nfe1d0021
  Switch {
   inputs 2
   which {{"HDRISource.width < HDRIInput.width"}}
-  name output_resolution
+  name OutputResolution
   xpos 0
-  ypos 1150
+  ypos 960
  }
 set N9e96a300 [stack 0]
  STMap {
