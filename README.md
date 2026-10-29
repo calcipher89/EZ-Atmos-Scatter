@@ -209,7 +209,7 @@ used while Nuke's GUI is open and *render resolution* when rendering from a term
 *1K* to 1024 wide and *0.5K* to 512 wide (keeping its aspect), whether the HDRI is 2K or 18K.
 Everything inside (skydome re-map, light, passes, preview comp, `atmos_clouds`) works at that
 size, so a big HDRI never fills the GPU, and every layer is scaled back up to the HDRI's own
-format at the end, sky and ground apart so the horizon stays sharp. It applies in the viewer
+format at the end in one piece, like a Reformat after the node. It applies in the viewer
 and in renders; viewer and render resolution still apply when they come out smaller. Bakes
 are written at the smaller size. Changing it makes an existing bake out of date; bakes made
 before the knob existed stay valid while it is on *Full*.
