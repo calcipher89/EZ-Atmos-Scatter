@@ -10,8 +10,13 @@ drive every BlinkScript node inside.
 """
 
 import os
+import sys
 
 import nuke
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import layout_hints  # noqa: E402
+import node_layout  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLINK = os.path.join(ROOT, "blink")
@@ -1027,6 +1032,10 @@ def build():
     out.setInput(0, stream)
     group.end()
     _add_bake_knobs(group, names)
+    # Spread the nodes out: trunk down the left, a Backdrop per module, Dots at the bends.
+    # The xpos/ypos given above are only starting points.
+    for problem in node_layout.apply_nuke(group, **layout_hints.HINTS):
+        print("layout: " + problem)
     return group
 
 

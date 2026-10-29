@@ -23,6 +23,7 @@ and brightness from the image, sky light). Depth-aware haze and multiple scatter
 | `blink/EzAtmosDome.blink`, `blink/EzAtmosDomeUV.blink`, `blink/EzAtmosCameraUV.blink` | BlinkScript kernels: skydome texture to lat-long and back, and lat-long to the camera view (for *output as* Skydome and Camera) |
 | `blink/EzAtmosTransmittanceLUT.blink` | BlinkScript kernel: precomputes the optical depth towards the sun as a 256x64 table |
 | `python/build_gizmo.py` | Rebuilds the gizmo after a kernel change |
+| `python/node_layout.py`, `python/layout_hints.py` | Lays out the nodes inside the group (trunk, Backdrops, Dots); the build runs it |
 | `init.py`, `menu.py` | Plugin path and the Nodes menu entry |
 | `reference/atmos_reference.py` | NumPy port of the scattering core for checking the math outside Nuke |
 | `docs/previews/contact_sheet.png` | Reference renders: inscatter, Mie and transmittance at 45°, 10°, 2° and -2° sun elevation |
@@ -278,6 +279,16 @@ Nuke15.1.exe --nukex -i -t python/build_gizmo.py
 
 It loads the kernels from `blink/`, embeds them in the group and writes
 `gizmos/EzAtmosScatter.gizmo`.
+
+The build also lays out the nodes inside the group: the main stream straight down the left,
+each module (inputs, light, passes, preview comp, AOV layers, bake, output) on its own
+Backdrop below the one it reads from, and Dots where pipes bend. The modules are listed in
+`python/layout_hints.py`; a node added to the build needs a module there. To redo the layout
+of the saved files without Nuke:
+
+```
+python3 python/node_layout.py groups/EzAtmosScatter_group.nk gizmos/EzAtmosScatter.gizmo
+```
 
 ## Reference renders
 
