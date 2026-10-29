@@ -101,6 +101,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | haze density (1/m) | read only | Extinction per metre at camera height, for depth hazing in a comp |
 | haze distance (km) | 5 | How far the depth haze reaches, for the *Haze Preview* view and the *Depth Haze* passes. *analyze* sets it to the distance of the horizon |
 | quality | Normal | Samples per ray (Draft is about 4x faster than High) |
+| downscale | Full | Computes the passes at most 1024 (*1K*) or 512 (*0.5K*) pixels wide, whatever the HDRI size, then scales them back up to the HDRI format |
 | viewer resolution | Half | Resolution the haze is computed at in the Nuke GUI (Full / Half / Quarter) |
 | render resolution | Full | Resolution the haze is computed at in terminal and farm renders |
 
@@ -203,6 +204,13 @@ The haze is smooth, so it is computed at a reduced size and scaled back up, with
 and ground halves scaled separately so the horizon stays sharp. *viewer resolution* is
 used while Nuke's GUI is open and *render resolution* when rendering from a terminal
 (`$gui` decides which). Half and Quarter stay within about 2% of Full.
+
+*downscale* caps that size in pixels instead: *1K* computes at 1024 wide and *0.5K* at 512
+wide (keeping the HDRI's aspect) whether the HDRI is 2K or 16K, in the viewer and in
+renders alike. Viewer and render resolution still apply when they come out smaller. The
+passes are scaled back up to the HDRI's own format, and the HDRI itself (in the preview comp
+and the `atmos_clouds` layer) is never downscaled. Changing it makes an existing bake out of
+date; bakes made before the knob existed stay valid while it is on *Full*.
 
 Measured on a 3044x1522 HDRI in Nuke 15.1 (RTX 3070, warm):
 
