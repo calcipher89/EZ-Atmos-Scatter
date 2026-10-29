@@ -212,6 +212,11 @@ passes are scaled back up to the HDRI's own format, and the HDRI itself (in the 
 and the `atmos_clouds` layer) is never downscaled. Changing it makes an existing bake out of
 date; bakes made before the knob existed stay valid while it is on *Full*.
 
+With a skydome connected, the full-size re-map of the HDRI (for the preview comp and
+`atmos_clouds`) runs on the CPU, so a very large HDRI (16K and up) doesn't run out of GPU
+memory. The light is measured from a separate re-map at most 4096 wide, and the passes only
+take their size from the HDRI, so neither waits on the full-size one.
+
 Measured on a 3044x1522 HDRI in Nuke 15.1 (RTX 3070, warm):
 
 | | CPU | GPU |

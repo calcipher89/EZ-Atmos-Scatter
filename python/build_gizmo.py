@@ -679,11 +679,11 @@ def _dome_expression(ret):
     return "[python -execlocal {%sret = %s}]" % (_DOME_WALK, ret)
 
 
-def _add_dome_nodes(hdri):
-    """Re-map the HDRI to what the camera sees on the skydome, when one is connected."""
-    dome = nuke.nodes.BlinkScript(name="DomeRemap", xpos=150, ypos=-360)
-    dome.setInput(0, hdri)
-    dome.setInput(1, hdri)
+def _dome_remap(name, ref, src, x, y):
+    """EzAtmosDome at the size of `ref`, reading the HDRI from `src`."""
+    dome = nuke.nodes.BlinkScript(name=name, xpos=x, ypos=y)
+    dome.setInput(0, ref)
+    dome.setInput(1, src)
     _load_kernel(dome, "EzAtmosDome.blink")
     for row in range(3):
         for col in range(4):
@@ -694,7 +694,32 @@ def _add_dome_nodes(hdri):
             "c['world_matrix'].getValueAt(t, %d) if c is not None "
             "else m[%d]" % (3 + 4 * k, 12 + k)), k)
     _link(dome, "radius", _dome_expression("r"))
+    return dome
+
+
+def _add_dome_nodes(hdri):
+    """Re-map the HDRI to what the camera sees on the skydome, when one is connected. This one
+    is full size, for the layers that carry the HDRI itself, so it runs on the CPU: on the GPU
+    the HDRI, the output and their copies all have to fit at once (over 10 GB for an 18K HDRI)."""
+    dome = _dome_remap("DomeRemap", hdri, hdri, 150, -360)
+    dome["useGPUIfAvailable"].setValue(False)
     pick = nuke.nodes.Switch(name="UseDome", xpos=0, ypos=-340)
+    pick.setInput(0, hdri)
+    pick.setInput(1, dome)
+    pick["which"].setExpression("[exists parent.input2]")
+    return pick
+
+
+def _add_light_dome(hdri):
+    """The skydome re-map the light is measured from: at most 4096 wide, so it stays on the GPU.
+    It is only shrunk to 512 wide after this."""
+    src = nuke.nodes.Reformat(name="LightDomeSource", type="to box", box_fixed=True, resize="distort",
+                              filter="Mitchell", xpos=450, ypos=-370)
+    src.setInput(0, hdri)
+    src["box_width"].setExpression("min(HDRISource.width, 4096)")
+    src["box_height"].setExpression("max(floor(HDRISource.height * min(HDRISource.width, 4096) / max(HDRISource.width, 1) + 0.5), 1)")
+    dome = _dome_remap("LightDome", src, src, 450, -340)
+    pick = nuke.nodes.Switch(name="UseDomeLight", xpos=300, ypos=-330)
     pick.setInput(0, hdri)
     pick.setInput(1, dome)
     pick["which"].setExpression("[exists parent.input2]")
@@ -751,6 +776,8 @@ def _add_dome_output(stream, hdri):
     uv = nuke.nodes.BlinkScript(name="DomeUV", xpos=200, ypos=stream.ypos() + 40)
     uv.setInput(0, hdri)
     _load_kernel(uv, "EzAtmosDomeUV.blink")
+    # Full size like DomeRemap, so on the CPU for the same reason.
+    uv["useGPUIfAvailable"].setValue(False)
     for row in range(3):
         for col in range(4):
             _link(uv, "dome_row%d" % row, _dome_expression("m[%d]" % (col * 4 + row)), col)
@@ -817,11 +844,14 @@ def build():
     # From here on the HDRI is the one seen on the skydome, when there is one.
     hdri_source = hdri
     hdri = _add_dome_nodes(hdri)
+    light_hdri = _add_light_dome(hdri_source)
+    # The passes, the LUT and the self-lit sky only take their size from the HDRI, which is the
+    # same with or without the dome, so they read it straight and never pull the full-size re-map.
 
     # Light measured from a small copy of the HDRI.
     proxy = nuke.nodes.Reformat(name="LightProxy", type="to box", box_width=512, box_height=256,
                                 box_fixed=True, resize="distort", filter="Mitchell", xpos=300, ypos=-300)
-    proxy.setInput(0, hdri)
+    proxy.setInput(0, light_hdri)
     ref = nuke.nodes.Reformat(name="LightRef", type="to box", box_width=4, box_height=1,
                               box_fixed=True, resize="distort", xpos=300, ypos=-240)
     ref.setInput(0, proxy)
@@ -836,7 +866,7 @@ def build():
     # Optical depth towards the sun, precomputed once instead of marched at every sample.
     lut_ref = nuke.nodes.Reformat(name="LUTRef", type="to box", box_width=256, box_height=64,
                                   box_fixed=True, resize="distort", xpos=450, ypos=-240)
-    lut_ref.setInput(0, hdri)
+    lut_ref.setInput(0, hdri_source)
     lut = nuke.nodes.BlinkScript(name="TransmittanceLUT", xpos=450, ypos=-180)
     lut.setInput(0, lut_ref)
     _load_kernel(lut, "EzAtmosTransmittanceLUT.blink")
@@ -848,7 +878,7 @@ def build():
     # The passes are computed at scatter_scale. Even height keeps the horizon on a row edge.
     low = nuke.nodes.Reformat(name="ScatterResolution", type="to box", box_fixed=True, resize="distort",
                               xpos=-300, ypos=-240)
-    low.setInput(0, hdri)
+    low.setInput(0, hdri_source)
     low["box_width"].setExpression("max(floor(HDRISource.width * parent.scatter_scale + 0.5), 4)")
     low["box_height"].setExpression("max(2 * floor(HDRISource.height * parent.scatter_scale / 2 + 0.5), 2)")
 
@@ -857,7 +887,7 @@ def build():
     # measured like an HDRI; the passes that use sky light read that measurement.
     self_ref = nuke.nodes.Reformat(name="SelfSkySize", type="to box", box_width=512, box_height=256,
                                    box_fixed=True, resize="distort", xpos=600, ypos=-300)
-    self_ref.setInput(0, hdri)
+    self_ref.setInput(0, hdri_source)
     self_parts = []
     for name, output in (("rayleigh", 1), ("mie", 2)):
         node = nuke.nodes.BlinkScript(name="SelfSky_" + name, xpos=600 + 120 * len(self_parts), ypos=-240)
