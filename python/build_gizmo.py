@@ -52,9 +52,12 @@ PASSES = [("rayleigh", 1, "atmos_rayleigh"),
 HAZE_DENSITY = ("(rayleigh_coefficients.{c} * sky_amount * exp(-camera_height / 1000 / rayleigh_scale_height)"
                 " + mie_coefficient * haze_amount / 0.9 * exp(-camera_height / 1000 / haze_height)) / 1000")
 
-# The most the passes may be computed at for 'downscale': 1024 or 512 pixels wide (1K, 0.5K),
-# never more than the HDRI itself. Tcl [value] because the group's own knob reads a node inside it.
-DOWNSCALE = ("(downscale==0 ? 1 : min(1, (downscale==1 ? 1024 : 512) / max([value HDRISource.width], 1)))")
+# Width the HDRI is shrunk to for 'downscale' (1K, 0.5K), never more than it already is.
+DOWNSCALE_WIDTH = "(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512))"
+# How much bigger the HDRI came in than it is worked at, so viewer and render resolution keep
+# meaning a fraction of the HDRI's own size and only go below downscale, never above it.
+# Tcl [value] because the group's own knob reads nodes inside it.
+DOWNSCALE_RATIO = "[value HDRIInput.width] / max([value HDRISource.width], 1)"
 
 # Position of the Axis in the sun input (through any Dots or NoOps), at the rendered frame.
 SUN_FROM_AXIS = ("[python -execlocal {n = nuke.thisGroup().input(1)\n"
@@ -232,11 +235,11 @@ def _add_knobs(group):
     quality.setTooltip("Number of samples along each ray. Draft is about 4x faster than High.")
     k.append(quality)
     downscale = nuke.Enumeration_Knob("downscale", "downscale", ["Full", "1K", "0.5K"])
-    downscale.setTooltip("Computes the passes at most 1024 (1K) or 512 (0.5K) pixels wide, whatever the HDRI's "
-                         "size, keeping its aspect, then scales them back up to the HDRI's format. Applies in the "
-                         "viewer and in renders; viewer and render resolution only go lower than this. An HDRI "
-                         "already narrower is left as it is. The atmos_clouds layer and the HDRI under the preview "
-                         "comp stay at full resolution.")
+    downscale.setTooltip("Shrinks the HDRI to 1024 (1K) or 512 (0.5K) pixels wide as it comes in, keeping its "
+                         "aspect, works on that, and scales every layer back up to the HDRI's format at the end: "
+                         "like a Reformat before the node and one after, so a big HDRI never fills the GPU. Applies "
+                         "in the viewer and in renders; viewer and render resolution only go lower than this. An "
+                         "HDRI already narrower is left as it is. Bakes are written at the smaller size.")
     k.append(downscale)
     for name, label, tip in [
             ("viewer_resolution", "viewer resolution",
@@ -296,9 +299,9 @@ def _add_knobs(group):
     for name, value in defaults.items():
         group[name].setValue(value)
     res = "(%s==0 ? 1 : %s==1 ? 0.5 : 0.25)"
-    group["scatter_scale"].setExpression("min($gui ? %s : %s, %s)" % (res % ("viewer_resolution", "viewer_resolution"),
-                                                                       res % ("render_resolution", "render_resolution"),
-                                                                       DOWNSCALE))
+    group["scatter_scale"].setExpression("min(($gui ? %s : %s) * %s, 1)" % (res % ("viewer_resolution", "viewer_resolution"),
+                                                                             res % ("render_resolution", "render_resolution"),
+                                                                             DOWNSCALE_RATIO))
     for i, c in enumerate("xyz"):
         group["haze_density"].setExpression(HAZE_DENSITY.format(c=c), i)
     # The sun the kernels use: found in the HDRI (the Light node's first pixel), the Axis, or manual.
@@ -339,10 +342,11 @@ def _link_scatter(node, output):
     _link(node, "view_samples", "parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32")
 
 
-def _upscale(node, hdri, name):
-    """Scale a pass back to the HDRI size, sky and ground halves apart so the hard
+def _upscale(node, hdri, name, target="HDRISource", needed="parent.scatter_scale < 1", layers=False):
+    """Scale a pass back to the size of `target`, sky and ground halves apart so the hard
     horizon line does not get filtered across. Mitchell, not Cubic: Cubic left every other row
-    step bigger, which showed as horizontal banding in smooth gradients."""
+    step bigger, which showed as horizontal banding in smooth gradients. `needed` says when the
+    round trip is needed at all; `layers` joins the halves of every layer, not just rgba."""
     halves = []
     for half, (lo, hi) in (("sky", ("input.height / 2", "input.height")), ("ground", ("0", "input.height / 2"))):
         x, y = node.xpos(), node.ypos() + 60
@@ -356,23 +360,25 @@ def _upscale(node, hdri, name):
         up = nuke.nodes.Reformat(name="%s_%s_up" % (name, half), type="to box", box_fixed=True,
                                  resize="distort", filter="Mitchell")
         up.setInput(0, cut)
-        up["box_width"].setExpression("HDRISource.width")
-        up["box_height"].setExpression("HDRISource.height")
+        up["box_width"].setExpression(target + ".width")
+        up["box_height"].setExpression(target + ".height")
         trim = nuke.nodes.Crop(name="%s_%s_trim" % (name, half))
         trim.setInput(0, up)
         trim["box"].setExpression("0", 0)
-        trim["box"].setExpression(lo.replace("input", "HDRISource"), 1)
-        trim["box"].setExpression("HDRISource.width", 2)
-        trim["box"].setExpression(hi.replace("input", "HDRISource"), 3)
+        trim["box"].setExpression(lo.replace("input", target), 1)
+        trim["box"].setExpression(target + ".width", 2)
+        trim["box"].setExpression(hi.replace("input", target), 3)
         halves.append(trim)
     joined = nuke.nodes.Merge2(name="%s_full" % name, operation="plus")
+    if layers:
+        joined["also_merge"].setValue("all")
     joined.setInput(0, halves[0])
     joined.setInput(1, halves[1])
     # At full resolution skip the round trip altogether.
     pick = nuke.nodes.Switch(name="%s_resolution" % name)
     pick.setInput(0, node)
     pick.setInput(1, joined)
-    pick["which"].setExpression("parent.scatter_scale < 1")
+    pick["which"].setExpression(needed)
     for i, n in enumerate([halves[0].input(0).input(0), halves[0].input(0), halves[0],
                            halves[1].input(0).input(0), halves[1].input(0), halves[1], joined, pick]):
         n.setXYpos(node.xpos() + (i // 3) * 0, node.ypos() + 40 + 30 * i)
@@ -833,11 +839,22 @@ def build():
     # passes keep a lat-long shape instead of taking the script's format.
     blank = nuke.nodes.Constant(name="BlankHDRI", xpos=-150, ypos=-400)
     blank["format"].setValue(nuke.addFormat("2048 1024 1 EzAtmos_latlong_2k"))
-    hdri_source = nuke.nodes.Switch(name="HDRISource", xpos=0, ypos=-370)
-    hdri_source.setInput(0, hdri)
-    hdri_source.setInput(1, blank)
-    hdri_source["which"].setExpression("![exists parent.input0]")
-    hdri = hdri_source
+    hdri_input = nuke.nodes.Switch(name="HDRIInput", xpos=0, ypos=-370)
+    hdri_input.setInput(0, hdri)
+    hdri_input.setInput(1, blank)
+    hdri_input["which"].setExpression("![exists parent.input0]")
+    # Everything inside works on the HDRI at the 'downscale' size (HDRISource); the output is
+    # scaled back up to HDRIInput's size at the end. Even height keeps the horizon on a row edge.
+    small = nuke.nodes.Reformat(name="InputDownscale", type="to box", box_fixed=True, resize="distort",
+                                filter="Mitchell", xpos=-150, ypos=-370)
+    small.setInput(0, hdri_input)
+    small["box_width"].setExpression(DOWNSCALE_WIDTH)
+    small["box_height"].setExpression("max(2 * floor(HDRIInput.height * %s / max(HDRIInput.width, 1) / 2 + 0.5), 2)"
+                                      % DOWNSCALE_WIDTH)
+    hdri = nuke.nodes.Switch(name="HDRISource", xpos=0, ypos=-350)
+    hdri.setInput(0, hdri_input)
+    hdri.setInput(1, small)
+    hdri["which"].setExpression("%s < HDRIInput.width" % DOWNSCALE_WIDTH)
     axis = nuke.nodes.Input(name="sun", xpos=600, ypos=-400)
     nuke.nodes.Input(name="dome", xpos=150, ypos=-440)
     nuke.nodes.Input(name="camera", xpos=300, ypos=-440)
@@ -991,7 +1008,9 @@ def build():
     names = [kn.name() for kn in group.allKnobs() if kn.Class() not in ("Tab_Knob", "Text_Knob", "PyScript_Knob")
              and kn.name() in _USER_KNOBS]
     stream = _add_bake_nodes(stream, names)
-    stream = _add_dome_output(stream, hdri_source)
+    # Back up to the size the HDRI came in at, every layer at once.
+    stream = _upscale(stream, None, "output", "HDRIInput", "HDRISource.width < HDRIInput.width", layers=True)
+    stream = _add_dome_output(stream, hdri_input)
     out = nuke.nodes.Output(xpos=0, ypos=stream.ypos() + 80)
     out.setInput(0, stream)
     group.end()

@@ -64,12 +64,12 @@ Group {
  haze_distance 5
  addUserKnob {4 quality t "Number of samples along each ray. Draft is about 4x faster than High." M {Draft Normal High}}
  quality Normal
- addUserKnob {4 downscale t "Computes the passes at most 1024 (1K) or 512 (0.5K) pixels wide, whatever the HDRI's size, keeping its aspect, then scales them back up to the HDRI's format. Applies in the viewer and in renders; viewer and render resolution only go lower than this. An HDRI already narrower is left as it is. The atmos_clouds layer and the HDRI under the preview comp stay at full resolution." M {Full 1K 0.5K}}
+ addUserKnob {4 downscale t "Shrinks the HDRI to 1024 (1K) or 512 (0.5K) pixels wide as it comes in, keeping its aspect, works on that, and scales every layer back up to the HDRI's format at the end: like a Reformat before the node and one after, so a big HDRI never fills the GPU. Applies in the viewer and in renders; viewer and render resolution only go lower than this. An HDRI already narrower is left as it is. Bakes are written at the smaller size." M {Full 1K 0.5K}}
  addUserKnob {4 viewer_resolution l "viewer resolution" t "Resolution the haze is computed at while you work in the Nuke GUI. It is smooth, so Half or Quarter look almost the same and are 4x or 16x faster. The horizon stays sharp." M {Full Half Quarter}}
  viewer_resolution Half
  addUserKnob {4 render_resolution l "render resolution" t "Resolution the haze is computed at when rendering from a terminal or on the farm." M {Full Half Quarter}}
  addUserKnob {7 scatter_scale l "scatter scale" +INVISIBLE}
- scatter_scale {{"min(\$gui ? (viewer_resolution==0 ? 1 : viewer_resolution==1 ? 0.5 : 0.25) : (render_resolution==0 ? 1 : render_resolution==1 ? 0.5 : 0.25), (downscale==0 ? 1 : min(1, (downscale==1 ? 1024 : 512) / max(\[value HDRISource.width], 1))))"}}
+ scatter_scale {{"min((\$gui ? (viewer_resolution==0 ? 1 : viewer_resolution==1 ? 0.5 : 0.25) : (render_resolution==0 ? 1 : render_resolution==1 ? 0.5 : 0.25)) * \[value HDRIInput.width] / max(\[value HDRISource.width], 1), 1)"}}
  addUserKnob {20 advanced l Advanced n 2}
  addUserKnob {13 rayleigh_coefficients l "rayleigh coefficients" t "Sea-level Rayleigh scattering per km at 680, 550, 440 nm."}
  rayleigh_coefficients {0.0052 0.0121 0.0296}
@@ -143,9 +143,29 @@ Group {
  Switch {
   inputs 2
   which {{"!\[exists parent.input0]"}}
-  name HDRISource
+  name HDRIInput
   xpos 0
   ypos -370
+ }
+set Nfe1d0020 [stack 0]
+ Reformat {
+  type "to box"
+  box_width {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512))"}}
+  box_height {{"max(2 * floor(HDRIInput.height * (parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512)) / max(HDRIInput.width, 1) / 2 + 0.5), 2)"}}
+  box_fixed true
+  resize distort
+  filter Mitchell
+  name InputDownscale
+  xpos -150
+  ypos -370
+ }
+push $Nfe1d0020
+ Switch {
+  inputs 2
+  which {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512)) < HDRIInput.width"}}
+  name HDRISource
+  xpos 0
+  ypos -350
  }
 set Nbb13af00 [stack 0]
 push $Nbb13af00
@@ -1468,7 +1488,7 @@ set N9eaffc00 [stack 0]
   xpos 200
   ypos 840
  }
-push $Nbb13af00
+push $Nfe1d0020
  Reformat {
   name CameraFormat
   xpos 400
@@ -1516,6 +1536,72 @@ push $N9eaffc00
   name UseBake
   xpos 0
   ypos 900
+ }
+set Nfe1d0021 [stack 0]
+ Crop {
+  box {{0} {0} {input.width} {"input.height / 2"}}
+  crop false
+  name output_ground_cut
+  xpos 0
+  ypos 1030
+ }
+ Reformat {
+  type "to box"
+  box_width {{HDRIInput.width}}
+  box_height {{HDRIInput.height}}
+  box_fixed true
+  resize distort
+  filter Mitchell
+  name output_ground_up
+  xpos 0
+  ypos 1060
+ }
+ Crop {
+  box {{0} {0} {HDRIInput.width} {"HDRIInput.height / 2"}}
+  name output_ground_trim
+  xpos 0
+  ypos 1090
+ }
+push $Nfe1d0021
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name output_sky_cut
+  xpos 0
+  ypos 940
+ }
+ Reformat {
+  type "to box"
+  box_width {{HDRIInput.width}}
+  box_height {{HDRIInput.height}}
+  box_fixed true
+  resize distort
+  filter Mitchell
+  name output_sky_up
+  xpos 0
+  ypos 970
+ }
+ Crop {
+  box {{0} {"HDRIInput.height / 2"} {HDRIInput.width} {HDRIInput.height}}
+  name output_sky_trim
+  xpos 0
+  ypos 1000
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  also_merge all
+  name output_full
+  xpos 0
+  ypos 1120
+ }
+push $Nfe1d0021
+ Switch {
+  inputs 2
+  which {{"HDRISource.width < HDRIInput.width"}}
+  name output_resolution
+  xpos 0
+  ypos 1150
  }
 set N9e96a300 [stack 0]
  STMap {
@@ -1584,7 +1670,7 @@ set N9ebfa000 [stack 0]
   xpos 300
   ypos 960
  }
-push $Nbb13af00
+push $Nfe1d0020
  BlinkScript {
   useGPUIfAvailable false
   recompileCount 2

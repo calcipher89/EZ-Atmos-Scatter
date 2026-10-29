@@ -101,7 +101,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | haze density (1/m) | read only | Extinction per metre at camera height, for depth hazing in a comp |
 | haze distance (km) | 5 | How far the depth haze reaches, for the *Haze Preview* view and the *Depth Haze* passes. *analyze* sets it to the distance of the horizon |
 | quality | Normal | Samples per ray (Draft is about 4x faster than High) |
-| downscale | Full | Computes the passes at most 1024 (*1K*) or 512 (*0.5K*) pixels wide, whatever the HDRI size, then scales them back up to the HDRI format |
+| downscale | Full | Shrinks the HDRI to 1024 (*1K*) or 512 (*0.5K*) wide as it comes in, works at that size, and scales every layer back up to the HDRI format at the end |
 | viewer resolution | Half | Resolution the haze is computed at in the Nuke GUI (Full / Half / Quarter) |
 | render resolution | Full | Resolution the haze is computed at in terminal and farm renders |
 
@@ -205,17 +205,18 @@ and ground halves scaled separately so the horizon stays sharp. *viewer resoluti
 used while Nuke's GUI is open and *render resolution* when rendering from a terminal
 (`$gui` decides which). Half and Quarter stay within about 2% of Full.
 
-*downscale* caps that size in pixels instead: *1K* computes at 1024 wide and *0.5K* at 512
-wide (keeping the HDRI's aspect) whether the HDRI is 2K or 16K, in the viewer and in
-renders alike. Viewer and render resolution still apply when they come out smaller. The
-passes are scaled back up to the HDRI's own format, and the HDRI itself (in the preview comp
-and the `atmos_clouds` layer) is never downscaled. Changing it makes an existing bake out of
-date; bakes made before the knob existed stay valid while it is on *Full*.
+*downscale* shrinks the HDRI itself as it comes in, like a Reformat in front of the node:
+*1K* to 1024 wide and *0.5K* to 512 wide (keeping its aspect), whether the HDRI is 2K or 18K.
+Everything inside (skydome re-map, light, passes, preview comp, `atmos_clouds`) works at that
+size, so a big HDRI never fills the GPU, and every layer is scaled back up to the HDRI's own
+format at the end, sky and ground apart so the horizon stays sharp. It applies in the viewer
+and in renders; viewer and render resolution still apply when they come out smaller. Bakes
+are written at the smaller size. Changing it makes an existing bake out of date; bakes made
+before the knob existed stay valid while it is on *Full*.
 
-With a skydome connected, the full-size re-map of the HDRI (for the preview comp and
-`atmos_clouds`) runs on the CPU, so a very large HDRI (16K and up) doesn't run out of GPU
-memory. The light is measured from a separate re-map at most 4096 wide, and the passes only
-take their size from the HDRI, so neither waits on the full-size one.
+On *Full*, the full-size skydome re-map runs on the CPU so a very large HDRI doesn't run out
+of GPU memory; the light is measured from a separate re-map at most 4096 wide, and the passes
+only take their size from the HDRI, so neither waits on the full-size one.
 
 Measured on a 3044x1522 HDRI in Nuke 15.1 (RTX 3070, warm):
 
