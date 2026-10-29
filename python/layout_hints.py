@@ -8,8 +8,12 @@ MODULES = [
     ("Sun light + transmittance LUT", 0x7a6a3aff,
      r"LUTRef|TransmittanceLUT|LightDome.*|UseDomeLight|LightProxy|LightRef|Light"),
     ("Self-lit sky", 0x7a6a3aff, r"SelfSky.*|SelfLight|SkyLightSource"),
-    ("Scatter passes", 0x3a5a4aff, r"ScatterResolution|Scatter_.*|\w+_(sky|ground)_(cut|up|trim)|\w+_full|\w+_resolution"),
-    ("Preview comp", 0x5a4a6aff, r"AddMie|AddSkyLight|Attenuate|PreviewComp|HazePreview.*|ViewOutput"),
+    # Its own band, so its pipes to the eight passes come in along a rail.
+    ("Scatter resolution", 0x3a5a4aff, r"ScatterResolution"),
+    ("Scatter passes", 0x3a5a4aff, r"Scatter_.*|\w+_(sky|ground)_(cut|up|trim)|\w+_full|\w+_resolution"),
+    ("Preview comp", 0x5a4a6aff, r"AddMie|AddSkyLight|Attenuate|PreviewComp|HazePreview.*"),
+    # Its own band, so the eight pipes into it come in along rails rather than across the comp.
+    ("View output", 0x5a4a6aff, r"ViewOutput"),
     ("AOV layers", 0x6a4a4aff, r"MainRGB|Layer_.*"),
     ("Bake", 0x444444ff, r"Bake.*|UseBake"),
     ("Back to HDRI size", 0x6a4a4aff, r"OutputUpscale|OutputResolution"),

@@ -121,10 +121,10 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   tile_color 0x4a5a6aff
   label "Inputs"
   note_font_size 32
-  xpos -190
+  xpos -220
   ypos -60
-  bdwidth 760
-  bdheight 262
+  bdwidth 880
+  bdheight 298
   z_order 3
  }
  BackdropNode {
@@ -134,9 +134,9 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   label "Skydome"
   note_font_size 32
   xpos -40
-  ypos 258
-  bdwidth 310
-  bdheight 208
+  ypos 297
+  bdwidth 340
+  bdheight 229
   z_order 8
  }
  BackdropNode {
@@ -145,10 +145,10 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   tile_color 0x7a6a3aff
   label "Sun light + transmittance LUT"
   note_font_size 32
-  xpos 110
-  ypos 522
-  bdwidth 460
-  bdheight 400
+  xpos 140
+  ypos 585
+  bdwidth 520
+  bdheight 469
   z_order 4
  }
  BackdropNode {
@@ -157,11 +157,23 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   tile_color 0x7a6a3aff
   label "Self-lit sky"
   note_font_size 32
-  xpos 110
-  ypos 978
-  bdwidth 310
-  bdheight 424
+  xpos 140
+  ypos 1113
+  bdwidth 340
+  bdheight 499
   z_order 5
+ }
+ BackdropNode {
+  inputs 0
+  name Backdrop_Scatter_resolution
+  tile_color 0x3a5a4aff
+  label "Scatter resolution"
+  note_font_size 32
+  xpos 140
+  ypos 1671
+  bdwidth 160
+  bdheight 169
+  z_order 11
  }
  BackdropNode {
   inputs 0
@@ -169,10 +181,10 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   tile_color 0x3a5a4aff
   label "Scatter passes"
   note_font_size 32
-  xpos 110
-  ypos 1458
-  bdwidth 2410
-  bdheight 520
+  xpos 140
+  ypos 1899
+  bdwidth 2860
+  bdheight 559
   z_order 0
  }
  BackdropNode {
@@ -181,11 +193,23 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   tile_color 0x5a4a6aff
   label "Preview comp"
   note_font_size 32
-  xpos 110
-  ypos 2034
-  bdwidth 610
-  bdheight 592
+  xpos 140
+  ypos 2517
+  bdwidth 700
+  bdheight 649
   z_order 2
+ }
+ BackdropNode {
+  inputs 0
+  name Backdrop_View_output
+  tile_color 0x5a4a6aff
+  label "View output"
+  note_font_size 32
+  xpos 140
+  ypos 3225
+  bdwidth 160
+  bdheight 379
+  z_order 10
  }
  BackdropNode {
   inputs 0
@@ -194,9 +218,9 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   label "AOV layers"
   note_font_size 32
   xpos -40
-  ypos 2676
+  ypos 3654
   bdwidth 160
-  bdheight 550
+  bdheight 658
   z_order 7
  }
  BackdropNode {
@@ -206,9 +230,9 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   label "Bake"
   note_font_size 32
   xpos -40
-  ypos 3282
-  bdwidth 460
-  bdheight 208
+  ypos 4371
+  bdwidth 520
+  bdheight 229
   z_order 6
  }
  BackdropNode {
@@ -218,9 +242,9 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   label "Back to HDRI size"
   note_font_size 32
   xpos -40
-  ypos 3546
-  bdwidth 310
-  bdheight 208
+  ypos 4659
+  bdwidth 340
+  bdheight 229
   z_order 9
  }
  BackdropNode {
@@ -230,16 +254,16 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   label "Remap to dome / camera"
   note_font_size 32
   xpos -40
-  ypos 3810
-  bdwidth 1060
-  bdheight 472
+  ypos 4947
+  bdwidth 1240
+  bdheight 559
   z_order 1
  }
  Input {
   inputs 0
   name sun
   number 1
-  xpos 450
+  xpos 540
   ypos 0
  }
 set N1a700000 [stack 0]
@@ -247,7 +271,7 @@ set N1a700000 [stack 0]
   inputs 0
   name dome
   number 2
-  xpos 300
+  xpos 360
   ypos 0
  }
 set N1a700001 [stack 0]
@@ -255,7 +279,7 @@ set N1a700001 [stack 0]
   inputs 0
   name camera
   number 3
-  xpos 150
+  xpos 180
   ypos 0
  }
 set N1a700002 [stack 0]
@@ -263,7 +287,7 @@ set N1a700002 [stack 0]
   inputs 0
   format "2048 1024 0 0 2048 1024 1 EzAtmos_latlong_2k"
   name BlankHDRI
-  xpos -150
+  xpos -180
   ypos 0
  }
 set N1a700003 [stack 0]
@@ -281,7 +305,7 @@ push $N1a700004
   which {{"!\[exists parent.input0]"}}
   name HDRIInput
   xpos 0
-  ypos 48
+  ypos 60
   label "blank if no hdri"
  }
 set N1a700005 [stack 0]
@@ -294,8 +318,8 @@ push $N1a700005
   resize distort
   filter Mitchell
   name InputDownscale
-  xpos -150
-  ypos 96
+  xpos -180
+  ypos 120
  }
 set N1a700006 [stack 0]
 push $N1a700006
@@ -305,29 +329,29 @@ push $N1a700005
   which {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512)) < HDRIInput.width"}}
   name HDRISource
   xpos 0
-  ypos 144
+  ypos 180
   label "downscale on"
  }
 set N1a700007 [stack 0]
 push $N1a700007
  Dot {
-  name LayoutDot17
-  xpos 107
-  ypos 147
+  name LayoutDot8
+  xpos 110
+  ypos 183
  }
 set N1a700008 [stack 0]
 push $N1a700008
  Dot {
-  name LayoutDot18
-  xpos 107
-  ypos 318
+  name LayoutDot9
+  xpos 110
+  ypos 357
  }
 set N1a700009 [stack 0]
 push $N1a700009
  Dot {
-  name LayoutDot19
-  xpos 184
-  ypos 318
+  name LayoutDot10
+  xpos 214
+  ypos 357
  }
 set N1a70000a [stack 0]
 push $N1a70000a
@@ -346,8 +370,8 @@ push $N1a70000a
   EzAtmosDome_radius {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = r\}]"}}
   rebuild_finalise ""
   name DomeRemap
-  xpos 150
-  ypos 360
+  xpos 180
+  ypos 408
  }
 set N1a70000b [stack 0]
 push $N1a70000b
@@ -357,36 +381,36 @@ push $N1a700007
   which {{"\[exists parent.input2]"}}
   name UseDome
   xpos 0
-  ypos 408
+  ypos 468
   label "dome input"
  }
 set N1a70000c [stack 0]
 push $N1a700009
  Dot {
-  name LayoutDot20
-  xpos 107
-  ypos 582
+  name LayoutDot11
+  xpos 110
+  ypos 645
  }
 set N1a70000d [stack 0]
 push $N1a70000d
  Dot {
-  name LayoutDot21
-  xpos 184
-  ypos 582
+  name LayoutDot12
+  xpos 214
+  ypos 645
  }
 set N1a70000e [stack 0]
 push $N1a70000e
  Dot {
-  name LayoutDot22
-  xpos 334
-  ypos 582
+  name LayoutDot13
+  xpos 394
+  ypos 645
  }
 set N1a70000f [stack 0]
 push $N1a70000f
  Dot {
-  name LayoutDot23
-  xpos 484
-  ypos 582
+  name LayoutDot14
+  xpos 574
+  ypos 645
  }
 set N1a700010 [stack 0]
 push $N1a700010
@@ -397,8 +421,8 @@ push $N1a700010
   box_fixed true
   resize distort
   name LUTRef
-  xpos 450
-  ypos 624
+  xpos 540
+  ypos 696
  }
 set N1a700011 [stack 0]
 push $N1a700011
@@ -413,8 +437,8 @@ push $N1a700011
   EzAtmosTransmittanceLUT_mie_scale_height_km {{parent.haze_height}}
   rebuild_finalise ""
   name TransmittanceLUT
-  xpos 450
-  ypos 672
+  xpos 540
+  ypos 756
  }
 set N1a700012 [stack 0]
 push $N1a70000e
@@ -426,8 +450,8 @@ push $N1a70000e
   resize distort
   filter Mitchell
   name LightDomeSource
-  xpos 150
-  ypos 624
+  xpos 180
+  ypos 696
  }
 set N1a700013 [stack 0]
 push $N1a700013
@@ -445,8 +469,8 @@ push $N1a700013
   EzAtmosDome_radius {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = r\}]"}}
   rebuild_finalise ""
   name LightDome
-  xpos 150
-  ypos 672
+  xpos 180
+  ypos 756
  }
 set N1a700014 [stack 0]
 push $N1a700014
@@ -455,8 +479,8 @@ push $N1a70000f
   inputs 2
   which {{"\[exists parent.input2]"}}
   name UseDomeLight
-  xpos 300
-  ypos 720
+  xpos 360
+  ypos 816
   label "dome input"
  }
 set N1a700015 [stack 0]
@@ -469,8 +493,8 @@ push $N1a700015
   resize distort
   filter Mitchell
   name LightProxy
-  xpos 300
-  ypos 768
+  xpos 360
+  ypos 876
  }
 set N1a700016 [stack 0]
 push $N1a700016
@@ -481,22 +505,22 @@ push $N1a700016
   box_fixed true
   resize distort
   name LightRef
-  xpos 300
-  ypos 816
+  xpos 360
+  ypos 936
  }
 set N1a700017 [stack 0]
 push $N1a700016
  Dot {
-  name LayoutDot32
-  xpos 386
-  ypos 771
+  name LayoutDot33
+  xpos 446
+  ypos 879
  }
 set N1a700018 [stack 0]
 push $N1a700018
  Dot {
-  name LayoutDot33
-  xpos 386
-  ypos 867
+  name LayoutDot34
+  xpos 446
+  ypos 978
  }
 set N1a700019 [stack 0]
 push $N1a700019
@@ -512,22 +536,22 @@ push $N1a700017
   EzAtmosLight_clip_ratio {{parent.clip_ratio}}
   rebuild_finalise ""
   name Light
-  xpos 300
-  ypos 864
+  xpos 360
+  ypos 996
  }
 set N1a70001a [stack 0]
 push $N1a70000d
  Dot {
-  name LayoutDot24
-  xpos 107
-  ypos 1038
+  name LayoutDot15
+  xpos 110
+  ypos 1173
  }
 set N1a70001b [stack 0]
 push $N1a70001b
  Dot {
-  name LayoutDot25
-  xpos 184
-  ypos 1038
+  name LayoutDot16
+  xpos 214
+  ypos 1173
  }
 set N1a70001c [stack 0]
 push $N1a70001c
@@ -538,50 +562,50 @@ push $N1a70001c
   box_fixed true
   resize distort
   name SelfSkySize
-  xpos 150
-  ypos 1152
+  xpos 180
+  ypos 1314
  }
 set N1a70001d [stack 0]
 push $N1a70001a
  Dot {
-  name LayoutDot38
-  xpos 428
-  ypos 867
+  name LayoutDot39
+  xpos 494
+  ypos 999
  }
 set N1a70001e [stack 0]
 push $N1a70001e
  Dot {
-  name LayoutDot39
-  xpos 428
-  ypos 1086
+  name LayoutDot40
+  xpos 494
+  ypos 1233
  }
 set N1a70001f [stack 0]
 push $N1a70001f
  Dot {
-  name LayoutDot40
-  xpos 325
-  ypos 1086
+  name LayoutDot41
+  xpos 394
+  ypos 1233
  }
 set N1a700020 [stack 0]
 push $N1a700012
  Dot {
   name LayoutDot52
-  xpos 536
-  ypos 675
+  xpos 626
+  ypos 759
  }
 set N1a700021 [stack 0]
 push $N1a700021
  Dot {
   name LayoutDot53
-  xpos 536
-  ypos 1110
+  xpos 626
+  ypos 1263
  }
 set N1a700022 [stack 0]
 push $N1a700022
  Dot {
   name LayoutDot54
-  xpos 343
-  ypos 1110
+  xpos 412
+  ypos 1263
  }
 set N1a700023 [stack 0]
 push $N1a700023
@@ -620,40 +644,47 @@ push $N1a70001d
   AtmosScatter_view_samples {{8}}
   rebuild_finalise ""
   name SelfSky_mie
-  xpos 300
-  ypos 1200
+  xpos 360
+  ypos 1374
  }
 set N1a700024 [stack 0]
 push $N1a700020
  Dot {
-  name LayoutDot41
-  xpos 236
-  ypos 1086
+  name LayoutDot42
+  xpos 290
+  ypos 1233
  }
 set N1a700025 [stack 0]
 push $N1a700025
  Dot {
-  name LayoutDot42
-  xpos 236
-  ypos 1203
+  name LayoutDot44
+  xpos 266
+  ypos 1233
  }
 set N1a700026 [stack 0]
+push $N1a700026
+ Dot {
+  name LayoutDot45
+  xpos 266
+  ypos 1365
+ }
+set N1a700027 [stack 0]
 push $N1a700023
  Dot {
   name LayoutDot55
-  xpos 278
-  ypos 1110
- }
-set N1a700027 [stack 0]
-push $N1a700027
- Dot {
-  name LayoutDot56
-  xpos 278
-  ypos 1203
+  xpos 314
+  ypos 1263
  }
 set N1a700028 [stack 0]
 push $N1a700028
-push $N1a700026
+ Dot {
+  name LayoutDot56
+  xpos 314
+  ypos 1377
+ }
+set N1a700029 [stack 0]
+push $N1a700029
+push $N1a700027
 push $N1a70001d
  BlinkScript {
   inputs 3
@@ -688,51 +719,51 @@ push $N1a70001d
   AtmosScatter_view_samples {{8}}
   rebuild_finalise ""
   name SelfSky_rayleigh
-  xpos 150
-  ypos 1200
+  xpos 180
+  ypos 1374
  }
-set N1a700029 [stack 0]
+set N1a70002a [stack 0]
 push $N1a700024
-push $N1a700029
+push $N1a70002a
  Merge2 {
   inputs 2
   operation plus
   output rgb
   name SelfSky
-  xpos 150
-  ypos 1248
- }
-set N1a70002a [stack 0]
-push $N1a700017
- Dot {
-  name LayoutDot34
-  xpos 407
-  ypos 819
+  xpos 180
+  ypos 1434
  }
 set N1a70002b [stack 0]
-push $N1a70002b
+push $N1a700017
  Dot {
   name LayoutDot35
-  xpos 407
-  ypos 1062
+  xpos 470
+  ypos 939
  }
 set N1a70002c [stack 0]
 push $N1a70002c
  Dot {
   name LayoutDot36
-  xpos 386
-  ypos 1062
+  xpos 470
+  ypos 1203
  }
 set N1a70002d [stack 0]
 push $N1a70002d
  Dot {
   name LayoutDot37
-  xpos 386
-  ypos 1299
+  xpos 446
+  ypos 1203
  }
 set N1a70002e [stack 0]
-push $N1a70002a
 push $N1a70002e
+ Dot {
+  name LayoutDot38
+  xpos 446
+  ypos 1497
+ }
+set N1a70002f [stack 0]
+push $N1a70002b
+push $N1a70002f
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -744,47 +775,40 @@ push $N1a70002e
   EzAtmosLight_clip_ratio {{parent.clip_ratio}}
   rebuild_finalise ""
   name SelfLight
-  xpos 300
-  ypos 1296
+  xpos 360
+  ypos 1494
  }
-set N1a70002f [stack 0]
+set N1a700030 [stack 0]
 push $N1a700025
  Dot {
   name LayoutDot43
-  xpos 257
-  ypos 1086
- }
-set N1a700030 [stack 0]
-push $N1a700030
- Dot {
-  name LayoutDot44
-  xpos 257
-  ypos 1347
+  xpos 290
+  ypos 1545
  }
 set N1a700031 [stack 0]
-push $N1a70002f
+push $N1a700030
 push $N1a700031
  Switch {
   inputs 2
   which {{parent.self_lit}}
   name SkyLightSource
-  xpos 150
-  ypos 1344
+  xpos 180
+  ypos 1554
   label "self lit"
  }
 set N1a700032 [stack 0]
 push $N1a70001b
  Dot {
-  name LayoutDot26
-  xpos 107
-  ypos 1518
+  name LayoutDot17
+  xpos 110
+  ypos 1731
  }
 set N1a700033 [stack 0]
 push $N1a700033
  Dot {
-  name LayoutDot27
-  xpos 184
-  ypos 1518
+  name LayoutDot18
+  xpos 214
+  ypos 1731
  }
 set N1a700034 [stack 0]
 push $N1a700034
@@ -795,118 +819,160 @@ push $N1a700034
   box_fixed true
   resize distort
   name ScatterResolution
-  xpos 150
-  ypos 1632
+  xpos 180
+  ypos 1782
  }
 set N1a700035 [stack 0]
 push $N1a700035
  Dot {
-  name LayoutDot9
-  xpos 2284
-  ypos 1635
+  name LayoutDot23
+  xpos 266
+  ypos 1785
  }
 set N1a700036 [stack 0]
-push $N1a700032
+push $N1a700036
  Dot {
-  name LayoutDot91
-  xpos 278
-  ypos 1347
+  name LayoutDot24
+  xpos 266
+  ypos 1989
  }
 set N1a700037 [stack 0]
 push $N1a700037
  Dot {
-  name LayoutDot92
-  xpos 278
-  ypos 1542
+  name LayoutDot26
+  xpos 574
+  ypos 1989
  }
 set N1a700038 [stack 0]
 push $N1a700038
  Dot {
-  name LayoutDot93
-  xpos 1075
-  ypos 1542
+  name LayoutDot27
+  xpos 934
+  ypos 1989
  }
 set N1a700039 [stack 0]
 push $N1a700039
  Dot {
-  name LayoutDot94
-  xpos 1375
-  ypos 1542
+  name LayoutDot28
+  xpos 1312
+  ypos 1989
  }
 set N1a70003a [stack 0]
 push $N1a70003a
  Dot {
-  name LayoutDot95
-  xpos 2275
-  ypos 1542
+  name LayoutDot29
+  xpos 1672
+  ypos 1989
  }
 set N1a70003b [stack 0]
-push $N1a700022
+push $N1a70003b
  Dot {
-  name LayoutDot57
-  xpos 536
-  ypos 1590
+  name LayoutDot30
+  xpos 2014
+  ypos 1989
  }
 set N1a70003c [stack 0]
 push $N1a70003c
  Dot {
-  name LayoutDot58
-  xpos 493
-  ypos 1590
+  name LayoutDot31
+  xpos 2374
+  ypos 1989
  }
 set N1a70003d [stack 0]
 push $N1a70003d
  Dot {
-  name LayoutDot59
-  xpos 793
-  ypos 1590
+  name LayoutDot32
+  xpos 2752
+  ypos 1989
  }
 set N1a70003e [stack 0]
-push $N1a70003e
+push $N1a700032
  Dot {
-  name LayoutDot60
-  xpos 257
-  ypos 1590
+  name LayoutDot90
+  xpos 314
+  ypos 1557
  }
 set N1a70003f [stack 0]
 push $N1a70003f
  Dot {
-  name LayoutDot62
-  xpos 1093
-  ypos 1590
+  name LayoutDot91
+  xpos 314
+  ypos 1959
  }
 set N1a700040 [stack 0]
 push $N1a700040
  Dot {
-  name LayoutDot63
-  xpos 1393
-  ypos 1590
+  name LayoutDot92
+  xpos 1294
+  ypos 1959
  }
 set N1a700041 [stack 0]
 push $N1a700041
  Dot {
-  name LayoutDot64
-  xpos 1693
-  ypos 1590
+  name LayoutDot93
+  xpos 1654
+  ypos 1959
  }
 set N1a700042 [stack 0]
 push $N1a700042
  Dot {
-  name LayoutDot65
-  xpos 1993
-  ypos 1590
+  name LayoutDot94
+  xpos 2734
+  ypos 1959
  }
 set N1a700043 [stack 0]
-push $N1a700043
+push $N1a700022
  Dot {
-  name LayoutDot66
-  xpos 2293
-  ypos 1590
+  name LayoutDot57
+  xpos 626
+  ypos 2049
  }
 set N1a700044 [stack 0]
 push $N1a700044
-push $N1a70003b
-push $N1a700036
+ Dot {
+  name LayoutDot59
+  xpos 916
+  ypos 2049
+ }
+set N1a700045 [stack 0]
+push $N1a700045
+ Dot {
+  name LayoutDot61
+  xpos 1276
+  ypos 2049
+ }
+set N1a700046 [stack 0]
+push $N1a700046
+ Dot {
+  name LayoutDot62
+  xpos 1636
+  ypos 2049
+ }
+set N1a700047 [stack 0]
+push $N1a700047
+ Dot {
+  name LayoutDot63
+  xpos 1996
+  ypos 2049
+ }
+set N1a700048 [stack 0]
+push $N1a700048
+ Dot {
+  name LayoutDot64
+  xpos 2356
+  ypos 2049
+ }
+set N1a700049 [stack 0]
+push $N1a700049
+ Dot {
+  name LayoutDot65
+  xpos 2716
+  ypos 2049
+ }
+set N1a70004a [stack 0]
+push $N1a70004a
+push $N1a700043
+push $N1a70003e
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -940,20 +1006,20 @@ push $N1a700036
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
   rebuild_finalise ""
   name Scatter_haze_sky
-  xpos 2250
-  ypos 1680
+  xpos 2700
+  ypos 2100
  }
-set N1a700045 [stack 0]
-push $N1a700045
+set N1a70004b [stack 0]
+push $N1a70004b
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
   name haze_sky_ground_cut
-  xpos 2400
-  ypos 1728
+  xpos 2880
+  ypos 2160
  }
-set N1a700046 [stack 0]
-push $N1a700046
+set N1a70004c [stack 0]
+push $N1a70004c
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -962,28 +1028,28 @@ push $N1a700046
   resize distort
   filter Mitchell
   name haze_sky_ground_up
-  xpos 2400
-  ypos 1776
+  xpos 2880
+  ypos 2220
  }
-set N1a700047 [stack 0]
-push $N1a700047
+set N1a70004d [stack 0]
+push $N1a70004d
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_sky_ground_trim
-  xpos 2400
-  ypos 1824
+  xpos 2880
+  ypos 2280
  }
-set N1a700048 [stack 0]
-push $N1a700045
+set N1a70004e [stack 0]
+push $N1a70004b
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
   name haze_sky_sky_cut
-  xpos 2250
-  ypos 1728
+  xpos 2700
+  ypos 2160
  }
-set N1a700049 [stack 0]
-push $N1a700049
+set N1a70004f [stack 0]
+push $N1a70004f
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -992,104 +1058,90 @@ push $N1a700049
   resize distort
   filter Mitchell
   name haze_sky_sky_up
-  xpos 2250
-  ypos 1776
+  xpos 2700
+  ypos 2220
  }
-set N1a70004a [stack 0]
-push $N1a70004a
+set N1a700050 [stack 0]
+push $N1a700050
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_sky_sky_trim
-  xpos 2250
-  ypos 1824
+  xpos 2700
+  ypos 2280
  }
-set N1a70004b [stack 0]
-push $N1a700048
-push $N1a70004b
+set N1a700051 [stack 0]
+push $N1a70004e
+push $N1a700051
  Merge2 {
   inputs 2
   operation plus
   name haze_sky_full
-  xpos 2250
-  ypos 1872
- }
-set N1a70004c [stack 0]
-push $N1a700045
- Dot {
-  name LayoutDot130
-  xpos 2336
-  ypos 1683
- }
-set N1a70004d [stack 0]
-push $N1a70004d
- Dot {
-  name LayoutDot131
-  xpos 2336
-  ypos 1923
- }
-set N1a70004e [stack 0]
-push $N1a70004c
-push $N1a70004e
- Switch {
-  inputs 2
-  which {{"parent.scatter_scale < 1"}}
-  name haze_sky_resolution
-  xpos 2400
-  ypos 1920
- }
-set N1a70004f [stack 0]
-push $N1a700035
- Dot {
-  name LayoutDot8
-  xpos 1984
-  ypos 1635
- }
-set N1a700050 [stack 0]
-push $N1a70001f
- Dot {
-  name LayoutDot45
-  xpos 428
-  ypos 1566
- }
-set N1a700051 [stack 0]
-push $N1a700051
- Dot {
-  name LayoutDot46
-  xpos 475
-  ypos 1566
+  xpos 2700
+  ypos 2340
  }
 set N1a700052 [stack 0]
-push $N1a700052
+push $N1a70004b
  Dot {
-  name LayoutDot47
-  xpos 236
-  ypos 1566
+  name LayoutDot136
+  xpos 2786
+  ypos 2103
  }
 set N1a700053 [stack 0]
 push $N1a700053
  Dot {
-  name LayoutDot49
-  xpos 775
-  ypos 1566
+  name LayoutDot137
+  xpos 2786
+  ypos 2403
  }
 set N1a700054 [stack 0]
+push $N1a700052
 push $N1a700054
- Dot {
-  name LayoutDot50
-  xpos 1675
-  ypos 1566
+ Switch {
+  inputs 2
+  which {{"parent.scatter_scale < 1"}}
+  name haze_sky_resolution
+  xpos 2880
+  ypos 2400
  }
 set N1a700055 [stack 0]
-push $N1a700055
+push $N1a70001f
  Dot {
-  name LayoutDot51
-  xpos 1975
-  ypos 1566
+  name LayoutDot46
+  xpos 494
+  ypos 2019
  }
 set N1a700056 [stack 0]
-push $N1a700043
 push $N1a700056
-push $N1a700050
+ Dot {
+  name LayoutDot47
+  xpos 592
+  ypos 2019
+ }
+set N1a700057 [stack 0]
+push $N1a700057
+ Dot {
+  name LayoutDot49
+  xpos 952
+  ypos 2019
+ }
+set N1a700058 [stack 0]
+push $N1a700058
+ Dot {
+  name LayoutDot50
+  xpos 2032
+  ypos 2019
+ }
+set N1a700059 [stack 0]
+push $N1a700059
+ Dot {
+  name LayoutDot51
+  xpos 2392
+  ypos 2019
+ }
+set N1a70005a [stack 0]
+push $N1a700049
+push $N1a70005a
+push $N1a70003d
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1123,20 +1175,20 @@ push $N1a700050
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
   rebuild_finalise ""
   name Scatter_haze_sun
-  xpos 1950
-  ypos 1680
+  xpos 2340
+  ypos 2100
  }
-set N1a700057 [stack 0]
-push $N1a700057
+set N1a70005b [stack 0]
+push $N1a70005b
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
   name haze_sun_ground_cut
-  xpos 2100
-  ypos 1728
+  xpos 2520
+  ypos 2160
  }
-set N1a700058 [stack 0]
-push $N1a700058
+set N1a70005c [stack 0]
+push $N1a70005c
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1145,28 +1197,28 @@ push $N1a700058
   resize distort
   filter Mitchell
   name haze_sun_ground_up
-  xpos 2100
-  ypos 1776
+  xpos 2520
+  ypos 2220
  }
-set N1a700059 [stack 0]
-push $N1a700059
+set N1a70005d [stack 0]
+push $N1a70005d
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_sun_ground_trim
-  xpos 2100
-  ypos 1824
+  xpos 2520
+  ypos 2280
  }
-set N1a70005a [stack 0]
-push $N1a700057
+set N1a70005e [stack 0]
+push $N1a70005b
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
   name haze_sun_sky_cut
-  xpos 1950
-  ypos 1728
+  xpos 2340
+  ypos 2160
  }
-set N1a70005b [stack 0]
-push $N1a70005b
+set N1a70005f [stack 0]
+push $N1a70005f
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1175,62 +1227,55 @@ push $N1a70005b
   resize distort
   filter Mitchell
   name haze_sun_sky_up
-  xpos 1950
-  ypos 1776
+  xpos 2340
+  ypos 2220
  }
-set N1a70005c [stack 0]
-push $N1a70005c
+set N1a700060 [stack 0]
+push $N1a700060
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_sun_sky_trim
-  xpos 1950
-  ypos 1824
+  xpos 2340
+  ypos 2280
  }
-set N1a70005d [stack 0]
-push $N1a70005a
-push $N1a70005d
+set N1a700061 [stack 0]
+push $N1a70005e
+push $N1a700061
  Merge2 {
   inputs 2
   operation plus
   name haze_sun_full
-  xpos 1950
-  ypos 1872
+  xpos 2340
+  ypos 2340
  }
-set N1a70005e [stack 0]
-push $N1a700057
+set N1a700062 [stack 0]
+push $N1a70005b
  Dot {
-  name LayoutDot126
-  xpos 2036
-  ypos 1683
+  name LayoutDot132
+  xpos 2426
+  ypos 2103
  }
-set N1a70005f [stack 0]
-push $N1a70005f
+set N1a700063 [stack 0]
+push $N1a700063
  Dot {
-  name LayoutDot127
-  xpos 2036
-  ypos 1923
+  name LayoutDot133
+  xpos 2426
+  ypos 2403
  }
-set N1a700060 [stack 0]
-push $N1a70005e
-push $N1a700060
+set N1a700064 [stack 0]
+push $N1a700062
+push $N1a700064
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
   name haze_sun_resolution
-  xpos 2100
-  ypos 1920
+  xpos 2520
+  ypos 2400
  }
-set N1a700061 [stack 0]
-push $N1a700035
- Dot {
-  name LayoutDot4
-  xpos 1384
-  ypos 1635
- }
-set N1a700062 [stack 0]
-push $N1a700041
-push $N1a70003a
-push $N1a700062
+set N1a700065 [stack 0]
+push $N1a700047
+push $N1a700042
+push $N1a70003b
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1264,47 +1309,17 @@ push $N1a700062
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
   rebuild_finalise ""
   name Scatter_haze_color
-  xpos 1350
-  ypos 1680
+  xpos 1620
+  ypos 2100
  }
-set N1a700063 [stack 0]
-push $N1a700063
+set N1a700066 [stack 0]
+push $N1a700066
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
   name haze_color_ground_cut
-  xpos 1500
-  ypos 1728
- }
-set N1a700064 [stack 0]
-push $N1a700064
- Reformat {
-  type "to box"
-  box_width {{HDRISource.width}}
-  box_height {{HDRISource.height}}
-  box_fixed true
-  resize distort
-  filter Mitchell
-  name haze_color_ground_up
-  xpos 1500
-  ypos 1776
- }
-set N1a700065 [stack 0]
-push $N1a700065
- Crop {
-  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
-  name haze_color_ground_trim
-  xpos 1500
-  ypos 1824
- }
-set N1a700066 [stack 0]
-push $N1a700063
- Crop {
-  box {{0} {"input.height / 2"} {input.width} {input.height}}
-  crop false
-  name haze_color_sky_cut
-  xpos 1350
-  ypos 1728
+  xpos 1800
+  ypos 2160
  }
 set N1a700067 [stack 0]
 push $N1a700067
@@ -1315,70 +1330,114 @@ push $N1a700067
   box_fixed true
   resize distort
   filter Mitchell
-  name haze_color_sky_up
-  xpos 1350
-  ypos 1776
+  name haze_color_ground_up
+  xpos 1800
+  ypos 2220
  }
 set N1a700068 [stack 0]
 push $N1a700068
  Crop {
-  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
-  name haze_color_sky_trim
-  xpos 1350
-  ypos 1824
+  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
+  name haze_color_ground_trim
+  xpos 1800
+  ypos 2280
  }
 set N1a700069 [stack 0]
 push $N1a700066
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name haze_color_sky_cut
+  xpos 1620
+  ypos 2160
+ }
+set N1a70006a [stack 0]
+push $N1a70006a
+ Reformat {
+  type "to box"
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
+  box_fixed true
+  resize distort
+  filter Mitchell
+  name haze_color_sky_up
+  xpos 1620
+  ypos 2220
+ }
+set N1a70006b [stack 0]
+push $N1a70006b
+ Crop {
+  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
+  name haze_color_sky_trim
+  xpos 1620
+  ypos 2280
+ }
+set N1a70006c [stack 0]
 push $N1a700069
+push $N1a70006c
  Merge2 {
   inputs 2
   operation plus
   name haze_color_full
-  xpos 1350
-  ypos 1872
+  xpos 1620
+  ypos 2340
  }
-set N1a70006a [stack 0]
-push $N1a700063
+set N1a70006d [stack 0]
+push $N1a700066
  Dot {
-  name LayoutDot109
-  xpos 1436
-  ypos 1683
+  name LayoutDot112
+  xpos 1706
+  ypos 2103
  }
-set N1a70006b [stack 0]
-push $N1a70006b
+set N1a70006e [stack 0]
+push $N1a70006e
  Dot {
-  name LayoutDot110
-  xpos 1436
-  ypos 1923
+  name LayoutDot113
+  xpos 1706
+  ypos 2403
  }
-set N1a70006c [stack 0]
-push $N1a70006a
-push $N1a70006c
+set N1a70006f [stack 0]
+push $N1a70006d
+push $N1a70006f
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
   name haze_color_resolution
-  xpos 1500
-  ypos 1920
+  xpos 1800
+  ypos 2400
  }
-set N1a70006d [stack 0]
-push $N1a700053
+set N1a700070 [stack 0]
+push $N1a700037
+ Dot {
+  name LayoutDot25
+  xpos 214
+  ypos 1989
+ }
+set N1a700071 [stack 0]
+push $N1a700056
  Dot {
   name LayoutDot48
-  xpos 236
-  ypos 1683
+  xpos 232
+  ypos 2019
  }
-set N1a70006e [stack 0]
-push $N1a70003f
+set N1a700072 [stack 0]
+push $N1a700044
  Dot {
-  name LayoutDot61
-  xpos 257
-  ypos 1683
+  name LayoutDot58
+  xpos 556
+  ypos 2049
  }
-set N1a70006f [stack 0]
-push $N1a70006f
-push $N1a70006e
-push $N1a700035
+set N1a700073 [stack 0]
+push $N1a700073
+ Dot {
+  name LayoutDot60
+  xpos 196
+  ypos 2049
+ }
+set N1a700074 [stack 0]
+push $N1a700074
+push $N1a700072
+push $N1a700071
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1412,20 +1471,20 @@ push $N1a700035
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
   rebuild_finalise ""
   name Scatter_transmittance
-  xpos 150
-  ypos 1680
+  xpos 180
+  ypos 2100
  }
-set N1a700070 [stack 0]
-push $N1a700070
+set N1a700075 [stack 0]
+push $N1a700075
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
   name transmittance_ground_cut
-  xpos 300
-  ypos 1728
+  xpos 360
+  ypos 2160
  }
-set N1a700071 [stack 0]
-push $N1a700071
+set N1a700076 [stack 0]
+push $N1a700076
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1434,28 +1493,28 @@ push $N1a700071
   resize distort
   filter Mitchell
   name transmittance_ground_up
-  xpos 300
-  ypos 1776
+  xpos 360
+  ypos 2220
  }
-set N1a700072 [stack 0]
-push $N1a700072
+set N1a700077 [stack 0]
+push $N1a700077
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name transmittance_ground_trim
-  xpos 300
-  ypos 1824
+  xpos 360
+  ypos 2280
  }
-set N1a700073 [stack 0]
-push $N1a700070
+set N1a700078 [stack 0]
+push $N1a700075
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
   name transmittance_sky_cut
-  xpos 150
-  ypos 1728
+  xpos 180
+  ypos 2160
  }
-set N1a700074 [stack 0]
-push $N1a700074
+set N1a700079 [stack 0]
+push $N1a700079
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1464,62 +1523,55 @@ push $N1a700074
   resize distort
   filter Mitchell
   name transmittance_sky_up
-  xpos 150
-  ypos 1776
+  xpos 180
+  ypos 2220
  }
-set N1a700075 [stack 0]
-push $N1a700075
+set N1a70007a [stack 0]
+push $N1a70007a
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name transmittance_sky_trim
-  xpos 150
-  ypos 1824
+  xpos 180
+  ypos 2280
  }
-set N1a700076 [stack 0]
-push $N1a700073
-push $N1a700076
+set N1a70007b [stack 0]
+push $N1a700078
+push $N1a70007b
  Merge2 {
   inputs 2
   operation plus
   name transmittance_full
-  xpos 150
-  ypos 1872
+  xpos 180
+  ypos 2340
  }
-set N1a700077 [stack 0]
-push $N1a700070
+set N1a70007c [stack 0]
+push $N1a700075
+ Dot {
+  name LayoutDot66
+  xpos 266
+  ypos 2103
+ }
+set N1a70007d [stack 0]
+push $N1a70007d
  Dot {
   name LayoutDot67
-  xpos 278
-  ypos 1683
+  xpos 266
+  ypos 2403
  }
-set N1a700078 [stack 0]
-push $N1a700078
- Dot {
-  name LayoutDot68
-  xpos 278
-  ypos 1923
- }
-set N1a700079 [stack 0]
-push $N1a700077
-push $N1a700079
+set N1a70007e [stack 0]
+push $N1a70007c
+push $N1a70007e
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
   name transmittance_resolution
-  xpos 300
-  ypos 1920
+  xpos 360
+  ypos 2400
  }
-set N1a70007a [stack 0]
-push $N1a700035
- Dot {
-  name LayoutDot3
-  xpos 1084
-  ypos 1635
- }
-set N1a70007b [stack 0]
-push $N1a700040
-push $N1a700039
-push $N1a70007b
+set N1a70007f [stack 0]
+push $N1a700046
+push $N1a700041
+push $N1a70003a
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1553,20 +1605,20 @@ push $N1a70007b
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
   rebuild_finalise ""
   name Scatter_ambient
-  xpos 1050
-  ypos 1680
+  xpos 1260
+  ypos 2100
  }
-set N1a70007c [stack 0]
-push $N1a70007c
+set N1a700080 [stack 0]
+push $N1a700080
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
   name ambient_ground_cut
-  xpos 1200
-  ypos 1728
+  xpos 1440
+  ypos 2160
  }
-set N1a70007d [stack 0]
-push $N1a70007d
+set N1a700081 [stack 0]
+push $N1a700081
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1575,28 +1627,28 @@ push $N1a70007d
   resize distort
   filter Mitchell
   name ambient_ground_up
-  xpos 1200
-  ypos 1776
+  xpos 1440
+  ypos 2220
  }
-set N1a70007e [stack 0]
-push $N1a70007e
+set N1a700082 [stack 0]
+push $N1a700082
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name ambient_ground_trim
-  xpos 1200
-  ypos 1824
+  xpos 1440
+  ypos 2280
  }
-set N1a70007f [stack 0]
-push $N1a70007c
+set N1a700083 [stack 0]
+push $N1a700080
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
   name ambient_sky_cut
-  xpos 1050
-  ypos 1728
+  xpos 1260
+  ypos 2160
  }
-set N1a700080 [stack 0]
-push $N1a700080
+set N1a700084 [stack 0]
+push $N1a700084
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1605,62 +1657,55 @@ push $N1a700080
   resize distort
   filter Mitchell
   name ambient_sky_up
-  xpos 1050
-  ypos 1776
+  xpos 1260
+  ypos 2220
  }
-set N1a700081 [stack 0]
-push $N1a700081
+set N1a700085 [stack 0]
+push $N1a700085
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name ambient_sky_trim
-  xpos 1050
-  ypos 1824
+  xpos 1260
+  ypos 2280
  }
-set N1a700082 [stack 0]
-push $N1a70007f
-push $N1a700082
+set N1a700086 [stack 0]
+push $N1a700083
+push $N1a700086
  Merge2 {
   inputs 2
   operation plus
   name ambient_full
-  xpos 1050
-  ypos 1872
+  xpos 1260
+  ypos 2340
  }
-set N1a700083 [stack 0]
-push $N1a70007c
+set N1a700087 [stack 0]
+push $N1a700080
+ Dot {
+  name LayoutDot95
+  xpos 1346
+  ypos 2103
+ }
+set N1a700088 [stack 0]
+push $N1a700088
  Dot {
   name LayoutDot96
-  xpos 1136
-  ypos 1683
+  xpos 1346
+  ypos 2403
  }
-set N1a700084 [stack 0]
-push $N1a700084
- Dot {
-  name LayoutDot97
-  xpos 1136
-  ypos 1923
- }
-set N1a700085 [stack 0]
-push $N1a700083
-push $N1a700085
+set N1a700089 [stack 0]
+push $N1a700087
+push $N1a700089
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
   name ambient_resolution
-  xpos 1200
-  ypos 1920
+  xpos 1440
+  ypos 2400
  }
-set N1a700086 [stack 0]
-push $N1a700035
- Dot {
-  name LayoutDot2
-  xpos 784
-  ypos 1635
- }
-set N1a700087 [stack 0]
-push $N1a70003e
-push $N1a700054
-push $N1a700087
+set N1a70008a [stack 0]
+push $N1a700045
+push $N1a700058
+push $N1a700039
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1694,47 +1739,17 @@ push $N1a700087
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
   rebuild_finalise ""
   name Scatter_mie
-  xpos 750
-  ypos 1680
+  xpos 900
+  ypos 2100
  }
-set N1a700088 [stack 0]
-push $N1a700088
+set N1a70008b [stack 0]
+push $N1a70008b
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
   name mie_ground_cut
-  xpos 900
-  ypos 1728
- }
-set N1a700089 [stack 0]
-push $N1a700089
- Reformat {
-  type "to box"
-  box_width {{HDRISource.width}}
-  box_height {{HDRISource.height}}
-  box_fixed true
-  resize distort
-  filter Mitchell
-  name mie_ground_up
-  xpos 900
-  ypos 1776
- }
-set N1a70008a [stack 0]
-push $N1a70008a
- Crop {
-  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
-  name mie_ground_trim
-  xpos 900
-  ypos 1824
- }
-set N1a70008b [stack 0]
-push $N1a700088
- Crop {
-  box {{0} {"input.height / 2"} {input.width} {input.height}}
-  crop false
-  name mie_sky_cut
-  xpos 750
-  ypos 1728
+  xpos 1080
+  ypos 2160
  }
 set N1a70008c [stack 0]
 push $N1a70008c
@@ -1745,63 +1760,86 @@ push $N1a70008c
   box_fixed true
   resize distort
   filter Mitchell
-  name mie_sky_up
-  xpos 750
-  ypos 1776
+  name mie_ground_up
+  xpos 1080
+  ypos 2220
  }
 set N1a70008d [stack 0]
 push $N1a70008d
  Crop {
-  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
-  name mie_sky_trim
-  xpos 750
-  ypos 1824
+  box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
+  name mie_ground_trim
+  xpos 1080
+  ypos 2280
  }
 set N1a70008e [stack 0]
 push $N1a70008b
+ Crop {
+  box {{0} {"input.height / 2"} {input.width} {input.height}}
+  crop false
+  name mie_sky_cut
+  xpos 900
+  ypos 2160
+ }
+set N1a70008f [stack 0]
+push $N1a70008f
+ Reformat {
+  type "to box"
+  box_width {{HDRISource.width}}
+  box_height {{HDRISource.height}}
+  box_fixed true
+  resize distort
+  filter Mitchell
+  name mie_sky_up
+  xpos 900
+  ypos 2220
+ }
+set N1a700090 [stack 0]
+push $N1a700090
+ Crop {
+  box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
+  name mie_sky_trim
+  xpos 900
+  ypos 2280
+ }
+set N1a700091 [stack 0]
 push $N1a70008e
+push $N1a700091
  Merge2 {
   inputs 2
   operation plus
   name mie_full
-  xpos 750
-  ypos 1872
+  xpos 900
+  ypos 2340
  }
-set N1a70008f [stack 0]
-push $N1a700088
+set N1a700092 [stack 0]
+push $N1a70008b
+ Dot {
+  name LayoutDot82
+  xpos 986
+  ypos 2103
+ }
+set N1a700093 [stack 0]
+push $N1a700093
  Dot {
   name LayoutDot83
-  xpos 836
-  ypos 1683
+  xpos 986
+  ypos 2403
  }
-set N1a700090 [stack 0]
-push $N1a700090
- Dot {
-  name LayoutDot84
-  xpos 836
-  ypos 1923
- }
-set N1a700091 [stack 0]
-push $N1a70008f
-push $N1a700091
+set N1a700094 [stack 0]
+push $N1a700092
+push $N1a700094
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
   name mie_resolution
-  xpos 900
-  ypos 1920
+  xpos 1080
+  ypos 2400
  }
-set N1a700092 [stack 0]
-push $N1a700035
- Dot {
-  name LayoutDot1
-  xpos 484
-  ypos 1635
- }
-set N1a700093 [stack 0]
-push $N1a70003d
-push $N1a700052
-push $N1a700093
+set N1a700095 [stack 0]
+push $N1a700073
+push $N1a700057
+push $N1a700038
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1835,20 +1873,20 @@ push $N1a700093
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
   rebuild_finalise ""
   name Scatter_rayleigh
-  xpos 450
-  ypos 1680
+  xpos 540
+  ypos 2100
  }
-set N1a700094 [stack 0]
-push $N1a700094
+set N1a700096 [stack 0]
+push $N1a700096
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
   name rayleigh_ground_cut
-  xpos 600
-  ypos 1728
+  xpos 720
+  ypos 2160
  }
-set N1a700095 [stack 0]
-push $N1a700095
+set N1a700097 [stack 0]
+push $N1a700097
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1857,28 +1895,28 @@ push $N1a700095
   resize distort
   filter Mitchell
   name rayleigh_ground_up
-  xpos 600
-  ypos 1776
+  xpos 720
+  ypos 2220
  }
-set N1a700096 [stack 0]
-push $N1a700096
+set N1a700098 [stack 0]
+push $N1a700098
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name rayleigh_ground_trim
-  xpos 600
-  ypos 1824
+  xpos 720
+  ypos 2280
  }
-set N1a700097 [stack 0]
-push $N1a700094
+set N1a700099 [stack 0]
+push $N1a700096
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
   name rayleigh_sky_cut
-  xpos 450
-  ypos 1728
+  xpos 540
+  ypos 2160
  }
-set N1a700098 [stack 0]
-push $N1a700098
+set N1a70009a [stack 0]
+push $N1a70009a
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1887,223 +1925,209 @@ push $N1a700098
   resize distort
   filter Mitchell
   name rayleigh_sky_up
-  xpos 450
-  ypos 1776
+  xpos 540
+  ypos 2220
  }
-set N1a700099 [stack 0]
-push $N1a700099
+set N1a70009b [stack 0]
+push $N1a70009b
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name rayleigh_sky_trim
-  xpos 450
-  ypos 1824
+  xpos 540
+  ypos 2280
  }
-set N1a70009a [stack 0]
-push $N1a700097
-push $N1a70009a
+set N1a70009c [stack 0]
+push $N1a700099
+push $N1a70009c
  Merge2 {
   inputs 2
   operation plus
   name rayleigh_full
-  xpos 450
-  ypos 1872
- }
-set N1a70009b [stack 0]
-push $N1a700094
- Dot {
-  name LayoutDot75
-  xpos 536
-  ypos 1683
- }
-set N1a70009c [stack 0]
-push $N1a70009c
- Dot {
-  name LayoutDot76
-  xpos 536
-  ypos 1923
+  xpos 540
+  ypos 2340
  }
 set N1a70009d [stack 0]
-push $N1a70009b
-push $N1a70009d
- Switch {
-  inputs 2
-  which {{"parent.scatter_scale < 1"}}
-  name rayleigh_resolution
-  xpos 600
-  ypos 1920
+push $N1a700096
+ Dot {
+  name LayoutDot74
+  xpos 626
+  ypos 2103
  }
 set N1a70009e [stack 0]
 push $N1a70009e
  Dot {
-  name LayoutDot77
-  xpos 686
-  ypos 1923
+  name LayoutDot75
+  xpos 626
+  ypos 2403
  }
 set N1a70009f [stack 0]
+push $N1a70009d
 push $N1a70009f
- Dot {
-  name LayoutDot78
-  xpos 686
-  ypos 2142
+ Switch {
+  inputs 2
+  which {{"parent.scatter_scale < 1"}}
+  name rayleigh_resolution
+  xpos 720
+  ypos 2400
  }
 set N1a7000a0 [stack 0]
 push $N1a7000a0
  Dot {
-  name LayoutDot79
-  xpos 325
-  ypos 2142
+  name LayoutDot76
+  xpos 806
+  ypos 2403
  }
 set N1a7000a1 [stack 0]
-push $N1a700092
+push $N1a7000a1
  Dot {
-  name LayoutDot85
-  xpos 986
-  ypos 1923
+  name LayoutDot77
+  xpos 806
+  ypos 2637
  }
 set N1a7000a2 [stack 0]
 push $N1a7000a2
  Dot {
-  name LayoutDot86
-  xpos 986
-  ypos 2166
+  name LayoutDot78
+  xpos 394
+  ypos 2637
  }
 set N1a7000a3 [stack 0]
-push $N1a7000a3
+push $N1a700095
  Dot {
-  name LayoutDot87
-  xpos 343
-  ypos 2166
+  name LayoutDot84
+  xpos 1166
+  ypos 2403
  }
 set N1a7000a4 [stack 0]
 push $N1a7000a4
-push $N1a7000a1
+ Dot {
+  name LayoutDot85
+  xpos 1166
+  ypos 2667
+ }
+set N1a7000a5 [stack 0]
+push $N1a7000a5
+ Dot {
+  name LayoutDot86
+  xpos 412
+  ypos 2667
+ }
+set N1a7000a6 [stack 0]
+push $N1a7000a6
+push $N1a7000a3
  Merge2 {
   inputs 2
   operation plus
   name AddMie
-  xpos 300
-  ypos 2280
- }
-set N1a7000a5 [stack 0]
-push $N1a700086
- Dot {
-  name LayoutDot98
-  xpos 1286
-  ypos 1923
- }
-set N1a7000a6 [stack 0]
-push $N1a7000a6
- Dot {
-  name LayoutDot99
-  xpos 1286
-  ypos 2190
+  xpos 360
+  ypos 2808
  }
 set N1a7000a7 [stack 0]
-push $N1a7000a7
+push $N1a70008a
  Dot {
-  name LayoutDot100
-  xpos 557
-  ypos 2190
+  name LayoutDot97
+  xpos 1526
+  ypos 2403
  }
 set N1a7000a8 [stack 0]
 push $N1a7000a8
  Dot {
-  name LayoutDot101
-  xpos 557
-  ypos 2331
+  name LayoutDot98
+  xpos 1526
+  ypos 2697
  }
 set N1a7000a9 [stack 0]
 push $N1a7000a9
-push $N1a7000a5
+ Dot {
+  name LayoutDot99
+  xpos 470
+  ypos 2697
+ }
+set N1a7000aa [stack 0]
+push $N1a7000aa
+ Dot {
+  name LayoutDot100
+  xpos 470
+  ypos 2859
+ }
+set N1a7000ab [stack 0]
+push $N1a7000ab
+push $N1a7000a7
  Merge2 {
   inputs 2
   operation plus
   name AddSkyLight
-  xpos 300
-  ypos 2328
- }
-set N1a7000aa [stack 0]
-push $N1a70000c
- Dot {
-  name LayoutDot28
-  xpos 128
-  ypos 411
- }
-set N1a7000ab [stack 0]
-push $N1a7000ab
- Dot {
-  name LayoutDot29
-  xpos 128
-  ypos 2094
+  xpos 360
+  ypos 2868
  }
 set N1a7000ac [stack 0]
-push $N1a7000ac
+push $N1a70000c
  Dot {
-  name LayoutDot30
-  xpos 175
-  ypos 2094
+  name LayoutDot19
+  xpos 134
+  ypos 471
  }
 set N1a7000ad [stack 0]
-push $N1a70007a
+push $N1a7000ad
  Dot {
-  name LayoutDot69
-  xpos 386
-  ypos 1923
+  name LayoutDot20
+  xpos 134
+  ypos 2577
  }
 set N1a7000ae [stack 0]
 push $N1a7000ae
  Dot {
-  name LayoutDot70
-  xpos 386
-  ypos 2118
+  name LayoutDot21
+  xpos 214
+  ypos 2577
  }
 set N1a7000af [stack 0]
-push $N1a7000af
+push $N1a70007f
  Dot {
-  name LayoutDot71
-  xpos 407
-  ypos 2118
+  name LayoutDot68
+  xpos 446
+  ypos 2403
  }
 set N1a7000b0 [stack 0]
 push $N1a7000b0
  Dot {
-  name LayoutDot73
-  xpos 193
-  ypos 2118
+  name LayoutDot69
+  xpos 446
+  ypos 2607
  }
 set N1a7000b1 [stack 0]
 push $N1a7000b1
-push $N1a7000ad
+ Dot {
+  name LayoutDot70
+  xpos 232
+  ypos 2607
+ }
+set N1a7000b2 [stack 0]
+push $N1a7000b2
+push $N1a7000af
  Merge2 {
   inputs 2
   operation multiply
   output rgb
   name Attenuate
-  xpos 150
-  ypos 2280
+  xpos 180
+  ypos 2808
  }
-set N1a7000b2 [stack 0]
-push $N1a7000aa
-push $N1a7000b2
+set N1a7000b3 [stack 0]
+push $N1a7000ac
+push $N1a7000b3
  Merge2 {
   inputs 2
   operation plus
   output rgb
   name PreviewComp
-  xpos 150
-  ypos 2376
- }
-set N1a7000b3 [stack 0]
-push $N1a700035
- Dot {
-  name LayoutDot5
-  xpos 1684
-  ypos 1635
+  xpos 180
+  ypos 2928
  }
 set N1a7000b4 [stack 0]
-push $N1a700042
-push $N1a700055
-push $N1a7000b4
+push $N1a700048
+push $N1a700059
+push $N1a70003c
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -2137,8 +2161,8 @@ push $N1a7000b4
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
   rebuild_finalise ""
   name Scatter_haze_transmittance
-  xpos 1650
-  ypos 1680
+  xpos 1980
+  ypos 2100
  }
 set N1a7000b5 [stack 0]
 push $N1a7000b5
@@ -2146,8 +2170,8 @@ push $N1a7000b5
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
   name haze_transmittance_ground_cut
-  xpos 1800
-  ypos 1728
+  xpos 2160
+  ypos 2160
  }
 set N1a7000b6 [stack 0]
 push $N1a7000b6
@@ -2159,16 +2183,16 @@ push $N1a7000b6
   resize distort
   filter Mitchell
   name haze_transmittance_ground_up
-  xpos 1800
-  ypos 1776
+  xpos 2160
+  ypos 2220
  }
 set N1a7000b7 [stack 0]
 push $N1a7000b7
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_transmittance_ground_trim
-  xpos 1800
-  ypos 1824
+  xpos 2160
+  ypos 2280
  }
 set N1a7000b8 [stack 0]
 push $N1a7000b5
@@ -2176,8 +2200,8 @@ push $N1a7000b5
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
   name haze_transmittance_sky_cut
-  xpos 1650
-  ypos 1728
+  xpos 1980
+  ypos 2160
  }
 set N1a7000b9 [stack 0]
 push $N1a7000b9
@@ -2189,16 +2213,16 @@ push $N1a7000b9
   resize distort
   filter Mitchell
   name haze_transmittance_sky_up
-  xpos 1650
-  ypos 1776
+  xpos 1980
+  ypos 2220
  }
 set N1a7000ba [stack 0]
 push $N1a7000ba
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_transmittance_sky_trim
-  xpos 1650
-  ypos 1824
+  xpos 1980
+  ypos 2280
  }
 set N1a7000bb [stack 0]
 push $N1a7000b8
@@ -2207,22 +2231,22 @@ push $N1a7000bb
   inputs 2
   operation plus
   name haze_transmittance_full
-  xpos 1650
-  ypos 1872
+  xpos 1980
+  ypos 2340
  }
 set N1a7000bc [stack 0]
 push $N1a7000b5
  Dot {
-  name LayoutDot117
-  xpos 1736
-  ypos 1683
+  name LayoutDot120
+  xpos 2066
+  ypos 2103
  }
 set N1a7000bd [stack 0]
 push $N1a7000bd
  Dot {
-  name LayoutDot118
-  xpos 1736
-  ypos 1923
+  name LayoutDot121
+  xpos 2066
+  ypos 2403
  }
 set N1a7000be [stack 0]
 push $N1a7000bc
@@ -2231,58 +2255,58 @@ push $N1a7000be
   inputs 2
   which {{"parent.scatter_scale < 1"}}
   name haze_transmittance_resolution
-  xpos 1800
-  ypos 1920
+  xpos 2160
+  ypos 2400
  }
 set N1a7000bf [stack 0]
 push $N1a7000bf
  Dot {
-  name LayoutDot119
-  xpos 1886
-  ypos 1923
+  name LayoutDot122
+  xpos 2246
+  ypos 2403
  }
 set N1a7000c0 [stack 0]
 push $N1a7000c0
  Dot {
-  name LayoutDot120
-  xpos 1886
-  ypos 2238
+  name LayoutDot123
+  xpos 2246
+  ypos 2757
  }
 set N1a7000c1 [stack 0]
 push $N1a7000c1
  Dot {
-  name LayoutDot121
-  xpos 484
-  ypos 2238
+  name LayoutDot124
+  xpos 574
+  ypos 2757
  }
 set N1a7000c2 [stack 0]
 push $N1a7000c2
  Invert {
   channels rgb
   name HazePreviewOpacity
-  xpos 450
-  ypos 2280
+  xpos 540
+  ypos 2808
  }
 set N1a7000c3 [stack 0]
-push $N1a70006d
+push $N1a700070
  Dot {
-  name LayoutDot111
-  xpos 1586
-  ypos 1923
+  name LayoutDot114
+  xpos 1886
+  ypos 2403
  }
 set N1a7000c4 [stack 0]
 push $N1a7000c4
  Dot {
-  name LayoutDot112
-  xpos 1586
-  ypos 2214
+  name LayoutDot115
+  xpos 1886
+  ypos 2727
  }
 set N1a7000c5 [stack 0]
 push $N1a7000c5
  Dot {
-  name LayoutDot113
-  xpos 634
-  ypos 2214
+  name LayoutDot116
+  xpos 754
+  ypos 2727
  }
 set N1a7000c6 [stack 0]
 push $N1a7000c3
@@ -2292,40 +2316,40 @@ push $N1a7000c6
   operation multiply
   output rgb
   name HazePreviewVeil
-  xpos 600
-  ypos 2328
+  xpos 720
+  ypos 2868
  }
 set N1a7000c7 [stack 0]
 push $N1a7000c2
  Dot {
-  name LayoutDot122
-  xpos 257
-  ypos 2238
+  name LayoutDot125
+  xpos 290
+  ypos 2757
  }
 set N1a7000c8 [stack 0]
 push $N1a7000c8
  Dot {
-  name LayoutDot123
-  xpos 257
-  ypos 2427
+  name LayoutDot126
+  xpos 290
+  ypos 2991
  }
 set N1a7000c9 [stack 0]
 push $N1a7000c9
-push $N1a7000b3
+push $N1a7000b4
  Merge2 {
   inputs 2
   operation multiply
   output rgb
   name HazePreviewAttenuate
-  xpos 150
-  ypos 2424
+  xpos 180
+  ypos 2988
  }
 set N1a7000ca [stack 0]
 push $N1a7000c7
  Dot {
-  name LayoutDot6
-  xpos 634
-  ypos 2475
+  name LayoutDot1
+  xpos 754
+  ypos 3051
  }
 set N1a7000cb [stack 0]
 push $N1a7000cb
@@ -2335,22 +2359,22 @@ push $N1a7000ca
   operation plus
   output rgb
   name HazePreview
-  xpos 150
-  ypos 2472
+  xpos 180
+  ypos 3048
  }
 set N1a7000cc [stack 0]
-push $N1a7000b3
+push $N1a7000b4
  Dot {
-  name LayoutDot107
-  xpos 236
-  ypos 2379
+  name LayoutDot108
+  xpos 266
+  ypos 2931
  }
 set N1a7000cd [stack 0]
 push $N1a7000cd
  Dot {
-  name LayoutDot108
-  xpos 236
-  ypos 2523
+  name LayoutDot109
+  xpos 266
+  ypos 3090
  }
 set N1a7000ce [stack 0]
 push $N1a7000ce
@@ -2359,137 +2383,186 @@ push $N1a7000cc
   inputs 2
   which {{parent.passes}}
   name HazePreviewMode
-  xpos 150
-  ypos 2520
+  xpos 180
+  ypos 3108
  }
 set N1a7000cf [stack 0]
-push $N1a7000b3
+push $N1a7000ce
  Dot {
-  name LayoutDot7
-  xpos 334
-  ypos 2379
+  name LayoutDot110
+  xpos 266
+  ypos 3285
  }
 set N1a7000d0 [stack 0]
-push $N1a7000a1
+push $N1a7000d0
  Dot {
-  name LayoutDot80
-  xpos 428
-  ypos 2142
+  name LayoutDot111
+  xpos 214
+  ypos 3285
  }
 set N1a7000d1 [stack 0]
-push $N1a7000d1
+push $N1a7000ac
  Dot {
-  name LayoutDot81
-  xpos 428
-  ypos 2571
+  name LayoutDot104
+  xpos 494
+  ypos 2871
  }
 set N1a7000d2 [stack 0]
-push $N1a7000a4
+push $N1a7000d2
  Dot {
-  name LayoutDot88
-  xpos 536
-  ypos 2166
+  name LayoutDot105
+  xpos 494
+  ypos 3375
  }
 set N1a7000d3 [stack 0]
 push $N1a7000d3
  Dot {
-  name LayoutDot89
-  xpos 536
-  ypos 2571
+  name LayoutDot106
+  xpos 250
+  ypos 3375
  }
 set N1a7000d4 [stack 0]
-push $N1a7000a8
+push $N1a7000a2
  Dot {
-  name LayoutDot102
-  xpos 578
-  ypos 2190
+  name LayoutDot79
+  xpos 806
+  ypos 3405
  }
 set N1a7000d5 [stack 0]
 push $N1a7000d5
  Dot {
-  name LayoutDot103
-  xpos 578
-  ypos 2571
+  name LayoutDot80
+  xpos 178
+  ypos 3405
  }
 set N1a7000d6 [stack 0]
-push $N1a7000b0
+push $N1a7000a5
  Dot {
-  name LayoutDot72
-  xpos 407
-  ypos 2571
+  name LayoutDot87
+  xpos 1166
+  ypos 3435
  }
 set N1a7000d7 [stack 0]
-push $N1a7000c6
+push $N1a7000d7
  Dot {
-  name LayoutDot114
-  xpos 728
-  ypos 2214
+  name LayoutDot88
+  xpos 268
+  ypos 3435
  }
 set N1a7000d8 [stack 0]
-push $N1a7000d8
+push $N1a7000a9
  Dot {
-  name LayoutDot115
-  xpos 728
-  ypos 2571
+  name LayoutDot101
+  xpos 1526
+  ypos 3465
  }
 set N1a7000d9 [stack 0]
-push $N1a7000cf
 push $N1a7000d9
-push $N1a7000d7
-push $N1a7000d6
-push $N1a7000d4
-push $N1a7000d2
-push $N1a7000aa
-push $N1a7000d0
- Switch {
-  inputs 8
-  which {{parent.view_output}}
-  name ViewOutput
-  xpos 300
-  ypos 2568
-  label "view output"
+ Dot {
+  name LayoutDot102
+  xpos 160
+  ypos 3465
  }
 set N1a7000da [stack 0]
-push $N1a7000da
+push $N1a7000b1
  Dot {
-  name LayoutDot124
-  xpos 557
-  ypos 2571
+  name LayoutDot71
+  xpos 446
+  ypos 3345
  }
 set N1a7000db [stack 0]
 push $N1a7000db
  Dot {
-  name LayoutDot125
-  xpos 557
-  ypos 2739
+  name LayoutDot72
+  xpos 196
+  ypos 3345
  }
 set N1a7000dc [stack 0]
+push $N1a7000c5
+ Dot {
+  name LayoutDot117
+  xpos 1886
+  ypos 3495
+ }
+set N1a7000dd [stack 0]
+push $N1a7000dd
+ Dot {
+  name LayoutDot118
+  xpos 286
+  ypos 3495
+ }
+set N1a7000de [stack 0]
+push $N1a7000cf
+ Dot {
+  name LayoutDot127
+  xpos 290
+  ypos 3111
+ }
+set N1a7000df [stack 0]
+push $N1a7000df
+ Dot {
+  name LayoutDot128
+  xpos 290
+  ypos 3315
+ }
+set N1a7000e0 [stack 0]
+push $N1a7000e0
+ Dot {
+  name LayoutDot129
+  xpos 232
+  ypos 3315
+ }
+set N1a7000e1 [stack 0]
+push $N1a7000e1
+push $N1a7000de
 push $N1a7000dc
+push $N1a7000da
+push $N1a7000d8
+push $N1a7000d6
+push $N1a7000d4
+push $N1a7000d1
+ Switch {
+  inputs 8
+  which {{parent.view_output}}
+  name ViewOutput
+  xpos 180
+  ypos 3546
+  label "view output"
+ }
+set N1a7000e2 [stack 0]
+push $N1a7000e2
+ Dot {
+  name LayoutDot130
+  xpos 266
+  ypos 3549
+ }
+set N1a7000e3 [stack 0]
+push $N1a7000e3
+ Dot {
+  name LayoutDot131
+  xpos 266
+  ypos 3717
+ }
+set N1a7000e4 [stack 0]
+push $N1a7000e4
 push $N1a70000c
  Copy {
   inputs 2
   channels rgb
   name MainRGB
   xpos 0
-  ypos 2736
+  ypos 3714
  }
-set N1a7000dd [stack 0]
-push $N1a7000aa
+set N1a7000e5 [stack 0]
+push $N1a7000d3
  Dot {
-  name LayoutDot105
-  xpos 707
-  ypos 2331
+  name LayoutDot107
+  xpos 494
+  ypos 3777
  }
-set N1a7000de [stack 0]
-push $N1a7000de
- Dot {
-  name LayoutDot106
-  xpos 707
-  ypos 2787
- }
-set N1a7000df [stack 0]
-push $N1a7000df
-push $N1a7000dd
+set N1a7000e6 [stack 0]
+push $N1a7000e6
+push $N1a7000e5
  Copy {
   inputs 2
   from0 rgba.red
@@ -2500,18 +2573,18 @@ push $N1a7000dd
   to2 atmos_inscatter.blue
   name Layer_atmos_inscatter
   xpos 0
-  ypos 2784
+  ypos 3774
  }
-set N1a7000e0 [stack 0]
-push $N1a7000a0
+set N1a7000e7 [stack 0]
+push $N1a7000d5
  Dot {
-  name LayoutDot82
-  xpos 686
-  ypos 2835
+  name LayoutDot81
+  xpos 806
+  ypos 3837
  }
-set N1a7000e1 [stack 0]
-push $N1a7000e1
-push $N1a7000e0
+set N1a7000e8 [stack 0]
+push $N1a7000e8
+push $N1a7000e7
  Copy {
   inputs 2
   from0 rgba.red
@@ -2522,18 +2595,18 @@ push $N1a7000e0
   to2 atmos_rayleigh.blue
   name Layer_atmos_rayleigh
   xpos 0
-  ypos 2832
+  ypos 3834
  }
-set N1a7000e2 [stack 0]
-push $N1a7000a3
+set N1a7000e9 [stack 0]
+push $N1a7000d7
  Dot {
-  name LayoutDot90
-  xpos 986
-  ypos 2883
+  name LayoutDot89
+  xpos 1166
+  ypos 3897
  }
-set N1a7000e3 [stack 0]
-push $N1a7000e3
-push $N1a7000e2
+set N1a7000ea [stack 0]
+push $N1a7000ea
+push $N1a7000e9
  Copy {
   inputs 2
   from0 rgba.red
@@ -2544,18 +2617,18 @@ push $N1a7000e2
   to2 atmos_mie.blue
   name Layer_atmos_mie
   xpos 0
-  ypos 2880
+  ypos 3894
  }
-set N1a7000e4 [stack 0]
-push $N1a7000a7
+set N1a7000eb [stack 0]
+push $N1a7000d9
  Dot {
-  name LayoutDot104
-  xpos 1286
-  ypos 2931
+  name LayoutDot103
+  xpos 1526
+  ypos 3957
  }
-set N1a7000e5 [stack 0]
-push $N1a7000e5
-push $N1a7000e4
+set N1a7000ec [stack 0]
+push $N1a7000ec
+push $N1a7000eb
  Copy {
   inputs 2
   from0 rgba.red
@@ -2566,18 +2639,18 @@ push $N1a7000e4
   to2 atmos_ambient.blue
   name Layer_atmos_ambient
   xpos 0
-  ypos 2928
+  ypos 3954
  }
-set N1a7000e6 [stack 0]
-push $N1a7000af
+set N1a7000ed [stack 0]
+push $N1a7000db
  Dot {
-  name LayoutDot74
-  xpos 386
-  ypos 2979
+  name LayoutDot73
+  xpos 446
+  ypos 4017
  }
-set N1a7000e7 [stack 0]
-push $N1a7000e7
-push $N1a7000e6
+set N1a7000ee [stack 0]
+push $N1a7000ee
+push $N1a7000ed
  Copy {
   inputs 2
   from0 rgba.red
@@ -2588,18 +2661,18 @@ push $N1a7000e6
   to2 atmos_transmittance.blue
   name Layer_atmos_transmittance
   xpos 0
-  ypos 2976
+  ypos 4014
  }
-set N1a7000e8 [stack 0]
-push $N1a7000c5
+set N1a7000ef [stack 0]
+push $N1a7000dd
  Dot {
-  name LayoutDot116
-  xpos 1586
-  ypos 3027
+  name LayoutDot119
+  xpos 1886
+  ypos 4077
  }
-set N1a7000e9 [stack 0]
-push $N1a7000e9
-push $N1a7000e8
+set N1a7000f0 [stack 0]
+push $N1a7000f0
+push $N1a7000ef
  Copy {
   inputs 2
   from0 rgba.red
@@ -2610,25 +2683,25 @@ push $N1a7000e8
   to2 atmos_haze_color.blue
   name Layer_atmos_haze_color
   xpos 0
-  ypos 3024
+  ypos 4074
  }
-set N1a7000ea [stack 0]
-push $N1a700061
+set N1a7000f1 [stack 0]
+push $N1a700065
  Dot {
-  name LayoutDot128
-  xpos 2186
-  ypos 1923
+  name LayoutDot134
+  xpos 2606
+  ypos 2403
  }
-set N1a7000eb [stack 0]
-push $N1a7000eb
+set N1a7000f2 [stack 0]
+push $N1a7000f2
  Dot {
-  name LayoutDot129
-  xpos 2186
-  ypos 3075
+  name LayoutDot135
+  xpos 2606
+  ypos 4137
  }
-set N1a7000ec [stack 0]
-push $N1a7000ec
-push $N1a7000ea
+set N1a7000f3 [stack 0]
+push $N1a7000f3
+push $N1a7000f1
  Copy {
   inputs 2
   from0 rgba.red
@@ -2639,25 +2712,25 @@ push $N1a7000ea
   to2 atmos_haze_sun.blue
   name Layer_atmos_haze_sun
   xpos 0
-  ypos 3072
+  ypos 4134
  }
-set N1a7000ed [stack 0]
-push $N1a70004f
+set N1a7000f4 [stack 0]
+push $N1a700055
  Dot {
-  name LayoutDot132
-  xpos 2486
-  ypos 1923
+  name LayoutDot138
+  xpos 2966
+  ypos 2403
  }
-set N1a7000ee [stack 0]
-push $N1a7000ee
+set N1a7000f5 [stack 0]
+push $N1a7000f5
  Dot {
-  name LayoutDot133
-  xpos 2486
-  ypos 3123
+  name LayoutDot139
+  xpos 2966
+  ypos 4197
  }
-set N1a7000ef [stack 0]
-push $N1a7000ef
-push $N1a7000ed
+set N1a7000f6 [stack 0]
+push $N1a7000f6
+push $N1a7000f4
  Copy {
   inputs 2
   from0 rgba.red
@@ -2668,18 +2741,18 @@ push $N1a7000ed
   to2 atmos_haze_sky.blue
   name Layer_atmos_haze_sky
   xpos 0
-  ypos 3120
+  ypos 4194
  }
-set N1a7000f0 [stack 0]
-push $N1a7000ac
+set N1a7000f7 [stack 0]
+push $N1a7000ae
  Dot {
-  name LayoutDot31
-  xpos 128
-  ypos 3171
+  name LayoutDot22
+  xpos 134
+  ypos 4236
  }
-set N1a7000f1 [stack 0]
-push $N1a7000f1
-push $N1a7000f0
+set N1a7000f8 [stack 0]
+push $N1a7000f8
+push $N1a7000f7
  Copy {
   inputs 2
   from0 rgba.red
@@ -2692,31 +2765,31 @@ push $N1a7000f0
   to3 atmos_clouds.alpha
   name Layer_atmos_clouds
   xpos 0
-  ypos 3168
+  ypos 4254
  }
-set N1a7000f2 [stack 0]
-push $N1a7000f2
+set N1a7000f9 [stack 0]
+push $N1a7000f9
  Dot {
-  name LayoutDot134
-  xpos 107
-  ypos 3171
+  name LayoutDot140
+  xpos 110
+  ypos 4257
  }
-set N1a7000f3 [stack 0]
-push $N1a7000f3
+set N1a7000fa [stack 0]
+push $N1a7000fa
  Dot {
-  name LayoutDot135
-  xpos 107
-  ypos 3342
+  name LayoutDot141
+  xpos 110
+  ypos 4431
  }
-set N1a7000f4 [stack 0]
-push $N1a7000f4
+set N1a7000fb [stack 0]
+push $N1a7000fb
  Dot {
-  name LayoutDot136
-  xpos 334
-  ypos 3342
+  name LayoutDot142
+  xpos 394
+  ypos 4431
  }
-set N1a7000f5 [stack 0]
-push $N1a7000f5
+set N1a7000fc [stack 0]
+push $N1a7000fc
  Write {
   channels all
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -2729,46 +2802,46 @@ push $N1a7000f5
   display default
   view sRGB
   name BakeWrite
-  xpos 300
-  ypos 3384
+  xpos 360
+  ypos 4482
  }
-set N1a7000f6 [stack 0]
+set N1a7000fd [stack 0]
 push $N1a700005
  Dot {
-  name LayoutDot13
+  name LayoutDot4
   xpos 86
-  ypos 51
+  ypos 63
  }
-set N1a7000f7 [stack 0]
-push $N1a7000f7
+set N1a7000fe [stack 0]
+push $N1a7000fe
  Dot {
-  name LayoutDot14
+  name LayoutDot5
   xpos 86
-  ypos 3870
+  ypos 5007
  }
-set N1a7000f8 [stack 0]
-push $N1a7000f8
+set N1a7000ff [stack 0]
+push $N1a7000ff
  Dot {
-  name LayoutDot15
-  xpos 484
-  ypos 3870
+  name LayoutDot6
+  xpos 574
+  ypos 5007
  }
-set N1a7000f9 [stack 0]
-push $N1a7000f9
+set N1a700100 [stack 0]
+push $N1a700100
  Dot {
-  name LayoutDot16
-  xpos 784
-  ypos 3870
+  name LayoutDot7
+  xpos 934
+  ypos 5007
  }
-set N1a7000fa [stack 0]
-push $N1a7000fa
+set N1a700101 [stack 0]
+push $N1a700101
  Reformat {
   name CameraFormat
-  xpos 750
-  ypos 3936
+  xpos 900
+  ypos 5088
  }
-set N1a7000fb [stack 0]
-push $N1a7000fb
+set N1a700102 [stack 0]
+push $N1a700102
  BlinkScript {
   recompileCount 2
   KernelDescription "3 \"EzAtmosCameraUV\" iterate pixelWise ef3ebfacbe5119f38aafd7c67595b27a441134e888d9ecd146bb2ebb8b47a1ff 2 \"ref\" Read Point \"dst\" Write Point 9 \"cam_row0\" Float 3 AACAPwAAAAAAAAAAAAAAAA== \"cam_row1\" Float 3 AAAAAAAAgD8AAAAAAAAAAA== \"cam_row2\" Float 3 AAAAAAAAAAAAAIA/AAAAAA== \"focal\" Float 1 AABIQg== \"haperture\" Float 1 ppvEQQ== \"win_translate\" Float 2 AAAAAAAAAAA= \"win_scale\" Float 2 AACAPwAAgD8= \"win_roll\" Float 1 AAAAAA== \"pixel_aspect\" Float 1 AACAPw== 9 \"camRow0\" 3 1 Default \"camRow1\" 3 1 Default \"camRow2\" 3 1 Default \"focal\" 1 1 Default \"haperture\" 1 1 Default \"winTranslate\" 2 1 Default \"winScale\" 2 1 Default \"winRoll\" 1 1 Default \"pixelAspect\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
@@ -2785,10 +2858,10 @@ push $N1a7000fb
   EzAtmosCameraUV_pixel_aspect {{"\[python \{nuke.root().format().pixelAspect()\}]"}}
   rebuild_finalise ""
   name CameraUV
-  xpos 750
-  ypos 3984
+  xpos 900
+  ypos 5148
  }
-set N1a7000fc [stack 0]
+set N1a700103 [stack 0]
  Read {
   inputs 0
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -2800,43 +2873,43 @@ set N1a7000fc [stack 0]
   in_colorspace scene_linear
   out_colorspace scene_linear
   name BakeRead
-  xpos 150
-  ypos 3384
+  xpos 180
+  ypos 4482
  }
-set N1a7000fd [stack 0]
-push $N1a7000fd
-push $N1a7000f2
+set N1a700104 [stack 0]
+push $N1a700104
+push $N1a7000f9
  Switch {
   inputs 2
   which {{"parent.use_baked && parent.bake_valid"}}
   name UseBake
   xpos 0
-  ypos 3432
+  ypos 4542
   label "use bake"
  }
-set N1a7000fe [stack 0]
-push $N1a7000fe
+set N1a700105 [stack 0]
+push $N1a700105
  Dot {
-  name LayoutDot137
-  xpos 107
-  ypos 3435
+  name LayoutDot143
+  xpos 110
+  ypos 4545
  }
-set N1a7000ff [stack 0]
-push $N1a7000ff
+set N1a700106 [stack 0]
+push $N1a700106
  Dot {
-  name LayoutDot138
-  xpos 107
-  ypos 3606
+  name LayoutDot144
+  xpos 110
+  ypos 4719
  }
-set N1a700100 [stack 0]
-push $N1a700100
+set N1a700107 [stack 0]
+push $N1a700107
  Dot {
-  name LayoutDot139
-  xpos 184
-  ypos 3606
+  name LayoutDot145
+  xpos 214
+  ypos 4719
  }
-set N1a700101 [stack 0]
-push $N1a700101
+set N1a700108 [stack 0]
+push $N1a700108
  Reformat {
   type "to box"
   box_width {{HDRIInput.width}}
@@ -2845,177 +2918,198 @@ push $N1a700101
   resize distort
   filter Mitchell
   name OutputUpscale
-  xpos 150
-  ypos 3648
+  xpos 180
+  ypos 4770
  }
-set N1a700102 [stack 0]
-push $N1a700102
-push $N1a7000fe
+set N1a700109 [stack 0]
+push $N1a700109
+push $N1a700105
  Switch {
   inputs 2
   which {{"HDRISource.width < HDRIInput.width"}}
   name OutputResolution
   xpos 0
-  ypos 3696
+  ypos 4830
   label "back to hdri size"
  }
-set N1a700103 [stack 0]
+set N1a70010a [stack 0]
+push $N1a70010a
+ Dot {
+  name LayoutDot146
+  xpos 110
+  ypos 4833
+ }
+set N1a70010b [stack 0]
+push $N1a70010b
+ Dot {
+  name LayoutDot147
+  xpos 110
+  ypos 5037
+ }
+set N1a70010c [stack 0]
+push $N1a70010c
+ Dot {
+  name LayoutDot148
+  xpos 214
+  ypos 5037
+ }
+set N1a70010d [stack 0]
+push $N1a70010d
+ Dot {
+  name LayoutDot149
+  xpos 394
+  ypos 5037
+ }
+set N1a70010e [stack 0]
+push $N1a70010e
+ Dot {
+  name LayoutDot150
+  xpos 754
+  ypos 5037
+ }
+set N1a70010f [stack 0]
+push $N1a70010f
+ Dot {
+  name LayoutDot151
+  xpos 1114
+  ypos 5037
+ }
+set N1a700110 [stack 0]
 push $N1a700103
- Dot {
-  name LayoutDot140
-  xpos 107
-  ypos 3699
- }
-set N1a700104 [stack 0]
-push $N1a700104
- Dot {
-  name LayoutDot141
-  xpos 107
-  ypos 3894
- }
-set N1a700105 [stack 0]
-push $N1a700105
- Dot {
-  name LayoutDot142
-  xpos 184
-  ypos 3894
- }
-set N1a700106 [stack 0]
-push $N1a700106
- Dot {
-  name LayoutDot143
-  xpos 334
-  ypos 3894
- }
-set N1a700107 [stack 0]
-push $N1a700107
- Dot {
-  name LayoutDot144
-  xpos 634
-  ypos 3894
- }
-set N1a700108 [stack 0]
-push $N1a700108
- Dot {
-  name LayoutDot145
-  xpos 934
-  ypos 3894
- }
-set N1a700109 [stack 0]
-push $N1a7000fc
-push $N1a700109
+push $N1a700110
  STMap {
   inputs 2
   uv rgb
   name ToCamera
-  xpos 900
-  ypos 4032
+  xpos 1080
+  ypos 5208
  }
-set N1a70010a [stack 0]
-push $N1a7000fc
+set N1a700111 [stack 0]
+push $N1a700103
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
   mappings "4 rgba.blue 0 2 rgba.red 0 0 rgba.green 0 1 rgba.green 0 1 rgba.blue 0 2 rgba.blue 0 2 rgba.alpha 0 3 rgba.alpha 0 3"
   name ToCameraTurnedUV
-  xpos 750
-  ypos 4032
+  xpos 900
+  ypos 5208
  }
-set N1a70010b [stack 0]
-push $N1a700107
+set N1a700112 [stack 0]
+push $N1a70010e
  Crop {
   box {{input.width/2} {0} {input.width} {input.height}}
   name RollRightCrop
-  xpos 300
-  ypos 3936
+  xpos 360
+  ypos 5088
  }
-set N1a70010c [stack 0]
-push $N1a70010c
+set N1a700113 [stack 0]
+push $N1a700113
  Transform {
   translate {{-input.width/2} 0}
   filter impulse
   name RollRightMove
-  xpos 300
-  ypos 3984
+  xpos 360
+  ypos 5148
  }
-set N1a70010d [stack 0]
-push $N1a700106
+set N1a700114 [stack 0]
+push $N1a70010d
  Crop {
   box {{0} {0} {input.width/2} {input.height}}
   name RollLeftCrop
-  xpos 150
-  ypos 3936
+  xpos 180
+  ypos 5088
  }
-set N1a70010e [stack 0]
-push $N1a70010e
+set N1a700115 [stack 0]
+push $N1a700115
  Transform {
   translate {{input.width/2} 0}
   filter impulse
   name RollLeftMove
-  xpos 150
-  ypos 3984
+  xpos 180
+  ypos 5148
  }
-set N1a70010f [stack 0]
-push $N1a70010d
-push $N1a70010f
+set N1a700116 [stack 0]
+push $N1a700114
+push $N1a700116
  Merge2 {
   inputs 2
   operation plus
   also_merge all
   name Rolled
-  xpos 150
-  ypos 4032
+  xpos 180
+  ypos 5208
  }
-set N1a700110 [stack 0]
-push $N1a70010b
+set N1a700117 [stack 0]
+push $N1a700112
  Dot {
-  name LayoutDot10
-  xpos 334
-  ypos 4035
+  name LayoutDot2
+  xpos 394
+  ypos 5211
  }
-set N1a700111 [stack 0]
-push $N1a700111
-push $N1a700110
+set N1a700118 [stack 0]
+push $N1a700118
+push $N1a700117
  STMap {
   inputs 2
   uv rgb
   name ToCameraTurned
-  xpos 300
-  ypos 4080
+  xpos 360
+  ypos 5268
  }
-set N1a700112 [stack 0]
-push $N1a70010a
+set N1a700119 [stack 0]
+push $N1a700111
  Dot {
-  name LayoutDot11
-  xpos 934
-  ypos 4131
+  name LayoutDot166
+  xpos 1166
+  ypos 5211
  }
-set N1a700113 [stack 0]
-push $N1a7000fc
+set N1a70011a [stack 0]
+push $N1a70011a
  Dot {
-  name LayoutDot158
-  xpos 836
-  ypos 3987
+  name LayoutDot167
+  xpos 1166
+  ypos 5331
  }
-set N1a700114 [stack 0]
-push $N1a700114
+set N1a70011b [stack 0]
+push $N1a700103
  Dot {
-  name LayoutDot159
-  xpos 836
-  ypos 4131
+  name LayoutDot162
+  xpos 986
+  ypos 5151
  }
-set N1a700115 [stack 0]
-push $N1a700115
-push $N1a700113
-push $N1a700112
+set N1a70011c [stack 0]
+push $N1a70011c
+ Dot {
+  name LayoutDot163
+  xpos 986
+  ypos 5236
+ }
+set N1a70011d [stack 0]
+push $N1a70011d
+ Dot {
+  name LayoutDot164
+  xpos 446
+  ypos 5236
+ }
+set N1a70011e [stack 0]
+push $N1a70011e
+ Dot {
+  name LayoutDot165
+  xpos 446
+  ypos 5319
+ }
+set N1a70011f [stack 0]
+push $N1a70011f
+push $N1a70011b
+push $N1a700119
  Keymix {
   inputs 3
   name ToCameraSeam
-  xpos 300
-  ypos 4128
+  xpos 360
+  ypos 5328
  }
-set N1a700116 [stack 0]
-push $N1a7000f9
+set N1a700120 [stack 0]
+push $N1a700100
  BlinkScript {
   useGPUIfAvailable false
   recompileCount 2
@@ -3029,158 +3123,144 @@ push $N1a7000f9
   EzAtmosDomeUV_radius {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = r\}]"}}
   rebuild_finalise ""
   name DomeUV
-  xpos 450
-  ypos 3936
+  xpos 540
+  ypos 5088
  }
-set N1a700117 [stack 0]
-push $N1a700117
-push $N1a700108
+set N1a700121 [stack 0]
+push $N1a700121
+push $N1a70010f
  STMap {
   inputs 2
   uv rgb
   name ToDome
-  xpos 600
-  ypos 3984
+  xpos 720
+  ypos 5148
  }
-set N1a700118 [stack 0]
-push $N1a700117
+set N1a700122 [stack 0]
+push $N1a700121
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
   mappings "4 rgba.blue 0 2 rgba.red 0 0 rgba.green 0 1 rgba.green 0 1 rgba.blue 0 2 rgba.blue 0 2 rgba.alpha 0 3 rgba.alpha 0 3"
   name ToDomeTurnedUV
-  xpos 450
-  ypos 3984
- }
-set N1a700119 [stack 0]
-push $N1a700119
- Dot {
-  name LayoutDot150
-  xpos 557
-  ypos 3987
- }
-set N1a70011a [stack 0]
-push $N1a70011a
- Dot {
-  name LayoutDot151
-  xpos 557
-  ypos 4059
- }
-set N1a70011b [stack 0]
-push $N1a70011b
- Dot {
-  name LayoutDot152
-  xpos 236
-  ypos 4059
- }
-set N1a70011c [stack 0]
-push $N1a70011c
- Dot {
-  name LayoutDot153
-  xpos 236
-  ypos 4083
- }
-set N1a70011d [stack 0]
-push $N1a70011d
-push $N1a700110
- STMap {
-  inputs 2
-  uv rgb
-  name ToDomeTurned
-  xpos 150
-  ypos 4080
- }
-set N1a70011e [stack 0]
-push $N1a700118
- Dot {
-  name LayoutDot154
-  xpos 686
-  ypos 3987
- }
-set N1a70011f [stack 0]
-push $N1a70011f
- Dot {
-  name LayoutDot155
-  xpos 686
-  ypos 4107
- }
-set N1a700120 [stack 0]
-push $N1a700120
- Dot {
-  name LayoutDot156
-  xpos 257
-  ypos 4107
- }
-set N1a700121 [stack 0]
-push $N1a700121
- Dot {
-  name LayoutDot157
-  xpos 257
-  ypos 4131
- }
-set N1a700122 [stack 0]
-push $N1a700117
- Dot {
-  name LayoutDot146
-  xpos 536
-  ypos 3939
+  xpos 540
+  ypos 5148
  }
 set N1a700123 [stack 0]
 push $N1a700123
  Dot {
-  name LayoutDot147
-  xpos 536
-  ypos 4107
+  name LayoutDot155
+  xpos 650
+  ypos 5151
  }
 set N1a700124 [stack 0]
 push $N1a700124
  Dot {
-  name LayoutDot148
-  xpos 236
-  ypos 4107
+  name LayoutDot156
+  xpos 650
+  ypos 5250
  }
 set N1a700125 [stack 0]
 push $N1a700125
  Dot {
-  name LayoutDot149
-  xpos 236
-  ypos 4131
+  name LayoutDot157
+  xpos 266
+  ypos 5250
  }
 set N1a700126 [stack 0]
 push $N1a700126
-push $N1a700122
-push $N1a70011e
- Keymix {
-  inputs 3
-  name ToDomeSeam
-  xpos 150
-  ypos 4128
+push $N1a700117
+ STMap {
+  inputs 2
+  uv rgb
+  name ToDomeTurned
+  xpos 180
+  ypos 5268
  }
 set N1a700127 [stack 0]
-push $N1a700116
+push $N1a700122
  Dot {
-  name LayoutDot12
-  xpos 334
-  ypos 4179
+  name LayoutDot158
+  xpos 806
+  ypos 5151
  }
 set N1a700128 [stack 0]
 push $N1a700128
+ Dot {
+  name LayoutDot159
+  xpos 806
+  ypos 5296
+ }
+set N1a700129 [stack 0]
+push $N1a700129
+ Dot {
+  name LayoutDot160
+  xpos 290
+  ypos 5296
+ }
+set N1a70012a [stack 0]
+push $N1a70012a
+ Dot {
+  name LayoutDot161
+  xpos 290
+  ypos 5331
+ }
+set N1a70012b [stack 0]
+push $N1a700121
+ Dot {
+  name LayoutDot152
+  xpos 626
+  ypos 5091
+ }
+set N1a70012c [stack 0]
+push $N1a70012c
+ Dot {
+  name LayoutDot153
+  xpos 626
+  ypos 5310
+ }
+set N1a70012d [stack 0]
+push $N1a70012d
+ Dot {
+  name LayoutDot154
+  xpos 266
+  ypos 5310
+ }
+set N1a70012e [stack 0]
+push $N1a70012e
+push $N1a70012b
 push $N1a700127
-push $N1a700103
+ Keymix {
+  inputs 3
+  name ToDomeSeam
+  xpos 180
+  ypos 5328
+ }
+set N1a70012f [stack 0]
+push $N1a700120
+ Dot {
+  name LayoutDot3
+  xpos 394
+  ypos 5391
+ }
+set N1a700130 [stack 0]
+push $N1a700130
+push $N1a70012f
+push $N1a70010a
  Switch {
   inputs 3
   which {{"parent.output_mapping==1 && \[exists parent.input2] ? 1 : parent.output_mapping==2 && \[exists parent.input3] ? 2 : 0"}}
   name OutputAs
   xpos 0
-  ypos 4176
+  ypos 5388
   label "output as"
  }
-set N1a700129 [stack 0]
-push $N1a700129
+set N1a700131 [stack 0]
+push $N1a700131
  Output {
   name Output1
   xpos 0
-  ypos 4224
+  ypos 5448
  }
-set N1a70012a [stack 0]
+set N1a700132 [stack 0]
 end_group
