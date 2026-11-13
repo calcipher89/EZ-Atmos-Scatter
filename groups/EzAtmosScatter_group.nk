@@ -10,8 +10,8 @@ add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky
 add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue atmos_clouds.alpha}
 Group {
  name EzAtmosScatter1
- onCreate "g = nuke.thisNode()\nif g\['bake_first'].value() == 0 and g\['bake_last'].value() == 0:\n    g\['bake_first'].setValue(int(nuke.root()\['first_frame'].value()))\n    g\['bake_last'].setValue(int(nuke.root()\['last_frame'].value()))\ng = nuke.thisNode()\nif g.knob('bake_valid') is not None:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        # downscale left at Full keeps bakes made before it existed.\n        if g.knob(n) and not (n == 'downscale' and int(g\[n].getValue()) == 0):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    import os, re\n    r = g.node('BakeRead')\n    p = (nuke.filename(r) or '') if r is not None else ''\n    fr = int(g\['baked_first'].value())\n    m = re.search('(#+)|%(0?\[0-9]*)d', p)\n    if m is not None:\n        width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n        p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n    ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n    if bool(g\['bake_valid'].value()) != ok:\n        g\['bake_valid'].setValue(ok)\n    status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n    if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n        g\['label'].setValue(status)\n"
- knobChanged "if nuke.thisKnob().name() in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio', 'use_baked', 'bake_file', 'bake_folder', 'baked_hash', 'baked_first', 'inputChange']:\n    g = nuke.thisNode()\n    if g.knob('bake_valid') is not None:\n        import hashlib\n        s = \[]\n        for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n            # downscale left at Full keeps bakes made before it existed.\n            if g.knob(n) and not (n == 'downscale' and int(g\[n].getValue()) == 0):\n                s.append((n, g\[n].toScript()))\n        # Where the skydome sits shapes the output too.\n        d = g.node('DomeRemap')\n        if d is not None and g.input(2) is not None:\n            for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n                s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n        h = hashlib.md5(repr(s).encode()).hexdigest()\n        import os, re\n        r = g.node('BakeRead')\n        p = (nuke.filename(r) or '') if r is not None else ''\n        fr = int(g\['baked_first'].value())\n        m = re.search('(#+)|%(0?\[0-9]*)d', p)\n        if m is not None:\n            width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n            p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n        ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n        if bool(g\['bake_valid'].value()) != ok:\n            g\['bake_valid'].setValue(ok)\n        status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n        if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n            g\['label'].setValue(status)\n"
+ onCreate "g = nuke.thisNode()\nif g\['bake_first'].value() == 0 and g\['bake_last'].value() == 0:\n    g\['bake_first'].setValue(int(nuke.root()\['first_frame'].value()))\n    g\['bake_last'].setValue(int(nuke.root()\['last_frame'].value()))\ng = nuke.thisNode()\nif g.knob('bake_valid') is not None:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'white_balance', 'sun_color_in_use', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        # downscale left at Full keeps bakes made before it existed.\n        if g.knob(n) and not (n == 'downscale' and int(g\[n].getValue()) == 0):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    import os, re\n    r = g.node('BakeRead')\n    p = (nuke.filename(r) or '') if r is not None else ''\n    fr = int(g\['baked_first'].value())\n    m = re.search('(#+)|%(0?\[0-9]*)d', p)\n    if m is not None:\n        width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n        p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n    ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n    if bool(g\['bake_valid'].value()) != ok:\n        g\['bake_valid'].setValue(ok)\n    status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n    if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n        g\['label'].setValue(status)\n"
+ knobChanged "if nuke.thisKnob().name() in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'white_balance', 'sun_color_in_use', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio', 'use_baked', 'bake_file', 'bake_folder', 'baked_hash', 'baked_first', 'inputChange']:\n    g = nuke.thisNode()\n    if g.knob('bake_valid') is not None:\n        import hashlib\n        s = \[]\n        for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'white_balance', 'sun_color_in_use', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n            # downscale left at Full keeps bakes made before it existed.\n            if g.knob(n) and not (n == 'downscale' and int(g\[n].getValue()) == 0):\n                s.append((n, g\[n].toScript()))\n        # Where the skydome sits shapes the output too.\n        d = g.node('DomeRemap')\n        if d is not None and g.input(2) is not None:\n            for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n                s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n        h = hashlib.md5(repr(s).encode()).hexdigest()\n        import os, re\n        r = g.node('BakeRead')\n        p = (nuke.filename(r) or '') if r is not None else ''\n        fr = int(g\['baked_first'].value())\n        m = re.search('(#+)|%(0?\[0-9]*)d', p)\n        if m is not None:\n            width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n            p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n        ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n        if bool(g\['bake_valid'].value()) != ok:\n            g\['bake_valid'].setValue(ok)\n        status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n        if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n            g\['label'].setValue(status)\n"
  tile_color 0x4a7fb5ff
  selected true
  addUserKnob {20 ezatmos l EzAtmosScatter}
@@ -39,6 +39,9 @@ Group {
  light_from_hdri true
  addUserKnob {18 sun_color l "sun color" t "Tint on the HDRI's sun, or the sun colour itself when 'light from HDRI' is off."}
  sun_color 1
+ addUserKnob {7 white_balance l "white balance" t "Balances the sun to white, as a camera's white balance does: the sun's colour after the air it crosses (yellow to orange near the horizon) is divided out, so sunlit cloud and haze come out neutral and the sky shifts the other way. 0: as before (the physical colour); 1: fully white. Only for 'light from HDRI' off or self-lit; an HDRI's sun is already as the camera saw it. EzCloudGen and EzDepthHaze pick it up through this node."}
+ addUserKnob {18 sun_color_in_use l "sun color in use" +INVISIBLE}
+ sun_color_in_use {{"\[python -execlocal \{import math\nn = nuke.thisNode()\nwb = n\['white_balance'].value()\nc = n\['sun_color'].value(0) if n\['sun_color'].arraySize() > 1 and not n\['sun_color'].singleValue() else n\['sun_color'].value()\nret = c\nif wb > 0 and not (n\['light_from_hdri'].value() and not n\['self_lit'].value()):\n    sx, sy, sz = n\['sun_in_use'].value(0), n\['sun_in_use'].value(1), n\['sun_in_use'].value(2)\n    el = math.degrees(math.asin(max(min(sy / (math.sqrt(sx * sx + sy * sy + sz * sz) or 1.0), 1.0), -1.0)))\n    am = 1.0 / (math.sin(math.radians(max(el, 0.0))) + 0.50572 * (max(el, 0.0) + 6.07995) ** -1.6364)\n    hk = n\['camera_height'].value() / 1000.0\n    tm = n\['mie_coefficient'].value() / 0.9 * n\['haze_amount'].value() * n\['haze_height'].value() * math.exp(-hk / max(n\['haze_height'].value(), 1e-3))\n    hr = n\['sky_amount'].value() * n\['rayleigh_scale_height'].value() * math.exp(-hk / n\['rayleigh_scale_height'].value())\n    rc = n\['rayleigh_coefficients']\n    tr = \[rc.value(0) * hr, rc.value(1) * hr, rc.value(2) * hr]\n    t = \[math.exp(-(tr\[0] + tm) * am), math.exp(-(tr\[1] + tm) * am), math.exp(-(tr\[2] + tm) * am)]\n    lum = 0.2126 * t\[0] + 0.7152 * t\[1] + 0.0722 * t\[2]\n    ret = c * (1.0 + wb * (lum / max(t\[0], 1e-6) - 1.0))\}]"} {"\[python -execlocal \{import math\nn = nuke.thisNode()\nwb = n\['white_balance'].value()\nc = n\['sun_color'].value(1) if n\['sun_color'].arraySize() > 1 and not n\['sun_color'].singleValue() else n\['sun_color'].value()\nret = c\nif wb > 0 and not (n\['light_from_hdri'].value() and not n\['self_lit'].value()):\n    sx, sy, sz = n\['sun_in_use'].value(0), n\['sun_in_use'].value(1), n\['sun_in_use'].value(2)\n    el = math.degrees(math.asin(max(min(sy / (math.sqrt(sx * sx + sy * sy + sz * sz) or 1.0), 1.0), -1.0)))\n    am = 1.0 / (math.sin(math.radians(max(el, 0.0))) + 0.50572 * (max(el, 0.0) + 6.07995) ** -1.6364)\n    hk = n\['camera_height'].value() / 1000.0\n    tm = n\['mie_coefficient'].value() / 0.9 * n\['haze_amount'].value() * n\['haze_height'].value() * math.exp(-hk / max(n\['haze_height'].value(), 1e-3))\n    hr = n\['sky_amount'].value() * n\['rayleigh_scale_height'].value() * math.exp(-hk / n\['rayleigh_scale_height'].value())\n    rc = n\['rayleigh_coefficients']\n    tr = \[rc.value(0) * hr, rc.value(1) * hr, rc.value(2) * hr]\n    t = \[math.exp(-(tr\[0] + tm) * am), math.exp(-(tr\[1] + tm) * am), math.exp(-(tr\[2] + tm) * am)]\n    lum = 0.2126 * t\[0] + 0.7152 * t\[1] + 0.0722 * t\[2]\n    ret = c * (1.0 + wb * (lum / max(t\[1], 1e-6) - 1.0))\}]"} {"\[python -execlocal \{import math\nn = nuke.thisNode()\nwb = n\['white_balance'].value()\nc = n\['sun_color'].value(2) if n\['sun_color'].arraySize() > 1 and not n\['sun_color'].singleValue() else n\['sun_color'].value()\nret = c\nif wb > 0 and not (n\['light_from_hdri'].value() and not n\['self_lit'].value()):\n    sx, sy, sz = n\['sun_in_use'].value(0), n\['sun_in_use'].value(1), n\['sun_in_use'].value(2)\n    el = math.degrees(math.asin(max(min(sy / (math.sqrt(sx * sx + sy * sy + sz * sz) or 1.0), 1.0), -1.0)))\n    am = 1.0 / (math.sin(math.radians(max(el, 0.0))) + 0.50572 * (max(el, 0.0) + 6.07995) ** -1.6364)\n    hk = n\['camera_height'].value() / 1000.0\n    tm = n\['mie_coefficient'].value() / 0.9 * n\['haze_amount'].value() * n\['haze_height'].value() * math.exp(-hk / max(n\['haze_height'].value(), 1e-3))\n    hr = n\['sky_amount'].value() * n\['rayleigh_scale_height'].value() * math.exp(-hk / n\['rayleigh_scale_height'].value())\n    rc = n\['rayleigh_coefficients']\n    tr = \[rc.value(0) * hr, rc.value(1) * hr, rc.value(2) * hr]\n    t = \[math.exp(-(tr\[0] + tm) * am), math.exp(-(tr\[1] + tm) * am), math.exp(-(tr\[2] + tm) * am)]\n    lum = 0.2126 * t\[0] + 0.7152 * t\[1] + 0.0722 * t\[2]\n    ret = c * (1.0 + wb * (lum / max(t\[2], 1e-6) - 1.0))\}]"}}
  addUserKnob {7 sun_strength l "sun strength" t "Multiplies the sun's brightness." R 0 4}
  sun_strength 1
  addUserKnob {7 sun_boost l "sun boost" t "Only used when the HDRI's sun is clipped (JPEGs, LDR captures). The sun is then sized from the sky brightness; this scales it." R 0 4}
@@ -95,8 +98,8 @@ Group {
  addUserKnob {2 bake_file l "bake file" t "Leave empty to use 'bake folder'. Fill in a full file path (with ####) to override it for this node. \$VAR and \[getenv VAR] work here too."}
  addUserKnob {3 bake_first l "bake range" t "First frame to bake. Set first and last to the same frame to bake one frame, held for the whole shot (a sun that doesn't move)."}
  addUserKnob {3 bake_last l "" t "Last frame to bake." -STARTLINE}
- addUserKnob {22 bake_now l "bake now" t "Writes all layers to the bake file here and now." T "g = nuke.thisNode()\nimport os\npath = nuke.filename(g.node('BakeRead')) or ''\nbad = '' if path and os.path.isabs(path) else ('the bake folder uses an environment variable that '\n    'isn\\'t set in Nuke' if path == '' else 'the bake path isn\\'t a full path: ' + path)\nif not bad and not path.lower().endswith('.exr'):\n    # A folder typed into 'bake file' (which is the whole file name) would make Nuke\n    # write a frame named like the folder.\n    bad = ('\\'bake file\\' is a folder, not a file name like name.####.exr. Put the folder in '\n           '\\'bake folder\\' and leave \\'bake file\\' empty')\nif not bad and not os.path.isdir(os.path.dirname(path)):\n    # The Write's own 'create directories' doesn't always make deep new folders, so\n    # make them here first.\n    try:\n        os.makedirs(os.path.dirname(path))\n    except OSError as e:\n        bad = 'can\\'t create ' + os.path.dirname(path) + ' (' + str(e.strerror or e) + ')'\nif bad:\n    nuke.message('Not baked: ' + bad + '.\\n\\nFolder: ' + (g\['bake_file'].value() or g\['bake_folder'].value()))\nif not bad:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        # downscale left at Full keeps bakes made before it existed.\n        if g.knob(n) and not (n == 'downscale' and int(g\[n].getValue()) == 0):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    first, last = int(g\['bake_first'].value()), int(g\['bake_last'].value())\n    if last < first:\n        first, last = last, first\n    use = g\['use_baked'].value()\n    g\['use_baked'].setValue(False)\n    try:\n        with g:\n            nuke.execute(nuke.toNode('BakeWrite'), first, last)\n        g\['baked_hash'].setValue(h)\n        g\['baked_first'].setValue(first)\n        g\['baked_last'].setValue(last)\n    finally:\n        g\['use_baked'].setValue(use)\n    g = nuke.thisNode()\n    if g.knob('bake_valid') is not None:\n        import hashlib\n        s = \[]\n        for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n            # downscale left at Full keeps bakes made before it existed.\n            if g.knob(n) and not (n == 'downscale' and int(g\[n].getValue()) == 0):\n                s.append((n, g\[n].toScript()))\n        # Where the skydome sits shapes the output too.\n        d = g.node('DomeRemap')\n        if d is not None and g.input(2) is not None:\n            for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n                s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n        h = hashlib.md5(repr(s).encode()).hexdigest()\n        import os, re\n        r = g.node('BakeRead')\n        p = (nuke.filename(r) or '') if r is not None else ''\n        fr = int(g\['baked_first'].value())\n        m = re.search('(#+)|%(0?\[0-9]*)d', p)\n        if m is not None:\n            width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n            p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n        ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n        if bool(g\['bake_valid'].value()) != ok:\n            g\['bake_valid'].setValue(ok)\n        status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n        if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n            g\['label'].setValue(status)\n" +STARTLINE}
- addUserKnob {22 bake_farm_write l "make farm bake Write" t "Adds a Write below this node with the bake path, to render on the farm before the comp." -STARTLINE T "g = nuke.thisNode()\nimport os\npath = nuke.filename(g.node('BakeRead')) or ''\nbad = '' if path and os.path.isabs(path) else ('the bake folder uses an environment variable that '\n    'isn\\'t set in Nuke' if path == '' else 'the bake path isn\\'t a full path: ' + path)\nif not bad and not path.lower().endswith('.exr'):\n    # A folder typed into 'bake file' (which is the whole file name) would make Nuke\n    # write a frame named like the folder.\n    bad = ('\\'bake file\\' is a folder, not a file name like name.####.exr. Put the folder in '\n           '\\'bake folder\\' and leave \\'bake file\\' empty')\nif not bad and not os.path.isdir(os.path.dirname(path)):\n    # The Write's own 'create directories' doesn't always make deep new folders, so\n    # make them here first.\n    try:\n        os.makedirs(os.path.dirname(path))\n    except OSError as e:\n        bad = 'can\\'t create ' + os.path.dirname(path) + ' (' + str(e.strerror or e) + ')'\nif bad:\n    nuke.message('Not baked: ' + bad + '.\\n\\nFolder: ' + (g\['bake_file'].value() or g\['bake_folder'].value()))\nif not bad:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        # downscale left at Full keeps bakes made before it existed.\n        if g.knob(n) and not (n == 'downscale' and int(g\[n].getValue()) == 0):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    first, last = int(g\['bake_first'].value()), int(g\['bake_last'].value())\n    if last < first:\n        first, last = last, first\n    with nuke.root():\n        w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n        w\['create_directories'].setValue(True)\n        w\['use_limit'].setValue(True)\n        w\['first'].setValue(first)\n        w\['last'].setValue(last)\n        w.setInput(0, g)\n        w.setXYpos(g.xpos(), g.ypos() + 80)\n    g\['baked_hash'].setValue(h)\n    g\['baked_first'].setValue(first)\n    g\['baked_last'].setValue(last)\n    g\['bake_valid'].setValue(True)\n    if g\['label'].value() in ('', 'bake out of date: live'):\n        g\['label'].setValue('baked')\n    if nuke.GUI:\n        nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n"}
+ addUserKnob {22 bake_now l "bake now" t "Writes all layers to the bake file here and now." T "g = nuke.thisNode()\nimport os\npath = nuke.filename(g.node('BakeRead')) or ''\nbad = '' if path and os.path.isabs(path) else ('the bake folder uses an environment variable that '\n    'isn\\'t set in Nuke' if path == '' else 'the bake path isn\\'t a full path: ' + path)\nif not bad and not path.lower().endswith('.exr'):\n    # A folder typed into 'bake file' (which is the whole file name) would make Nuke\n    # write a frame named like the folder.\n    bad = ('\\'bake file\\' is a folder, not a file name like name.####.exr. Put the folder in '\n           '\\'bake folder\\' and leave \\'bake file\\' empty')\nif not bad and not os.path.isdir(os.path.dirname(path)):\n    # The Write's own 'create directories' doesn't always make deep new folders, so\n    # make them here first.\n    try:\n        os.makedirs(os.path.dirname(path))\n    except OSError as e:\n        bad = 'can\\'t create ' + os.path.dirname(path) + ' (' + str(e.strerror or e) + ')'\nif bad:\n    nuke.message('Not baked: ' + bad + '.\\n\\nFolder: ' + (g\['bake_file'].value() or g\['bake_folder'].value()))\nif not bad:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'white_balance', 'sun_color_in_use', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        # downscale left at Full keeps bakes made before it existed.\n        if g.knob(n) and not (n == 'downscale' and int(g\[n].getValue()) == 0):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    first, last = int(g\['bake_first'].value()), int(g\['bake_last'].value())\n    if last < first:\n        first, last = last, first\n    use = g\['use_baked'].value()\n    g\['use_baked'].setValue(False)\n    try:\n        with g:\n            nuke.execute(nuke.toNode('BakeWrite'), first, last)\n        g\['baked_hash'].setValue(h)\n        g\['baked_first'].setValue(first)\n        g\['baked_last'].setValue(last)\n    finally:\n        g\['use_baked'].setValue(use)\n    g = nuke.thisNode()\n    if g.knob('bake_valid') is not None:\n        import hashlib\n        s = \[]\n        for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'white_balance', 'sun_color_in_use', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n            # downscale left at Full keeps bakes made before it existed.\n            if g.knob(n) and not (n == 'downscale' and int(g\[n].getValue()) == 0):\n                s.append((n, g\[n].toScript()))\n        # Where the skydome sits shapes the output too.\n        d = g.node('DomeRemap')\n        if d is not None and g.input(2) is not None:\n            for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n                s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n        h = hashlib.md5(repr(s).encode()).hexdigest()\n        import os, re\n        r = g.node('BakeRead')\n        p = (nuke.filename(r) or '') if r is not None else ''\n        fr = int(g\['baked_first'].value())\n        m = re.search('(#+)|%(0?\[0-9]*)d', p)\n        if m is not None:\n            width = len(m.group(1)) if m.group(1) else int(m.group(2) or 1)\n            p = p\[:m.start()] + str(fr).zfill(width) + p\[m.end():]\n        ok = bool(g\['baked_hash'].value()) and g\['baked_hash'].value() == h and os.path.exists(p)\n        if bool(g\['bake_valid'].value()) != ok:\n            g\['bake_valid'].setValue(ok)\n        status = ('baked' if ok else 'bake out of date: live') if g\['use_baked'].value() and g\['baked_hash'].value() else ''\n        if g\['label'].value() in ('', 'baked', 'bake out of date: live') and g\['label'].value() != status:\n            g\['label'].setValue(status)\n" +STARTLINE}
+ addUserKnob {22 bake_farm_write l "make farm bake Write" t "Adds a Write below this node with the bake path, to render on the farm before the comp." -STARTLINE T "g = nuke.thisNode()\nimport os\npath = nuke.filename(g.node('BakeRead')) or ''\nbad = '' if path and os.path.isabs(path) else ('the bake folder uses an environment variable that '\n    'isn\\'t set in Nuke' if path == '' else 'the bake path isn\\'t a full path: ' + path)\nif not bad and not path.lower().endswith('.exr'):\n    # A folder typed into 'bake file' (which is the whole file name) would make Nuke\n    # write a frame named like the folder.\n    bad = ('\\'bake file\\' is a folder, not a file name like name.####.exr. Put the folder in '\n           '\\'bake folder\\' and leave \\'bake file\\' empty')\nif not bad and not os.path.isdir(os.path.dirname(path)):\n    # The Write's own 'create directories' doesn't always make deep new folders, so\n    # make them here first.\n    try:\n        os.makedirs(os.path.dirname(path))\n    except OSError as e:\n        bad = 'can\\'t create ' + os.path.dirname(path) + ' (' + str(e.strerror or e) + ')'\nif bad:\n    nuke.message('Not baked: ' + bad + '.\\n\\nFolder: ' + (g\['bake_file'].value() or g\['bake_folder'].value()))\nif not bad:\n    import hashlib\n    s = \[]\n    for n in \['view_output', 'passes', 'sun_from', 'sun_direction', 'hdri_rotation', 'self_lit', 'light_from_hdri', 'sun_color', 'white_balance', 'sun_color_in_use', 'sun_strength', 'sun_boost', 'sky_light', 'sky_amount', 'haze_amount', 'haze_glow_size', 'haze_height', 'camera_height', 'max_distance', 'haze_density', 'haze_distance', 'quality', 'downscale', 'viewer_resolution', 'render_resolution', 'scatter_scale', 'rayleigh_coefficients', 'mie_coefficient', 'rayleigh_scale_height', 'planet_radius', 'atmosphere_thickness', 'manual_sun_brightness', 'clear_sky_ratio', 'sun_search_cone', 'clip_ratio']:\n        # downscale left at Full keeps bakes made before it existed.\n        if g.knob(n) and not (n == 'downscale' and int(g\[n].getValue()) == 0):\n            s.append((n, g\[n].toScript()))\n    # Where the skydome sits shapes the output too.\n    d = g.node('DomeRemap')\n    if d is not None and g.input(2) is not None:\n        for k in ('dome_row0', 'dome_row1', 'dome_row2', 'eye', 'radius'):\n            s.append((k, repr(d\['EzAtmosDome_' + k].value())))\n    h = hashlib.md5(repr(s).encode()).hexdigest()\n    first, last = int(g\['bake_first'].value()), int(g\['bake_last'].value())\n    if last < first:\n        first, last = last, first\n    with nuke.root():\n        w = nuke.nodes.Write(name=g.name() + '_BakeWrite', file=path, file_type='exr', channels='all')\n        w\['create_directories'].setValue(True)\n        w\['use_limit'].setValue(True)\n        w\['first'].setValue(first)\n        w\['last'].setValue(last)\n        w.setInput(0, g)\n        w.setXYpos(g.xpos(), g.ypos() + 80)\n    g\['baked_hash'].setValue(h)\n    g\['baked_first'].setValue(first)\n    g\['baked_last'].setValue(last)\n    g\['bake_valid'].setValue(True)\n    if g\['label'].value() in ('', 'bake out of date: live'):\n        g\['label'].setValue('baked')\n    if nuke.GUI:\n        nuke.message('Render %s on the farm before the comp. It writes ' % w.name() + path)\n"}
  addUserKnob {6 use_baked l "use baked" t "Read the bake instead of computing, but only while it exists and these settings still match it; otherwise the node computes live and its label says the bake is out of date. The check runs when a knob or input of this node changes and when the script opens; after moving the skydome upstream, bake again." +STARTLINE}
  use_baked true
  addUserKnob {1 baked_hash l "baked hash" +INVISIBLE}
@@ -106,38 +109,52 @@ Group {
  addUserKnob {26 version_divider l "" +STARTLINE}
  addUserKnob {26 version T "EzAtmosScatter v1.0.0"}
 }
-add_layer {atmos_inscatter atmos_inscatter.red atmos_inscatter.green atmos_inscatter.blue}
-add_layer {atmos_rayleigh atmos_rayleigh.red atmos_rayleigh.green atmos_rayleigh.blue}
-add_layer {atmos_mie atmos_mie.red atmos_mie.green atmos_mie.blue}
-add_layer {atmos_ambient atmos_ambient.red atmos_ambient.green atmos_ambient.blue}
-add_layer {atmos_transmittance atmos_transmittance.red atmos_transmittance.green atmos_transmittance.blue}
-add_layer {atmos_haze_color atmos_haze_color.red atmos_haze_color.green atmos_haze_color.blue}
-add_layer {atmos_haze_sun atmos_haze_sun.red atmos_haze_sun.green atmos_haze_sun.blue}
-add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky.blue}
-add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue atmos_clouds.alpha}
+ BackdropNode {
+  inputs 0
+  name Backdrop_Scatter_passes
+  tile_color 0x3a5a4aff
+  label "Scatter passes"
+  note_font_size 32
+  xpos 140
+  ypos 1899
+  bdwidth 2860
+  bdheight 559
+ }
+ BackdropNode {
+  inputs 0
+  name Backdrop_Remap_to_dome_camera
+  tile_color 0x6a4a4aff
+  label "Remap to dome / camera"
+  note_font_size 32
+  xpos -40
+  ypos 4947
+  bdwidth 1240
+  bdheight 559
+  z_order 1
+ }
+ BackdropNode {
+  inputs 0
+  name Backdrop_Preview_comp
+  tile_color 0x5a4a6aff
+  label "Preview comp"
+  note_font_size 32
+  xpos 140
+  ypos 2517
+  bdwidth 700
+  bdheight 649
+  z_order 2
+ }
  BackdropNode {
   inputs 0
   name Backdrop_Inputs
   tile_color 0x4a5a6aff
-  label "Inputs"
+  label Inputs
   note_font_size 32
   xpos -220
   ypos -60
   bdwidth 880
   bdheight 298
   z_order 3
- }
- BackdropNode {
-  inputs 0
-  name Backdrop_Skydome
-  tile_color 0x4a5a6aff
-  label "Skydome"
-  note_font_size 32
-  xpos -40
-  ypos 297
-  bdwidth 340
-  bdheight 229
-  z_order 8
  }
  BackdropNode {
   inputs 0
@@ -165,51 +182,15 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
  }
  BackdropNode {
   inputs 0
-  name Backdrop_Scatter_resolution
-  tile_color 0x3a5a4aff
-  label "Scatter resolution"
+  name Backdrop_Bake
+  tile_color 0x444444ff
+  label Bake
   note_font_size 32
-  xpos 140
-  ypos 1671
-  bdwidth 160
-  bdheight 169
-  z_order 11
- }
- BackdropNode {
-  inputs 0
-  name Backdrop_Scatter_passes
-  tile_color 0x3a5a4aff
-  label "Scatter passes"
-  note_font_size 32
-  xpos 140
-  ypos 1899
-  bdwidth 2860
-  bdheight 559
-  z_order 0
- }
- BackdropNode {
-  inputs 0
-  name Backdrop_Preview_comp
-  tile_color 0x5a4a6aff
-  label "Preview comp"
-  note_font_size 32
-  xpos 140
-  ypos 2517
-  bdwidth 700
-  bdheight 649
-  z_order 2
- }
- BackdropNode {
-  inputs 0
-  name Backdrop_View_output
-  tile_color 0x5a4a6aff
-  label "View output"
-  note_font_size 32
-  xpos 140
-  ypos 3225
-  bdwidth 160
-  bdheight 379
-  z_order 10
+  xpos -40
+  ypos 4371
+  bdwidth 520
+  bdheight 229
+  z_order 6
  }
  BackdropNode {
   inputs 0
@@ -225,15 +206,15 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
  }
  BackdropNode {
   inputs 0
-  name Backdrop_Bake
-  tile_color 0x444444ff
-  label "Bake"
+  name Backdrop_Skydome
+  tile_color 0x4a5a6aff
+  label Skydome
   note_font_size 32
   xpos -40
-  ypos 4371
-  bdwidth 520
+  ypos 297
+  bdwidth 340
   bdheight 229
-  z_order 6
+  z_order 8
  }
  BackdropNode {
   inputs 0
@@ -249,67 +230,66 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
  }
  BackdropNode {
   inputs 0
-  name Backdrop_Remap_to_dome_camera
-  tile_color 0x6a4a4aff
-  label "Remap to dome / camera"
+  name Backdrop_View_output
+  tile_color 0x5a4a6aff
+  label "View output"
   note_font_size 32
-  xpos -40
-  ypos 4947
-  bdwidth 1240
-  bdheight 559
-  z_order 1
+  xpos 140
+  ypos 3225
+  bdwidth 160
+  bdheight 379
+  z_order 10
+ }
+ BackdropNode {
+  inputs 0
+  name Backdrop_Scatter_resolution
+  tile_color 0x3a5a4aff
+  label "Scatter resolution"
+  note_font_size 32
+  xpos 140
+  ypos 1671
+  bdwidth 160
+  bdheight 169
+  z_order 11
  }
  Input {
   inputs 0
   name sun
-  number 1
   xpos 540
-  ypos 0
+  number 1
  }
-set N1a700000 [stack 0]
  Input {
   inputs 0
   name dome
-  number 2
   xpos 360
-  ypos 0
+  number 2
  }
-set N1a700001 [stack 0]
  Input {
   inputs 0
   name camera
-  number 3
   xpos 180
-  ypos 0
+  number 3
  }
-set N1a700002 [stack 0]
  Constant {
   inputs 0
   format "2048 1024 0 0 2048 1024 1 EzAtmos_latlong_2k"
   name BlankHDRI
   xpos -180
-  ypos 0
  }
-set N1a700003 [stack 0]
  Input {
   inputs 0
   name hdri
   xpos 0
-  ypos 0
  }
-set N1a700004 [stack 0]
-push $N1a700003
-push $N1a700004
  Switch {
   inputs 2
   which {{"!\[exists parent.input0]"}}
   name HDRIInput
+  label "blank if no hdri"
   xpos 0
   ypos 60
-  label "blank if no hdri"
  }
-set N1a700005 [stack 0]
-push $N1a700005
+set N25afb400 [stack 0]
  Reformat {
   type "to box"
   box_width {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512))"}}
@@ -321,47 +301,40 @@ push $N1a700005
   xpos -180
   ypos 120
  }
-set N1a700006 [stack 0]
-push $N1a700006
-push $N1a700005
+push $N25afb400
  Switch {
   inputs 2
   which {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512)) < HDRIInput.width"}}
   name HDRISource
+  label "downscale on"
   xpos 0
   ypos 180
-  label "downscale on"
  }
-set N1a700007 [stack 0]
-push $N1a700007
+set N25afb900 [stack 0]
  Dot {
   name LayoutDot8
   xpos 110
   ypos 183
  }
-set N1a700008 [stack 0]
-push $N1a700008
  Dot {
   name LayoutDot9
   xpos 110
   ypos 357
  }
-set N1a700009 [stack 0]
-push $N1a700009
+set N55fad000 [stack 0]
  Dot {
   name LayoutDot10
   xpos 214
   ypos 357
  }
-set N1a70000a [stack 0]
-push $N1a70000a
-push $N1a70000a
+set N55fad400 [stack 0]
+push $N55fad400
  BlinkScript {
   inputs 2
-  useGPUIfAvailable false
   recompileCount 2
   KernelDescription "3 \"EzAtmosDome\" iterate pixelWise b67eb6c2c3c5c033104968b81914a98e331d1e695630644a598eb061130f4605 3 \"ref\" Read Point \"src\" Read Random \"dst\" Write Point 5 \"dome_row0\" Float 4 AACAPwAAAAAAAAAAAAAAAA== \"dome_row1\" Float 4 AAAAAAAAgD8AAAAAAAAAAA== \"dome_row2\" Float 4 AAAAAAAAAAAAAIA/AAAAAA== \"eye\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"radius\" Float 1 AACAPw== 5 \"domeRow0\" 4 1 Default \"domeRow1\" 4 1 Default \"domeRow2\" 4 1 Default \"eye\" 3 1 Default \"radius\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
   kernelSource "// EzAtmosDome: re-maps an HDRI textured on a skydome Sphere to the lat-long seen from the\n// camera, in EzAtmosScatter's convention (centre column looks down -Z, top row up).\n//\n// For each output direction it follows the ray from the camera to the dome (the Sphere's\n// local space, after all of its transforms; `domeRow0..2` are the rows of the inverse of its\n// world matrix), and reads the HDRI where the ray hits, with Nuke's Sphere UV mapping. So a\n// dome that is rotated, moved off the camera or squashed shows the HDRI exactly where a\n// ScanlineRender of the dome does.\n\nkernel EzAtmosDome : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> ref;\n  Image<eRead, eAccessRandom, eEdgeClamped> src;\n  Image<eWrite> dst;\n\nparam:\n  float4 domeRow0;\n  float4 domeRow1;\n  float4 domeRow2;\n  float3 eye;\n  float radius;\n\nlocal:\n  float pi;\n\n  void define()\n  \{\n    defineParam(domeRow0, \"dome_row0\", float4(1.0f, 0.0f, 0.0f, 0.0f));\n    defineParam(domeRow1, \"dome_row1\", float4(0.0f, 1.0f, 0.0f, 0.0f));\n    defineParam(domeRow2, \"dome_row2\", float4(0.0f, 0.0f, 1.0f, 0.0f));\n    defineParam(eye, \"eye\", float3(0.0f, 0.0f, 0.0f));\n    defineParam(radius, \"radius\", 1.0f);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n  \}\n\n  float3 toLocal(float3 p, float w)\n  \{\n    float4 q = float4(p.x, p.y, p.z, w);\n    return float3(dot(domeRow0, q), dot(domeRow1, q), dot(domeRow2, q));\n  \}\n\n  float4 sampleWrapped(float x, float y)\n  \{\n    // Wrap around the seam so the two edges blend.\n    float w = src.bounds.width();\n    float fx = x - floor((x - src.bounds.x1) / w) * w;\n    return bilinear(src, fx, y);\n  \}\n\n  void process(int2 pos)\n  \{\n    float u = (pos.x - ref.bounds.x1 + 0.5f) / ref.bounds.width();\n    float v = (pos.y - ref.bounds.y1 + 0.5f) / ref.bounds.height();\n    float lon = (u - 0.5f) * 2.0f * pi;\n    float lat = (v - 0.5f) * pi;\n    float3 d = float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n\n    float3 o = toLocal(eye, 1.0f);\n    float3 dl = toLocal(d, 0.0f);\n    float a = dot(dl, dl);\n    float b = 2.0f * dot(o, dl);\n    float c = dot(o, o) - radius * radius;\n    float disc = b * b - 4.0f * a * c;\n    if (disc < 0.0f || a <= 0.0f) \{\n      dst() = float4(0.0f);\n      return;\n    \}\n    float t = (-b + sqrt(disc)) / (2.0f * a);\n    if (t <= 0.0f) \{\n      dst() = float4(0.0f);\n      return;\n    \}\n    float3 p = normalize(o + dl * t);\n    // Nuke's Sphere UVs: u = 0.5 looks down -Z, u = 0.75 down -X; v = 1 at the top.\n    float su = 0.5f + atan2(-p.x, -p.z) / (2.0f * pi);\n    float sv = 0.5f + asin(clamp(p.y, -1.0f, 1.0f)) / pi;\n    dst() = sampleWrapped(src.bounds.x1 + su * src.bounds.width() - 0.5f,\n                          src.bounds.y1 + sv * src.bounds.height() - 0.5f);\n  \}\n\};\n"
+  useGPUIfAvailable false
   rebuild ""
   EzAtmosDome_dome_row0 {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[0]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[4]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[8]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[12]\}]"}}
   EzAtmosDome_dome_row1 {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[1]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[5]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[9]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m.inverse()\[13]\}]"}}
@@ -373,47 +346,56 @@ push $N1a70000a
   xpos 180
   ypos 408
  }
-set N1a70000b [stack 0]
-push $N1a70000b
-push $N1a700007
+push $N25afb900
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
   name UseDome
+  label "dome input"
   xpos 0
   ypos 468
-  label "dome input"
  }
-set N1a70000c [stack 0]
-push $N1a700009
+set N25afcd00 [stack 0]
+ Dot {
+  name LayoutDot19
+  xpos 134
+  ypos 471
+ }
+ Dot {
+  name LayoutDot20
+  xpos 134
+  ypos 2577
+ }
+set N55fc5c00 [stack 0]
+ Dot {
+  name LayoutDot22
+  xpos 134
+  ypos 4236
+ }
+push $N55fad000
  Dot {
   name LayoutDot11
   xpos 110
   ypos 645
  }
-set N1a70000d [stack 0]
-push $N1a70000d
+set N55fad800 [stack 0]
  Dot {
   name LayoutDot12
   xpos 214
   ypos 645
  }
-set N1a70000e [stack 0]
-push $N1a70000e
+set N55fadc00 [stack 0]
  Dot {
   name LayoutDot13
   xpos 394
   ypos 645
  }
-set N1a70000f [stack 0]
-push $N1a70000f
+set N55fc4000 [stack 0]
  Dot {
   name LayoutDot14
   xpos 574
   ypos 645
  }
-set N1a700010 [stack 0]
-push $N1a700010
  Reformat {
   type "to box"
   box_width 256
@@ -424,8 +406,6 @@ push $N1a700010
   xpos 540
   ypos 696
  }
-set N1a700011 [stack 0]
-push $N1a700011
  BlinkScript {
   recompileCount 2
   KernelDescription "3 \"EzAtmosTransmittanceLUT\" iterate pixelWise 7b9e665df90b9b69e3888fd3ba97f65f2a96400aabc8ddd21a158f8f110f94bb 2 \"ref\" Read Point \"dst\" Write Point 5 \"planet_radius_km\" Float 1 AMDGRQ== \"atmosphere_thickness_km\" Float 1 AABwQg== \"rayleigh_scale_height_km\" Float 1 AAAIQQ== \"mie_scale_height_km\" Float 1 mpmZPw== \"samples\" Int 1 QAAAAA== 5 \"planetRadius\" 1 1 Default \"atmosphereThickness\" 1 1 Default \"rayleighScaleHeight\" 1 1 Default \"mieScaleHeight\" 1 1 Default \"samples\" 1 1 Default 2 \"atmosphereRadius\" Float 1 1 AAAAAA== \"horizonLength\" Float 1 1 AAAAAA=="
@@ -440,8 +420,66 @@ push $N1a700011
   xpos 540
   ypos 756
  }
-set N1a700012 [stack 0]
-push $N1a70000e
+ Dot {
+  name LayoutDot52
+  xpos 626
+  ypos 759
+ }
+ Dot {
+  name LayoutDot53
+  xpos 626
+  ypos 1263
+ }
+set N56046000 [stack 0]
+ Dot {
+  name LayoutDot57
+  xpos 626
+  ypos 2049
+ }
+set N56047000 [stack 0]
+ Dot {
+  name LayoutDot59
+  xpos 916
+  ypos 2049
+ }
+set N56047800 [stack 0]
+ Dot {
+  name LayoutDot61
+  xpos 1276
+  ypos 2049
+ }
+set N56060000 [stack 0]
+ Dot {
+  name LayoutDot62
+  xpos 1636
+  ypos 2049
+ }
+set N56060400 [stack 0]
+ Dot {
+  name LayoutDot63
+  xpos 1996
+  ypos 2049
+ }
+set N56060800 [stack 0]
+ Dot {
+  name LayoutDot64
+  xpos 2356
+  ypos 2049
+ }
+set N56060c00 [stack 0]
+ Dot {
+  name LayoutDot65
+  xpos 2716
+  ypos 2049
+ }
+push $N56046000
+ Dot {
+  name LayoutDot54
+  xpos 412
+  ypos 1263
+ }
+set N56046400 [stack 0]
+push $N55fadc00
  Reformat {
   type "to box"
   box_width {{"min(HDRISource.width, 4096)"}}
@@ -453,9 +491,8 @@ push $N1a70000e
   xpos 180
   ypos 696
  }
-set N1a700013 [stack 0]
-push $N1a700013
-push $N1a700013
+set N25b3e000 [stack 0]
+push $N25b3e000
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -472,19 +509,15 @@ push $N1a700013
   xpos 180
   ypos 756
  }
-set N1a700014 [stack 0]
-push $N1a700014
-push $N1a70000f
+push $N55fc4000
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
   name UseDomeLight
+  label "dome input"
   xpos 360
   ypos 816
-  label "dome input"
  }
-set N1a700015 [stack 0]
-push $N1a700015
  Reformat {
   type "to box"
   box_width 512
@@ -496,8 +529,18 @@ push $N1a700015
   xpos 360
   ypos 876
  }
-set N1a700016 [stack 0]
-push $N1a700016
+set N25b3ec00 [stack 0]
+ Dot {
+  name LayoutDot33
+  xpos 446
+  ypos 879
+ }
+ Dot {
+  name LayoutDot34
+  xpos 446
+  ypos 978
+ }
+push $N25b3ec00
  Reformat {
   type "to box"
   box_width 4
@@ -508,23 +551,7 @@ push $N1a700016
   xpos 360
   ypos 936
  }
-set N1a700017 [stack 0]
-push $N1a700016
- Dot {
-  name LayoutDot33
-  xpos 446
-  ypos 879
- }
-set N1a700018 [stack 0]
-push $N1a700018
- Dot {
-  name LayoutDot34
-  xpos 446
-  ypos 978
- }
-set N1a700019 [stack 0]
-push $N1a700019
-push $N1a700017
+set N25b3f400 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -539,22 +566,35 @@ push $N1a700017
   xpos 360
   ypos 996
  }
-set N1a70001a [stack 0]
-push $N1a70000d
+ Dot {
+  name LayoutDot39
+  xpos 494
+  ypos 999
+ }
+ Dot {
+  name LayoutDot40
+  xpos 494
+  ypos 1233
+ }
+set N56012c00 [stack 0]
+ Dot {
+  name LayoutDot41
+  xpos 394
+  ypos 1233
+ }
+set N56013000 [stack 0]
+push $N55fad800
  Dot {
   name LayoutDot15
   xpos 110
   ypos 1173
  }
-set N1a70001b [stack 0]
-push $N1a70001b
+set N55fc4800 [stack 0]
  Dot {
   name LayoutDot16
   xpos 214
   ypos 1173
  }
-set N1a70001c [stack 0]
-push $N1a70001c
  Reformat {
   type "to box"
   box_width 512
@@ -565,52 +605,7 @@ push $N1a70001c
   xpos 180
   ypos 1314
  }
-set N1a70001d [stack 0]
-push $N1a70001a
- Dot {
-  name LayoutDot39
-  xpos 494
-  ypos 999
- }
-set N1a70001e [stack 0]
-push $N1a70001e
- Dot {
-  name LayoutDot40
-  xpos 494
-  ypos 1233
- }
-set N1a70001f [stack 0]
-push $N1a70001f
- Dot {
-  name LayoutDot41
-  xpos 394
-  ypos 1233
- }
-set N1a700020 [stack 0]
-push $N1a700012
- Dot {
-  name LayoutDot52
-  xpos 626
-  ypos 759
- }
-set N1a700021 [stack 0]
-push $N1a700021
- Dot {
-  name LayoutDot53
-  xpos 626
-  ypos 1263
- }
-set N1a700022 [stack 0]
-push $N1a700022
- Dot {
-  name LayoutDot54
-  xpos 412
-  ypos 1263
- }
-set N1a700023 [stack 0]
-push $N1a700023
-push $N1a700020
-push $N1a70001d
+set N25b77400 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -622,7 +617,7 @@ push $N1a70001d
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
-  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_color {{parent.sun_color_in_use.r} {parent.sun_color_in_use.g} {parent.sun_color_in_use.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
   AtmosScatter_sun_boost {{parent.sun_boost}}
@@ -647,45 +642,35 @@ push $N1a70001d
   xpos 360
   ypos 1374
  }
-set N1a700024 [stack 0]
-push $N1a700020
- Dot {
-  name LayoutDot42
-  xpos 290
-  ypos 1233
- }
-set N1a700025 [stack 0]
-push $N1a700025
- Dot {
-  name LayoutDot44
-  xpos 266
-  ypos 1233
- }
-set N1a700026 [stack 0]
-push $N1a700026
- Dot {
-  name LayoutDot45
-  xpos 266
-  ypos 1365
- }
-set N1a700027 [stack 0]
-push $N1a700023
+push $N56046400
  Dot {
   name LayoutDot55
   xpos 314
   ypos 1263
  }
-set N1a700028 [stack 0]
-push $N1a700028
  Dot {
   name LayoutDot56
   xpos 314
   ypos 1377
  }
-set N1a700029 [stack 0]
-push $N1a700029
-push $N1a700027
-push $N1a70001d
+push $N56013000
+ Dot {
+  name LayoutDot42
+  xpos 290
+  ypos 1233
+ }
+set N56013400 [stack 0]
+ Dot {
+  name LayoutDot44
+  xpos 266
+  ypos 1233
+ }
+ Dot {
+  name LayoutDot45
+  xpos 266
+  ypos 1365
+ }
+push $N25b77400
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -697,7 +682,7 @@ push $N1a70001d
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
-  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_color {{parent.sun_color_in_use.r} {parent.sun_color_in_use.g} {parent.sun_color_in_use.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
   AtmosScatter_sun_boost {{parent.sun_boost}}
@@ -722,9 +707,6 @@ push $N1a70001d
   xpos 180
   ypos 1374
  }
-set N1a70002a [stack 0]
-push $N1a700024
-push $N1a70002a
  Merge2 {
   inputs 2
   operation plus
@@ -733,37 +715,27 @@ push $N1a70002a
   xpos 180
   ypos 1434
  }
-set N1a70002b [stack 0]
-push $N1a700017
+push $N25b3f400
  Dot {
   name LayoutDot35
   xpos 470
   ypos 939
  }
-set N1a70002c [stack 0]
-push $N1a70002c
  Dot {
   name LayoutDot36
   xpos 470
   ypos 1203
  }
-set N1a70002d [stack 0]
-push $N1a70002d
  Dot {
   name LayoutDot37
   xpos 446
   ypos 1203
  }
-set N1a70002e [stack 0]
-push $N1a70002e
  Dot {
   name LayoutDot38
   xpos 446
   ypos 1497
  }
-set N1a70002f [stack 0]
-push $N1a70002b
-push $N1a70002f
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -778,40 +750,58 @@ push $N1a70002f
   xpos 360
   ypos 1494
  }
-set N1a700030 [stack 0]
-push $N1a700025
+push $N56013400
  Dot {
   name LayoutDot43
   xpos 290
   ypos 1545
  }
-set N1a700031 [stack 0]
-push $N1a700030
-push $N1a700031
  Switch {
   inputs 2
   which {{parent.self_lit}}
   name SkyLightSource
+  label "self lit"
   xpos 180
   ypos 1554
-  label "self lit"
  }
-set N1a700032 [stack 0]
-push $N1a70001b
+ Dot {
+  name LayoutDot90
+  xpos 314
+  ypos 1557
+ }
+ Dot {
+  name LayoutDot91
+  xpos 314
+  ypos 1959
+ }
+ Dot {
+  name LayoutDot92
+  xpos 1294
+  ypos 1959
+ }
+set N560afc00 [stack 0]
+ Dot {
+  name LayoutDot93
+  xpos 1654
+  ypos 1959
+ }
+set N560c8000 [stack 0]
+ Dot {
+  name LayoutDot94
+  xpos 2734
+  ypos 1959
+ }
+push $N55fc4800
  Dot {
   name LayoutDot17
   xpos 110
   ypos 1731
  }
-set N1a700033 [stack 0]
-push $N1a700033
  Dot {
   name LayoutDot18
   xpos 214
   ypos 1731
  }
-set N1a700034 [stack 0]
-push $N1a700034
  Reformat {
   type "to box"
   box_width {{"max(floor(HDRISource.width * parent.scatter_scale + 0.5), 4)"}}
@@ -822,157 +812,58 @@ push $N1a700034
   xpos 180
   ypos 1782
  }
-set N1a700035 [stack 0]
-push $N1a700035
  Dot {
   name LayoutDot23
   xpos 266
   ypos 1785
  }
-set N1a700036 [stack 0]
-push $N1a700036
  Dot {
   name LayoutDot24
   xpos 266
   ypos 1989
  }
-set N1a700037 [stack 0]
-push $N1a700037
+set N55fdec00 [stack 0]
  Dot {
   name LayoutDot26
   xpos 574
   ypos 1989
  }
-set N1a700038 [stack 0]
-push $N1a700038
+set N55fdf400 [stack 0]
  Dot {
   name LayoutDot27
   xpos 934
   ypos 1989
  }
-set N1a700039 [stack 0]
-push $N1a700039
+set N55fdf800 [stack 0]
  Dot {
   name LayoutDot28
   xpos 1312
   ypos 1989
  }
-set N1a70003a [stack 0]
-push $N1a70003a
+set N55fdfc00 [stack 0]
  Dot {
   name LayoutDot29
   xpos 1672
   ypos 1989
  }
-set N1a70003b [stack 0]
-push $N1a70003b
+set N55ffa000 [stack 0]
  Dot {
   name LayoutDot30
   xpos 2014
   ypos 1989
  }
-set N1a70003c [stack 0]
-push $N1a70003c
+set N55ffa400 [stack 0]
  Dot {
   name LayoutDot31
   xpos 2374
   ypos 1989
  }
-set N1a70003d [stack 0]
-push $N1a70003d
+set N55ffa800 [stack 0]
  Dot {
   name LayoutDot32
   xpos 2752
   ypos 1989
  }
-set N1a70003e [stack 0]
-push $N1a700032
- Dot {
-  name LayoutDot90
-  xpos 314
-  ypos 1557
- }
-set N1a70003f [stack 0]
-push $N1a70003f
- Dot {
-  name LayoutDot91
-  xpos 314
-  ypos 1959
- }
-set N1a700040 [stack 0]
-push $N1a700040
- Dot {
-  name LayoutDot92
-  xpos 1294
-  ypos 1959
- }
-set N1a700041 [stack 0]
-push $N1a700041
- Dot {
-  name LayoutDot93
-  xpos 1654
-  ypos 1959
- }
-set N1a700042 [stack 0]
-push $N1a700042
- Dot {
-  name LayoutDot94
-  xpos 2734
-  ypos 1959
- }
-set N1a700043 [stack 0]
-push $N1a700022
- Dot {
-  name LayoutDot57
-  xpos 626
-  ypos 2049
- }
-set N1a700044 [stack 0]
-push $N1a700044
- Dot {
-  name LayoutDot59
-  xpos 916
-  ypos 2049
- }
-set N1a700045 [stack 0]
-push $N1a700045
- Dot {
-  name LayoutDot61
-  xpos 1276
-  ypos 2049
- }
-set N1a700046 [stack 0]
-push $N1a700046
- Dot {
-  name LayoutDot62
-  xpos 1636
-  ypos 2049
- }
-set N1a700047 [stack 0]
-push $N1a700047
- Dot {
-  name LayoutDot63
-  xpos 1996
-  ypos 2049
- }
-set N1a700048 [stack 0]
-push $N1a700048
- Dot {
-  name LayoutDot64
-  xpos 2356
-  ypos 2049
- }
-set N1a700049 [stack 0]
-push $N1a700049
- Dot {
-  name LayoutDot65
-  xpos 2716
-  ypos 2049
- }
-set N1a70004a [stack 0]
-push $N1a70004a
-push $N1a700043
-push $N1a70003e
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -984,7 +875,7 @@ push $N1a70003e
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
-  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_color {{parent.sun_color_in_use.r} {parent.sun_color_in_use.g} {parent.sun_color_in_use.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
   AtmosScatter_sun_boost {{parent.sun_boost}}
@@ -1009,8 +900,7 @@ push $N1a70003e
   xpos 2700
   ypos 2100
  }
-set N1a70004b [stack 0]
-push $N1a70004b
+set N55d5bc00 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1018,8 +908,6 @@ push $N1a70004b
   xpos 2880
   ypos 2160
  }
-set N1a70004c [stack 0]
-push $N1a70004c
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1031,16 +919,13 @@ push $N1a70004c
   xpos 2880
   ypos 2220
  }
-set N1a70004d [stack 0]
-push $N1a70004d
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_sky_ground_trim
   xpos 2880
   ypos 2280
  }
-set N1a70004e [stack 0]
-push $N1a70004b
+push $N55d5bc00
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1048,8 +933,6 @@ push $N1a70004b
   xpos 2700
   ypos 2160
  }
-set N1a70004f [stack 0]
-push $N1a70004f
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1061,17 +944,12 @@ push $N1a70004f
   xpos 2700
   ypos 2220
  }
-set N1a700050 [stack 0]
-push $N1a700050
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_sky_sky_trim
   xpos 2700
   ypos 2280
  }
-set N1a700051 [stack 0]
-push $N1a70004e
-push $N1a700051
  Merge2 {
   inputs 2
   operation plus
@@ -1079,23 +957,17 @@ push $N1a700051
   xpos 2700
   ypos 2340
  }
-set N1a700052 [stack 0]
-push $N1a70004b
+push $N55d5bc00
  Dot {
   name LayoutDot136
   xpos 2786
   ypos 2103
  }
-set N1a700053 [stack 0]
-push $N1a700053
  Dot {
   name LayoutDot137
   xpos 2786
   ypos 2403
  }
-set N1a700054 [stack 0]
-push $N1a700052
-push $N1a700054
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1103,45 +975,48 @@ push $N1a700054
   xpos 2880
   ypos 2400
  }
-set N1a700055 [stack 0]
-push $N1a70001f
+ Dot {
+  name LayoutDot138
+  xpos 2966
+  ypos 2403
+ }
+ Dot {
+  name LayoutDot139
+  xpos 2966
+  ypos 4197
+ }
+push $N56060c00
+push $N56012c00
  Dot {
   name LayoutDot46
   xpos 494
   ypos 2019
  }
-set N1a700056 [stack 0]
-push $N1a700056
+set N5602a400 [stack 0]
  Dot {
   name LayoutDot47
   xpos 592
   ypos 2019
  }
-set N1a700057 [stack 0]
-push $N1a700057
+set N5602a800 [stack 0]
  Dot {
   name LayoutDot49
   xpos 952
   ypos 2019
  }
-set N1a700058 [stack 0]
-push $N1a700058
+set N5602b000 [stack 0]
  Dot {
   name LayoutDot50
   xpos 2032
   ypos 2019
  }
-set N1a700059 [stack 0]
-push $N1a700059
+set N5602b400 [stack 0]
  Dot {
   name LayoutDot51
   xpos 2392
   ypos 2019
  }
-set N1a70005a [stack 0]
-push $N1a700049
-push $N1a70005a
-push $N1a70003d
+push $N55ffa800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1153,7 +1028,7 @@ push $N1a70003d
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
-  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_color {{parent.sun_color_in_use.r} {parent.sun_color_in_use.g} {parent.sun_color_in_use.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
   AtmosScatter_sun_boost {{parent.sun_boost}}
@@ -1178,8 +1053,7 @@ push $N1a70003d
   xpos 2340
   ypos 2100
  }
-set N1a70005b [stack 0]
-push $N1a70005b
+set N55d21400 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1187,8 +1061,6 @@ push $N1a70005b
   xpos 2520
   ypos 2160
  }
-set N1a70005c [stack 0]
-push $N1a70005c
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1200,16 +1072,13 @@ push $N1a70005c
   xpos 2520
   ypos 2220
  }
-set N1a70005d [stack 0]
-push $N1a70005d
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_sun_ground_trim
   xpos 2520
   ypos 2280
  }
-set N1a70005e [stack 0]
-push $N1a70005b
+push $N55d21400
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1217,8 +1086,6 @@ push $N1a70005b
   xpos 2340
   ypos 2160
  }
-set N1a70005f [stack 0]
-push $N1a70005f
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1230,17 +1097,12 @@ push $N1a70005f
   xpos 2340
   ypos 2220
  }
-set N1a700060 [stack 0]
-push $N1a700060
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_sun_sky_trim
   xpos 2340
   ypos 2280
  }
-set N1a700061 [stack 0]
-push $N1a70005e
-push $N1a700061
  Merge2 {
   inputs 2
   operation plus
@@ -1248,23 +1110,17 @@ push $N1a700061
   xpos 2340
   ypos 2340
  }
-set N1a700062 [stack 0]
-push $N1a70005b
+push $N55d21400
  Dot {
   name LayoutDot132
   xpos 2426
   ypos 2103
  }
-set N1a700063 [stack 0]
-push $N1a700063
  Dot {
   name LayoutDot133
   xpos 2426
   ypos 2403
  }
-set N1a700064 [stack 0]
-push $N1a700062
-push $N1a700064
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1272,10 +1128,19 @@ push $N1a700064
   xpos 2520
   ypos 2400
  }
-set N1a700065 [stack 0]
-push $N1a700047
-push $N1a700042
-push $N1a70003b
+ Dot {
+  name LayoutDot134
+  xpos 2606
+  ypos 2403
+ }
+ Dot {
+  name LayoutDot135
+  xpos 2606
+  ypos 4137
+ }
+push $N56060400
+push $N560c8000
+push $N55ffa000
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1287,7 +1152,7 @@ push $N1a70003b
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
-  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_color {{parent.sun_color_in_use.r} {parent.sun_color_in_use.g} {parent.sun_color_in_use.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
   AtmosScatter_sun_boost {{parent.sun_boost}}
@@ -1312,8 +1177,7 @@ push $N1a70003b
   xpos 1620
   ypos 2100
  }
-set N1a700066 [stack 0]
-push $N1a700066
+set N55ce2c00 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1321,8 +1185,6 @@ push $N1a700066
   xpos 1800
   ypos 2160
  }
-set N1a700067 [stack 0]
-push $N1a700067
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1334,16 +1196,13 @@ push $N1a700067
   xpos 1800
   ypos 2220
  }
-set N1a700068 [stack 0]
-push $N1a700068
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_color_ground_trim
   xpos 1800
   ypos 2280
  }
-set N1a700069 [stack 0]
-push $N1a700066
+push $N55ce2c00
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1351,8 +1210,6 @@ push $N1a700066
   xpos 1620
   ypos 2160
  }
-set N1a70006a [stack 0]
-push $N1a70006a
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1364,17 +1221,12 @@ push $N1a70006a
   xpos 1620
   ypos 2220
  }
-set N1a70006b [stack 0]
-push $N1a70006b
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_color_sky_trim
   xpos 1620
   ypos 2280
  }
-set N1a70006c [stack 0]
-push $N1a700069
-push $N1a70006c
  Merge2 {
   inputs 2
   operation plus
@@ -1382,23 +1234,17 @@ push $N1a70006c
   xpos 1620
   ypos 2340
  }
-set N1a70006d [stack 0]
-push $N1a700066
+push $N55ce2c00
  Dot {
   name LayoutDot112
   xpos 1706
   ypos 2103
  }
-set N1a70006e [stack 0]
-push $N1a70006e
  Dot {
   name LayoutDot113
   xpos 1706
   ypos 2403
  }
-set N1a70006f [stack 0]
-push $N1a70006d
-push $N1a70006f
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1406,38 +1252,52 @@ push $N1a70006f
   xpos 1800
   ypos 2400
  }
-set N1a700070 [stack 0]
-push $N1a700037
  Dot {
-  name LayoutDot25
-  xpos 214
-  ypos 1989
+  name LayoutDot114
+  xpos 1886
+  ypos 2403
  }
-set N1a700071 [stack 0]
-push $N1a700056
  Dot {
-  name LayoutDot48
-  xpos 232
-  ypos 2019
+  name LayoutDot115
+  xpos 1886
+  ypos 2727
  }
-set N1a700072 [stack 0]
-push $N1a700044
+set N5812f800 [stack 0]
+ Dot {
+  name LayoutDot117
+  xpos 1886
+  ypos 3495
+ }
+set N58144000 [stack 0]
+ Dot {
+  name LayoutDot119
+  xpos 1886
+  ypos 4077
+ }
+push $N56047000
  Dot {
   name LayoutDot58
   xpos 556
   ypos 2049
  }
-set N1a700073 [stack 0]
-push $N1a700073
+set N56047400 [stack 0]
  Dot {
   name LayoutDot60
   xpos 196
   ypos 2049
  }
-set N1a700074 [stack 0]
-push $N1a700074
-push $N1a700072
-push $N1a700071
+push $N5602a400
+ Dot {
+  name LayoutDot48
+  xpos 232
+  ypos 2019
+ }
+push $N55fdec00
+ Dot {
+  name LayoutDot25
+  xpos 214
+  ypos 1989
+ }
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1449,7 +1309,7 @@ push $N1a700071
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
-  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_color {{parent.sun_color_in_use.r} {parent.sun_color_in_use.g} {parent.sun_color_in_use.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
   AtmosScatter_sun_boost {{parent.sun_boost}}
@@ -1474,8 +1334,7 @@ push $N1a700071
   xpos 180
   ypos 2100
  }
-set N1a700075 [stack 0]
-push $N1a700075
+set N55c37c00 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1483,8 +1342,6 @@ push $N1a700075
   xpos 360
   ypos 2160
  }
-set N1a700076 [stack 0]
-push $N1a700076
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1496,16 +1353,13 @@ push $N1a700076
   xpos 360
   ypos 2220
  }
-set N1a700077 [stack 0]
-push $N1a700077
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name transmittance_ground_trim
   xpos 360
   ypos 2280
  }
-set N1a700078 [stack 0]
-push $N1a700075
+push $N55c37c00
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1513,8 +1367,6 @@ push $N1a700075
   xpos 180
   ypos 2160
  }
-set N1a700079 [stack 0]
-push $N1a700079
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1526,17 +1378,12 @@ push $N1a700079
   xpos 180
   ypos 2220
  }
-set N1a70007a [stack 0]
-push $N1a70007a
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name transmittance_sky_trim
   xpos 180
   ypos 2280
  }
-set N1a70007b [stack 0]
-push $N1a700078
-push $N1a70007b
  Merge2 {
   inputs 2
   operation plus
@@ -1544,23 +1391,17 @@ push $N1a70007b
   xpos 180
   ypos 2340
  }
-set N1a70007c [stack 0]
-push $N1a700075
+push $N55c37c00
  Dot {
   name LayoutDot66
   xpos 266
   ypos 2103
  }
-set N1a70007d [stack 0]
-push $N1a70007d
  Dot {
   name LayoutDot67
   xpos 266
   ypos 2403
  }
-set N1a70007e [stack 0]
-push $N1a70007c
-push $N1a70007e
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1568,10 +1409,31 @@ push $N1a70007e
   xpos 360
   ypos 2400
  }
-set N1a70007f [stack 0]
-push $N1a700046
-push $N1a700041
-push $N1a70003a
+ Dot {
+  name LayoutDot68
+  xpos 446
+  ypos 2403
+ }
+ Dot {
+  name LayoutDot69
+  xpos 446
+  ypos 2607
+ }
+set N56078000 [stack 0]
+ Dot {
+  name LayoutDot71
+  xpos 446
+  ypos 3345
+ }
+set N56078800 [stack 0]
+ Dot {
+  name LayoutDot73
+  xpos 446
+  ypos 4017
+ }
+push $N56060000
+push $N560afc00
+push $N55fdfc00
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1583,7 +1445,7 @@ push $N1a70003a
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
-  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_color {{parent.sun_color_in_use.r} {parent.sun_color_in_use.g} {parent.sun_color_in_use.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
   AtmosScatter_sun_boost {{parent.sun_boost}}
@@ -1608,8 +1470,7 @@ push $N1a70003a
   xpos 1260
   ypos 2100
  }
-set N1a700080 [stack 0]
-push $N1a700080
+set N55ca2400 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1617,8 +1478,6 @@ push $N1a700080
   xpos 1440
   ypos 2160
  }
-set N1a700081 [stack 0]
-push $N1a700081
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1630,16 +1489,13 @@ push $N1a700081
   xpos 1440
   ypos 2220
  }
-set N1a700082 [stack 0]
-push $N1a700082
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name ambient_ground_trim
   xpos 1440
   ypos 2280
  }
-set N1a700083 [stack 0]
-push $N1a700080
+push $N55ca2400
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1647,8 +1503,6 @@ push $N1a700080
   xpos 1260
   ypos 2160
  }
-set N1a700084 [stack 0]
-push $N1a700084
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1660,17 +1514,12 @@ push $N1a700084
   xpos 1260
   ypos 2220
  }
-set N1a700085 [stack 0]
-push $N1a700085
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name ambient_sky_trim
   xpos 1260
   ypos 2280
  }
-set N1a700086 [stack 0]
-push $N1a700083
-push $N1a700086
  Merge2 {
   inputs 2
   operation plus
@@ -1678,23 +1527,17 @@ push $N1a700086
   xpos 1260
   ypos 2340
  }
-set N1a700087 [stack 0]
-push $N1a700080
+push $N55ca2400
  Dot {
   name LayoutDot95
   xpos 1346
   ypos 2103
  }
-set N1a700088 [stack 0]
-push $N1a700088
  Dot {
   name LayoutDot96
   xpos 1346
   ypos 2403
  }
-set N1a700089 [stack 0]
-push $N1a700087
-push $N1a700089
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1702,10 +1545,31 @@ push $N1a700089
   xpos 1440
   ypos 2400
  }
-set N1a70008a [stack 0]
-push $N1a700045
-push $N1a700058
-push $N1a700039
+ Dot {
+  name LayoutDot97
+  xpos 1526
+  ypos 2403
+ }
+ Dot {
+  name LayoutDot98
+  xpos 1526
+  ypos 2697
+ }
+set N560c9400 [stack 0]
+ Dot {
+  name LayoutDot101
+  xpos 1526
+  ypos 3465
+ }
+set N58110000 [stack 0]
+ Dot {
+  name LayoutDot103
+  xpos 1526
+  ypos 3957
+ }
+push $N56047800
+push $N5602b000
+push $N55fdf800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1717,7 +1581,7 @@ push $N1a700039
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
-  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_color {{parent.sun_color_in_use.r} {parent.sun_color_in_use.g} {parent.sun_color_in_use.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
   AtmosScatter_sun_boost {{parent.sun_boost}}
@@ -1742,8 +1606,7 @@ push $N1a700039
   xpos 900
   ypos 2100
  }
-set N1a70008b [stack 0]
-push $N1a70008b
+set N55bff400 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1751,8 +1614,6 @@ push $N1a70008b
   xpos 1080
   ypos 2160
  }
-set N1a70008c [stack 0]
-push $N1a70008c
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1764,16 +1625,13 @@ push $N1a70008c
   xpos 1080
   ypos 2220
  }
-set N1a70008d [stack 0]
-push $N1a70008d
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name mie_ground_trim
   xpos 1080
   ypos 2280
  }
-set N1a70008e [stack 0]
-push $N1a70008b
+push $N55bff400
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1781,8 +1639,6 @@ push $N1a70008b
   xpos 900
   ypos 2160
  }
-set N1a70008f [stack 0]
-push $N1a70008f
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1794,17 +1650,12 @@ push $N1a70008f
   xpos 900
   ypos 2220
  }
-set N1a700090 [stack 0]
-push $N1a700090
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name mie_sky_trim
   xpos 900
   ypos 2280
  }
-set N1a700091 [stack 0]
-push $N1a70008e
-push $N1a700091
  Merge2 {
   inputs 2
   operation plus
@@ -1812,23 +1663,17 @@ push $N1a700091
   xpos 900
   ypos 2340
  }
-set N1a700092 [stack 0]
-push $N1a70008b
+push $N55bff400
  Dot {
   name LayoutDot82
   xpos 986
   ypos 2103
  }
-set N1a700093 [stack 0]
-push $N1a700093
  Dot {
   name LayoutDot83
   xpos 986
   ypos 2403
  }
-set N1a700094 [stack 0]
-push $N1a700092
-push $N1a700094
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1836,10 +1681,31 @@ push $N1a700094
   xpos 1080
   ypos 2400
  }
-set N1a700095 [stack 0]
-push $N1a700073
-push $N1a700057
-push $N1a700038
+ Dot {
+  name LayoutDot84
+  xpos 1166
+  ypos 2403
+ }
+ Dot {
+  name LayoutDot85
+  xpos 1166
+  ypos 2667
+ }
+set N560ae000 [stack 0]
+ Dot {
+  name LayoutDot87
+  xpos 1166
+  ypos 3435
+ }
+set N560ae800 [stack 0]
+ Dot {
+  name LayoutDot89
+  xpos 1166
+  ypos 3897
+ }
+push $N56047400
+push $N5602a800
+push $N55fdf400
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1851,7 +1717,7 @@ push $N1a700038
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
-  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_color {{parent.sun_color_in_use.r} {parent.sun_color_in_use.g} {parent.sun_color_in_use.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
   AtmosScatter_sun_boost {{parent.sun_boost}}
@@ -1876,8 +1742,7 @@ push $N1a700038
   xpos 540
   ypos 2100
  }
-set N1a700096 [stack 0]
-push $N1a700096
+set N25ba8c00 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1885,8 +1750,6 @@ push $N1a700096
   xpos 720
   ypos 2160
  }
-set N1a700097 [stack 0]
-push $N1a700097
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1898,16 +1761,13 @@ push $N1a700097
   xpos 720
   ypos 2220
  }
-set N1a700098 [stack 0]
-push $N1a700098
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name rayleigh_ground_trim
   xpos 720
   ypos 2280
  }
-set N1a700099 [stack 0]
-push $N1a700096
+push $N25ba8c00
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1915,8 +1775,6 @@ push $N1a700096
   xpos 540
   ypos 2160
  }
-set N1a70009a [stack 0]
-push $N1a70009a
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -1928,17 +1786,12 @@ push $N1a70009a
   xpos 540
   ypos 2220
  }
-set N1a70009b [stack 0]
-push $N1a70009b
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name rayleigh_sky_trim
   xpos 540
   ypos 2280
  }
-set N1a70009c [stack 0]
-push $N1a700099
-push $N1a70009c
  Merge2 {
   inputs 2
   operation plus
@@ -1946,23 +1799,17 @@ push $N1a70009c
   xpos 540
   ypos 2340
  }
-set N1a70009d [stack 0]
-push $N1a700096
+push $N25ba8c00
  Dot {
   name LayoutDot74
   xpos 626
   ypos 2103
  }
-set N1a70009e [stack 0]
-push $N1a70009e
  Dot {
   name LayoutDot75
   xpos 626
   ypos 2403
  }
-set N1a70009f [stack 0]
-push $N1a70009d
-push $N1a70009f
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -1970,51 +1817,51 @@ push $N1a70009f
   xpos 720
   ypos 2400
  }
-set N1a7000a0 [stack 0]
-push $N1a7000a0
  Dot {
   name LayoutDot76
   xpos 806
   ypos 2403
  }
-set N1a7000a1 [stack 0]
-push $N1a7000a1
  Dot {
   name LayoutDot77
   xpos 806
   ypos 2637
  }
-set N1a7000a2 [stack 0]
-push $N1a7000a2
+set N56094000 [stack 0]
  Dot {
-  name LayoutDot78
-  xpos 394
-  ypos 2637
+  name LayoutDot79
+  xpos 806
+  ypos 3405
  }
-set N1a7000a3 [stack 0]
-push $N1a700095
+set N56094800 [stack 0]
  Dot {
-  name LayoutDot84
-  xpos 1166
-  ypos 2403
+  name LayoutDot81
+  xpos 806
+  ypos 3837
  }
-set N1a7000a4 [stack 0]
-push $N1a7000a4
+push $N560c9400
  Dot {
-  name LayoutDot85
-  xpos 1166
-  ypos 2667
+  name LayoutDot99
+  xpos 470
+  ypos 2697
  }
-set N1a7000a5 [stack 0]
-push $N1a7000a5
+ Dot {
+  name LayoutDot100
+  xpos 470
+  ypos 2859
+ }
+push $N560ae000
  Dot {
   name LayoutDot86
   xpos 412
   ypos 2667
  }
-set N1a7000a6 [stack 0]
-push $N1a7000a6
-push $N1a7000a3
+push $N56094000
+ Dot {
+  name LayoutDot78
+  xpos 394
+  ypos 2637
+ }
  Merge2 {
   inputs 2
   operation plus
@@ -2022,37 +1869,6 @@ push $N1a7000a3
   xpos 360
   ypos 2808
  }
-set N1a7000a7 [stack 0]
-push $N1a70008a
- Dot {
-  name LayoutDot97
-  xpos 1526
-  ypos 2403
- }
-set N1a7000a8 [stack 0]
-push $N1a7000a8
- Dot {
-  name LayoutDot98
-  xpos 1526
-  ypos 2697
- }
-set N1a7000a9 [stack 0]
-push $N1a7000a9
- Dot {
-  name LayoutDot99
-  xpos 470
-  ypos 2697
- }
-set N1a7000aa [stack 0]
-push $N1a7000aa
- Dot {
-  name LayoutDot100
-  xpos 470
-  ypos 2859
- }
-set N1a7000ab [stack 0]
-push $N1a7000ab
-push $N1a7000a7
  Merge2 {
   inputs 2
   operation plus
@@ -2060,51 +1876,36 @@ push $N1a7000a7
   xpos 360
   ypos 2868
  }
-set N1a7000ac [stack 0]
-push $N1a70000c
+set N55e01000 [stack 0]
  Dot {
-  name LayoutDot19
-  xpos 134
-  ypos 471
+  name LayoutDot104
+  xpos 494
+  ypos 2871
  }
-set N1a7000ad [stack 0]
-push $N1a7000ad
  Dot {
-  name LayoutDot20
-  xpos 134
-  ypos 2577
+  name LayoutDot105
+  xpos 494
+  ypos 3375
  }
-set N1a7000ae [stack 0]
-push $N1a7000ae
+set N58111000 [stack 0]
  Dot {
-  name LayoutDot21
-  xpos 214
-  ypos 2577
+  name LayoutDot107
+  xpos 494
+  ypos 3777
  }
-set N1a7000af [stack 0]
-push $N1a70007f
- Dot {
-  name LayoutDot68
-  xpos 446
-  ypos 2403
- }
-set N1a7000b0 [stack 0]
-push $N1a7000b0
- Dot {
-  name LayoutDot69
-  xpos 446
-  ypos 2607
- }
-set N1a7000b1 [stack 0]
-push $N1a7000b1
+push $N55e01000
+push $N56078000
  Dot {
   name LayoutDot70
   xpos 232
   ypos 2607
  }
-set N1a7000b2 [stack 0]
-push $N1a7000b2
-push $N1a7000af
+push $N55fc5c00
+ Dot {
+  name LayoutDot21
+  xpos 214
+  ypos 2577
+ }
  Merge2 {
   inputs 2
   operation multiply
@@ -2113,9 +1914,6 @@ push $N1a7000af
   xpos 180
   ypos 2808
  }
-set N1a7000b3 [stack 0]
-push $N1a7000ac
-push $N1a7000b3
  Merge2 {
   inputs 2
   operation plus
@@ -2124,10 +1922,21 @@ push $N1a7000b3
   xpos 180
   ypos 2928
  }
-set N1a7000b4 [stack 0]
-push $N1a700048
-push $N1a700059
-push $N1a70003c
+set N55e01800 [stack 0]
+ Dot {
+  name LayoutDot108
+  xpos 266
+  ypos 2931
+ }
+ Dot {
+  name LayoutDot109
+  xpos 266
+  ypos 3090
+ }
+set N5812e000 [stack 0]
+push $N56060800
+push $N5602b400
+push $N55ffa400
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -2139,7 +1948,7 @@ push $N1a70003c
   AtmosScatter_sun_from_hdri {{parent.sun_from==0}}
   AtmosScatter_light_from_hdri {{"parent.light_from_hdri && !parent.self_lit"}}
   AtmosScatter_sun_direction {{"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 3) if n is not None else 0\}]) : parent.sun_direction.x"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 7) if n is not None else 0\}]) : parent.sun_direction.y"} {"parent.sun_from==1 && \[exists parent.input1] ? (\[python -execlocal \{n = nuke.thisGroup().input(1)\nwhile n is not None and not n.knob('world_matrix'):\n    n = n.input(0) if n.inputs() else None\nret = n\['world_matrix'].getValueAt(nuke.frame(), 11) if n is not None else 0\}]) : parent.sun_direction.z"}}
-  AtmosScatter_sun_color {{parent.sun_color.r} {parent.sun_color.g} {parent.sun_color.b}}
+  AtmosScatter_sun_color {{parent.sun_color_in_use.r} {parent.sun_color_in_use.g} {parent.sun_color_in_use.b}}
   AtmosScatter_sun_intensity {{parent.manual_sun_brightness}}
   AtmosScatter_sun_strength {{parent.sun_strength}}
   AtmosScatter_sun_boost {{parent.sun_boost}}
@@ -2164,8 +1973,7 @@ push $N1a70003c
   xpos 1980
   ypos 2100
  }
-set N1a7000b5 [stack 0]
-push $N1a7000b5
+set N55dc6400 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -2173,8 +1981,6 @@ push $N1a7000b5
   xpos 2160
   ypos 2160
  }
-set N1a7000b6 [stack 0]
-push $N1a7000b6
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -2186,16 +1992,13 @@ push $N1a7000b6
   xpos 2160
   ypos 2220
  }
-set N1a7000b7 [stack 0]
-push $N1a7000b7
  Crop {
   box {{0} {0} {HDRISource.width} {"HDRISource.height / 2"}}
   name haze_transmittance_ground_trim
   xpos 2160
   ypos 2280
  }
-set N1a7000b8 [stack 0]
-push $N1a7000b5
+push $N55dc6400
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -2203,8 +2006,6 @@ push $N1a7000b5
   xpos 1980
   ypos 2160
  }
-set N1a7000b9 [stack 0]
-push $N1a7000b9
  Reformat {
   type "to box"
   box_width {{HDRISource.width}}
@@ -2216,17 +2017,12 @@ push $N1a7000b9
   xpos 1980
   ypos 2220
  }
-set N1a7000ba [stack 0]
-push $N1a7000ba
  Crop {
   box {{0} {"HDRISource.height / 2"} {HDRISource.width} {HDRISource.height}}
   name haze_transmittance_sky_trim
   xpos 1980
   ypos 2280
  }
-set N1a7000bb [stack 0]
-push $N1a7000b8
-push $N1a7000bb
  Merge2 {
   inputs 2
   operation plus
@@ -2234,23 +2030,17 @@ push $N1a7000bb
   xpos 1980
   ypos 2340
  }
-set N1a7000bc [stack 0]
-push $N1a7000b5
+push $N55dc6400
  Dot {
   name LayoutDot120
   xpos 2066
   ypos 2103
  }
-set N1a7000bd [stack 0]
-push $N1a7000bd
  Dot {
   name LayoutDot121
   xpos 2066
   ypos 2403
  }
-set N1a7000be [stack 0]
-push $N1a7000bc
-push $N1a7000be
  Switch {
   inputs 2
   which {{"parent.scatter_scale < 1"}}
@@ -2258,59 +2048,34 @@ push $N1a7000be
   xpos 2160
   ypos 2400
  }
-set N1a7000bf [stack 0]
-push $N1a7000bf
  Dot {
   name LayoutDot122
   xpos 2246
   ypos 2403
  }
-set N1a7000c0 [stack 0]
-push $N1a7000c0
  Dot {
   name LayoutDot123
   xpos 2246
   ypos 2757
  }
-set N1a7000c1 [stack 0]
-push $N1a7000c1
  Dot {
   name LayoutDot124
   xpos 574
   ypos 2757
  }
-set N1a7000c2 [stack 0]
-push $N1a7000c2
+set N58145c00 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 540
   ypos 2808
  }
-set N1a7000c3 [stack 0]
-push $N1a700070
- Dot {
-  name LayoutDot114
-  xpos 1886
-  ypos 2403
- }
-set N1a7000c4 [stack 0]
-push $N1a7000c4
- Dot {
-  name LayoutDot115
-  xpos 1886
-  ypos 2727
- }
-set N1a7000c5 [stack 0]
-push $N1a7000c5
+push $N5812f800
  Dot {
   name LayoutDot116
   xpos 754
   ypos 2727
  }
-set N1a7000c6 [stack 0]
-push $N1a7000c3
-push $N1a7000c6
  Merge2 {
   inputs 2
   operation multiply
@@ -2319,23 +2084,23 @@ push $N1a7000c6
   xpos 720
   ypos 2868
  }
-set N1a7000c7 [stack 0]
-push $N1a7000c2
+ Dot {
+  name LayoutDot1
+  xpos 754
+  ypos 3051
+ }
+push $N58145c00
  Dot {
   name LayoutDot125
   xpos 290
   ypos 2757
  }
-set N1a7000c8 [stack 0]
-push $N1a7000c8
  Dot {
   name LayoutDot126
   xpos 290
   ypos 2991
  }
-set N1a7000c9 [stack 0]
-push $N1a7000c9
-push $N1a7000b4
+push $N55e01800
  Merge2 {
   inputs 2
   operation multiply
@@ -2344,16 +2109,6 @@ push $N1a7000b4
   xpos 180
   ypos 2988
  }
-set N1a7000ca [stack 0]
-push $N1a7000c7
- Dot {
-  name LayoutDot1
-  xpos 754
-  ypos 3051
- }
-set N1a7000cb [stack 0]
-push $N1a7000cb
-push $N1a7000ca
  Merge2 {
   inputs 2
   operation plus
@@ -2362,23 +2117,6 @@ push $N1a7000ca
   xpos 180
   ypos 3048
  }
-set N1a7000cc [stack 0]
-push $N1a7000b4
- Dot {
-  name LayoutDot108
-  xpos 266
-  ypos 2931
- }
-set N1a7000cd [stack 0]
-push $N1a7000cd
- Dot {
-  name LayoutDot109
-  xpos 266
-  ypos 3090
- }
-set N1a7000ce [stack 0]
-push $N1a7000ce
-push $N1a7000cc
  Switch {
   inputs 2
   which {{parent.passes}}
@@ -2386,166 +2124,87 @@ push $N1a7000cc
   xpos 180
   ypos 3108
  }
-set N1a7000cf [stack 0]
-push $N1a7000ce
- Dot {
-  name LayoutDot110
-  xpos 266
-  ypos 3285
- }
-set N1a7000d0 [stack 0]
-push $N1a7000d0
- Dot {
-  name LayoutDot111
-  xpos 214
-  ypos 3285
- }
-set N1a7000d1 [stack 0]
-push $N1a7000ac
- Dot {
-  name LayoutDot104
-  xpos 494
-  ypos 2871
- }
-set N1a7000d2 [stack 0]
-push $N1a7000d2
- Dot {
-  name LayoutDot105
-  xpos 494
-  ypos 3375
- }
-set N1a7000d3 [stack 0]
-push $N1a7000d3
- Dot {
-  name LayoutDot106
-  xpos 250
-  ypos 3375
- }
-set N1a7000d4 [stack 0]
-push $N1a7000a2
- Dot {
-  name LayoutDot79
-  xpos 806
-  ypos 3405
- }
-set N1a7000d5 [stack 0]
-push $N1a7000d5
- Dot {
-  name LayoutDot80
-  xpos 178
-  ypos 3405
- }
-set N1a7000d6 [stack 0]
-push $N1a7000a5
- Dot {
-  name LayoutDot87
-  xpos 1166
-  ypos 3435
- }
-set N1a7000d7 [stack 0]
-push $N1a7000d7
- Dot {
-  name LayoutDot88
-  xpos 268
-  ypos 3435
- }
-set N1a7000d8 [stack 0]
-push $N1a7000a9
- Dot {
-  name LayoutDot101
-  xpos 1526
-  ypos 3465
- }
-set N1a7000d9 [stack 0]
-push $N1a7000d9
- Dot {
-  name LayoutDot102
-  xpos 160
-  ypos 3465
- }
-set N1a7000da [stack 0]
-push $N1a7000b1
- Dot {
-  name LayoutDot71
-  xpos 446
-  ypos 3345
- }
-set N1a7000db [stack 0]
-push $N1a7000db
- Dot {
-  name LayoutDot72
-  xpos 196
-  ypos 3345
- }
-set N1a7000dc [stack 0]
-push $N1a7000c5
- Dot {
-  name LayoutDot117
-  xpos 1886
-  ypos 3495
- }
-set N1a7000dd [stack 0]
-push $N1a7000dd
- Dot {
-  name LayoutDot118
-  xpos 286
-  ypos 3495
- }
-set N1a7000de [stack 0]
-push $N1a7000cf
  Dot {
   name LayoutDot127
   xpos 290
   ypos 3111
  }
-set N1a7000df [stack 0]
-push $N1a7000df
  Dot {
   name LayoutDot128
   xpos 290
   ypos 3315
  }
-set N1a7000e0 [stack 0]
-push $N1a7000e0
  Dot {
   name LayoutDot129
   xpos 232
   ypos 3315
  }
-set N1a7000e1 [stack 0]
-push $N1a7000e1
-push $N1a7000de
-push $N1a7000dc
-push $N1a7000da
-push $N1a7000d8
-push $N1a7000d6
-push $N1a7000d4
-push $N1a7000d1
+push $N58144000
+ Dot {
+  name LayoutDot118
+  xpos 286
+  ypos 3495
+ }
+push $N56078800
+ Dot {
+  name LayoutDot72
+  xpos 196
+  ypos 3345
+ }
+push $N58110000
+ Dot {
+  name LayoutDot102
+  xpos 160
+  ypos 3465
+ }
+push $N560ae800
+ Dot {
+  name LayoutDot88
+  xpos 268
+  ypos 3435
+ }
+push $N56094800
+ Dot {
+  name LayoutDot80
+  xpos 178
+  ypos 3405
+ }
+push $N58111000
+ Dot {
+  name LayoutDot106
+  xpos 250
+  ypos 3375
+ }
+push $N5812e000
+ Dot {
+  name LayoutDot110
+  xpos 266
+  ypos 3285
+ }
+ Dot {
+  name LayoutDot111
+  xpos 214
+  ypos 3285
+ }
  Switch {
   inputs 8
   which {{parent.view_output}}
   name ViewOutput
+  label "view output"
   xpos 180
   ypos 3546
-  label "view output"
  }
-set N1a7000e2 [stack 0]
-push $N1a7000e2
  Dot {
   name LayoutDot130
   xpos 266
   ypos 3549
  }
-set N1a7000e3 [stack 0]
-push $N1a7000e3
  Dot {
   name LayoutDot131
   xpos 266
   ypos 3717
  }
-set N1a7000e4 [stack 0]
-push $N1a7000e4
-push $N1a70000c
+push $N25afcd00
  Copy {
   inputs 2
   channels rgb
@@ -2553,16 +2212,7 @@ push $N1a70000c
   xpos 0
   ypos 3714
  }
-set N1a7000e5 [stack 0]
-push $N1a7000d3
- Dot {
-  name LayoutDot107
-  xpos 494
-  ypos 3777
- }
-set N1a7000e6 [stack 0]
-push $N1a7000e6
-push $N1a7000e5
+add_layer {atmos_inscatter atmos_inscatter.red atmos_inscatter.green atmos_inscatter.blue}
  Copy {
   inputs 2
   from0 rgba.red
@@ -2575,16 +2225,7 @@ push $N1a7000e5
   xpos 0
   ypos 3774
  }
-set N1a7000e7 [stack 0]
-push $N1a7000d5
- Dot {
-  name LayoutDot81
-  xpos 806
-  ypos 3837
- }
-set N1a7000e8 [stack 0]
-push $N1a7000e8
-push $N1a7000e7
+add_layer {atmos_rayleigh atmos_rayleigh.red atmos_rayleigh.green atmos_rayleigh.blue}
  Copy {
   inputs 2
   from0 rgba.red
@@ -2597,16 +2238,7 @@ push $N1a7000e7
   xpos 0
   ypos 3834
  }
-set N1a7000e9 [stack 0]
-push $N1a7000d7
- Dot {
-  name LayoutDot89
-  xpos 1166
-  ypos 3897
- }
-set N1a7000ea [stack 0]
-push $N1a7000ea
-push $N1a7000e9
+add_layer {atmos_mie atmos_mie.red atmos_mie.green atmos_mie.blue}
  Copy {
   inputs 2
   from0 rgba.red
@@ -2619,16 +2251,7 @@ push $N1a7000e9
   xpos 0
   ypos 3894
  }
-set N1a7000eb [stack 0]
-push $N1a7000d9
- Dot {
-  name LayoutDot103
-  xpos 1526
-  ypos 3957
- }
-set N1a7000ec [stack 0]
-push $N1a7000ec
-push $N1a7000eb
+add_layer {atmos_ambient atmos_ambient.red atmos_ambient.green atmos_ambient.blue}
  Copy {
   inputs 2
   from0 rgba.red
@@ -2641,16 +2264,7 @@ push $N1a7000eb
   xpos 0
   ypos 3954
  }
-set N1a7000ed [stack 0]
-push $N1a7000db
- Dot {
-  name LayoutDot73
-  xpos 446
-  ypos 4017
- }
-set N1a7000ee [stack 0]
-push $N1a7000ee
-push $N1a7000ed
+add_layer {atmos_transmittance atmos_transmittance.red atmos_transmittance.green atmos_transmittance.blue}
  Copy {
   inputs 2
   from0 rgba.red
@@ -2663,16 +2277,7 @@ push $N1a7000ed
   xpos 0
   ypos 4014
  }
-set N1a7000ef [stack 0]
-push $N1a7000dd
- Dot {
-  name LayoutDot119
-  xpos 1886
-  ypos 4077
- }
-set N1a7000f0 [stack 0]
-push $N1a7000f0
-push $N1a7000ef
+add_layer {atmos_haze_color atmos_haze_color.red atmos_haze_color.green atmos_haze_color.blue}
  Copy {
   inputs 2
   from0 rgba.red
@@ -2685,23 +2290,7 @@ push $N1a7000ef
   xpos 0
   ypos 4074
  }
-set N1a7000f1 [stack 0]
-push $N1a700065
- Dot {
-  name LayoutDot134
-  xpos 2606
-  ypos 2403
- }
-set N1a7000f2 [stack 0]
-push $N1a7000f2
- Dot {
-  name LayoutDot135
-  xpos 2606
-  ypos 4137
- }
-set N1a7000f3 [stack 0]
-push $N1a7000f3
-push $N1a7000f1
+add_layer {atmos_haze_sun atmos_haze_sun.red atmos_haze_sun.green atmos_haze_sun.blue}
  Copy {
   inputs 2
   from0 rgba.red
@@ -2714,23 +2303,7 @@ push $N1a7000f1
   xpos 0
   ypos 4134
  }
-set N1a7000f4 [stack 0]
-push $N1a700055
- Dot {
-  name LayoutDot138
-  xpos 2966
-  ypos 2403
- }
-set N1a7000f5 [stack 0]
-push $N1a7000f5
- Dot {
-  name LayoutDot139
-  xpos 2966
-  ypos 4197
- }
-set N1a7000f6 [stack 0]
-push $N1a7000f6
-push $N1a7000f4
+add_layer {atmos_haze_sky atmos_haze_sky.red atmos_haze_sky.green atmos_haze_sky.blue}
  Copy {
   inputs 2
   from0 rgba.red
@@ -2743,16 +2316,7 @@ push $N1a7000f4
   xpos 0
   ypos 4194
  }
-set N1a7000f7 [stack 0]
-push $N1a7000ae
- Dot {
-  name LayoutDot22
-  xpos 134
-  ypos 4236
- }
-set N1a7000f8 [stack 0]
-push $N1a7000f8
-push $N1a7000f7
+add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue atmos_clouds.alpha}
  Copy {
   inputs 2
   from0 rgba.red
@@ -2767,29 +2331,22 @@ push $N1a7000f7
   xpos 0
   ypos 4254
  }
-set N1a7000f9 [stack 0]
-push $N1a7000f9
+set N55ea7000 [stack 0]
  Dot {
   name LayoutDot140
   xpos 110
   ypos 4257
  }
-set N1a7000fa [stack 0]
-push $N1a7000fa
  Dot {
   name LayoutDot141
   xpos 110
   ypos 4431
  }
-set N1a7000fb [stack 0]
-push $N1a7000fb
  Dot {
   name LayoutDot142
   xpos 394
   ypos 4431
  }
-set N1a7000fc [stack 0]
-push $N1a7000fc
  Write {
   channels all
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -2805,43 +2362,33 @@ push $N1a7000fc
   xpos 360
   ypos 4482
  }
-set N1a7000fd [stack 0]
-push $N1a700005
+push $N25afb400
  Dot {
   name LayoutDot4
   xpos 86
   ypos 63
  }
-set N1a7000fe [stack 0]
-push $N1a7000fe
  Dot {
   name LayoutDot5
   xpos 86
   ypos 5007
  }
-set N1a7000ff [stack 0]
-push $N1a7000ff
  Dot {
   name LayoutDot6
   xpos 574
   ypos 5007
  }
-set N1a700100 [stack 0]
-push $N1a700100
+set N55fac400 [stack 0]
  Dot {
   name LayoutDot7
   xpos 934
   ypos 5007
  }
-set N1a700101 [stack 0]
-push $N1a700101
  Reformat {
   name CameraFormat
   xpos 900
   ypos 5088
  }
-set N1a700102 [stack 0]
-push $N1a700102
  BlinkScript {
   recompileCount 2
   KernelDescription "3 \"EzAtmosCameraUV\" iterate pixelWise ef3ebfacbe5119f38aafd7c67595b27a441134e888d9ecd146bb2ebb8b47a1ff 2 \"ref\" Read Point \"dst\" Write Point 9 \"cam_row0\" Float 3 AACAPwAAAAAAAAAAAAAAAA== \"cam_row1\" Float 3 AAAAAAAAgD8AAAAAAAAAAA== \"cam_row2\" Float 3 AAAAAAAAAAAAAIA/AAAAAA== \"focal\" Float 1 AABIQg== \"haperture\" Float 1 ppvEQQ== \"win_translate\" Float 2 AAAAAAAAAAA= \"win_scale\" Float 2 AACAPwAAgD8= \"win_roll\" Float 1 AAAAAA== \"pixel_aspect\" Float 1 AACAPw== 9 \"camRow0\" 3 1 Default \"camRow1\" 3 1 Default \"camRow2\" 3 1 Default \"focal\" 1 1 Default \"haperture\" 1 1 Default \"winTranslate\" 2 1 Default \"winScale\" 2 1 Default \"winRoll\" 1 1 Default \"pixelAspect\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
@@ -2861,7 +2408,28 @@ push $N1a700102
   xpos 900
   ypos 5148
  }
-set N1a700103 [stack 0]
+set N55f4d800 [stack 0]
+ Dot {
+  name LayoutDot162
+  xpos 986
+  ypos 5151
+ }
+ Dot {
+  name LayoutDot163
+  xpos 986
+  ypos 5236
+ }
+ Dot {
+  name LayoutDot164
+  xpos 446
+  ypos 5236
+ }
+ Dot {
+  name LayoutDot165
+  xpos 446
+  ypos 5319
+ }
+push $N55f4d800
  Read {
   inputs 0
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -2876,40 +2444,31 @@ set N1a700103 [stack 0]
   xpos 180
   ypos 4482
  }
-set N1a700104 [stack 0]
-push $N1a700104
-push $N1a7000f9
+push $N55ea7000
  Switch {
   inputs 2
   which {{"parent.use_baked && parent.bake_valid"}}
   name UseBake
+  label "use bake"
   xpos 0
   ypos 4542
-  label "use bake"
  }
-set N1a700105 [stack 0]
-push $N1a700105
+set N55e6a500 [stack 0]
  Dot {
   name LayoutDot143
   xpos 110
   ypos 4545
  }
-set N1a700106 [stack 0]
-push $N1a700106
  Dot {
   name LayoutDot144
   xpos 110
   ypos 4719
  }
-set N1a700107 [stack 0]
-push $N1a700107
  Dot {
   name LayoutDot145
   xpos 214
   ypos 4719
  }
-set N1a700108 [stack 0]
-push $N1a700108
  Reformat {
   type "to box"
   box_width {{HDRIInput.width}}
@@ -2921,62 +2480,49 @@ push $N1a700108
   xpos 180
   ypos 4770
  }
-set N1a700109 [stack 0]
-push $N1a700109
-push $N1a700105
+push $N55e6a500
  Switch {
   inputs 2
   which {{"HDRISource.width < HDRIInput.width"}}
   name OutputResolution
+  label "back to hdri size"
   xpos 0
   ypos 4830
-  label "back to hdri size"
  }
-set N1a70010a [stack 0]
-push $N1a70010a
+set N55e6aa00 [stack 0]
  Dot {
   name LayoutDot146
   xpos 110
   ypos 4833
  }
-set N1a70010b [stack 0]
-push $N1a70010b
  Dot {
   name LayoutDot147
   xpos 110
   ypos 5037
  }
-set N1a70010c [stack 0]
-push $N1a70010c
  Dot {
   name LayoutDot148
   xpos 214
   ypos 5037
  }
-set N1a70010d [stack 0]
-push $N1a70010d
+set N58195c00 [stack 0]
  Dot {
   name LayoutDot149
   xpos 394
   ypos 5037
  }
-set N1a70010e [stack 0]
-push $N1a70010e
+set N581aa000 [stack 0]
  Dot {
   name LayoutDot150
   xpos 754
   ypos 5037
  }
-set N1a70010f [stack 0]
-push $N1a70010f
+set N581aa400 [stack 0]
  Dot {
   name LayoutDot151
   xpos 1114
   ypos 5037
  }
-set N1a700110 [stack 0]
-push $N1a700103
-push $N1a700110
  STMap {
   inputs 2
   uv rgb
@@ -2984,8 +2530,17 @@ push $N1a700110
   xpos 1080
   ypos 5208
  }
-set N1a700111 [stack 0]
-push $N1a700103
+ Dot {
+  name LayoutDot166
+  xpos 1166
+  ypos 5211
+ }
+ Dot {
+  name LayoutDot167
+  xpos 1166
+  ypos 5331
+ }
+push $N55f4d800
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
@@ -2994,16 +2549,18 @@ push $N1a700103
   xpos 900
   ypos 5208
  }
-set N1a700112 [stack 0]
-push $N1a70010e
+ Dot {
+  name LayoutDot2
+  xpos 394
+  ypos 5211
+ }
+push $N581aa000
  Crop {
   box {{input.width/2} {0} {input.width} {input.height}}
   name RollRightCrop
   xpos 360
   ypos 5088
  }
-set N1a700113 [stack 0]
-push $N1a700113
  Transform {
   translate {{-input.width/2} 0}
   filter impulse
@@ -3011,16 +2568,13 @@ push $N1a700113
   xpos 360
   ypos 5148
  }
-set N1a700114 [stack 0]
-push $N1a70010d
+push $N58195c00
  Crop {
   box {{0} {0} {input.width/2} {input.height}}
   name RollLeftCrop
   xpos 180
   ypos 5088
  }
-set N1a700115 [stack 0]
-push $N1a700115
  Transform {
   translate {{input.width/2} 0}
   filter impulse
@@ -3028,9 +2582,6 @@ push $N1a700115
   xpos 180
   ypos 5148
  }
-set N1a700116 [stack 0]
-push $N1a700114
-push $N1a700116
  Merge2 {
   inputs 2
   operation plus
@@ -3039,16 +2590,7 @@ push $N1a700116
   xpos 180
   ypos 5208
  }
-set N1a700117 [stack 0]
-push $N1a700112
- Dot {
-  name LayoutDot2
-  xpos 394
-  ypos 5211
- }
-set N1a700118 [stack 0]
-push $N1a700118
-push $N1a700117
+set N55f0bc00 [stack 0]
  STMap {
   inputs 2
   uv rgb
@@ -3056,65 +2598,23 @@ push $N1a700117
   xpos 360
   ypos 5268
  }
-set N1a700119 [stack 0]
-push $N1a700111
- Dot {
-  name LayoutDot166
-  xpos 1166
-  ypos 5211
- }
-set N1a70011a [stack 0]
-push $N1a70011a
- Dot {
-  name LayoutDot167
-  xpos 1166
-  ypos 5331
- }
-set N1a70011b [stack 0]
-push $N1a700103
- Dot {
-  name LayoutDot162
-  xpos 986
-  ypos 5151
- }
-set N1a70011c [stack 0]
-push $N1a70011c
- Dot {
-  name LayoutDot163
-  xpos 986
-  ypos 5236
- }
-set N1a70011d [stack 0]
-push $N1a70011d
- Dot {
-  name LayoutDot164
-  xpos 446
-  ypos 5236
- }
-set N1a70011e [stack 0]
-push $N1a70011e
- Dot {
-  name LayoutDot165
-  xpos 446
-  ypos 5319
- }
-set N1a70011f [stack 0]
-push $N1a70011f
-push $N1a70011b
-push $N1a700119
  Keymix {
   inputs 3
   name ToCameraSeam
   xpos 360
   ypos 5328
  }
-set N1a700120 [stack 0]
-push $N1a700100
+ Dot {
+  name LayoutDot3
+  xpos 394
+  ypos 5391
+ }
+push $N55fac400
  BlinkScript {
-  useGPUIfAvailable false
   recompileCount 2
   KernelDescription "3 \"EzAtmosDomeUV\" iterate pixelWise 37e4f8031dadbe05054e12de6d0bd18cd608f8656abb24698d0e1f2da23c61f8 2 \"ref\" Read Point \"dst\" Write Point 5 \"dome_row0\" Float 4 AACAPwAAAAAAAAAAAAAAAA== \"dome_row1\" Float 4 AAAAAAAAgD8AAAAAAAAAAA== \"dome_row2\" Float 4 AAAAAAAAAAAAAIA/AAAAAA== \"eye\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"radius\" Float 1 AACAPw== 5 \"domeRow0\" 4 1 Default \"domeRow1\" 4 1 Default \"domeRow2\" 4 1 Default \"eye\" 3 1 Default \"radius\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
   kernelSource "// EzAtmosDomeUV: the other way round from EzAtmosDome. For each texel of the skydome's own\n// texture (Nuke's Sphere UV mapping) it finds where that point of the dome sits in the world,\n// after all of its transforms, and the direction the camera sees it in; it writes that\n// direction's place in EzAtmosScatter's lat-long as an ST map (red = u, green = v; blue and alpha for reading across the seam). An STMap\n// then turns every output layer into a texture that goes back on the dome, lined up with it.\n//\n// Inputs: `ref` sets the output size (the HDRI). `domeRow0..2` are the rows of the dome's\n// world matrix, `eye` the camera position, `radius` the Sphere's radius.\n\nkernel EzAtmosDomeUV : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> ref;\n  Image<eWrite> dst;\n\nparam:\n  float4 domeRow0;\n  float4 domeRow1;\n  float4 domeRow2;\n  float3 eye;\n  float radius;\n\nlocal:\n  float pi;\n\n  void define()\n  \{\n    defineParam(domeRow0, \"dome_row0\", float4(1.0f, 0.0f, 0.0f, 0.0f));\n    defineParam(domeRow1, \"dome_row1\", float4(0.0f, 1.0f, 0.0f, 0.0f));\n    defineParam(domeRow2, \"dome_row2\", float4(0.0f, 0.0f, 1.0f, 0.0f));\n    defineParam(eye, \"eye\", float3(0.0f, 0.0f, 0.0f));\n    defineParam(radius, \"radius\", 1.0f);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n  \}\n\n  void process(int2 pos)\n  \{\n    float su = (pos.x - ref.bounds.x1 + 0.5f) / ref.bounds.width();\n    float sv = (pos.y - ref.bounds.y1 + 0.5f) / ref.bounds.height();\n    // Nuke's Sphere UVs: u = 0.5 looks down -Z, u = 0.75 down -X; v = 1 at the top.\n    float a = (su - 0.5f) * 2.0f * pi;\n    float lat = (sv - 0.5f) * pi;\n    float4 p = float4(-sin(a) * cos(lat) * radius, sin(lat) * radius, -cos(a) * cos(lat) * radius, 1.0f);\n    float3 world = float3(dot(domeRow0, p), dot(domeRow1, p), dot(domeRow2, p));\n    float3 d = world - eye;\n    float len = length(d);\n    if (len <= 0.0f) \{\n      dst() = float4(0.5f, 0.5f, 0.0f, 1.0f);\n      return;\n    \}\n    d /= len;\n    // EzAtmosScatter's lat-long: the centre column looks down -Z, the top row up.\n    float u = 0.5f + atan2(d.x, -d.z) / (2.0f * pi);\n    float v = 0.5f + asin(clamp(d.y, -1.0f, 1.0f)) / pi;\n    // Blue: u for the lat-long turned half way round; alpha: 1 away from the 0/1 seam, where\n    // the plain lat-long can be read (see _seamless_stmap in build_gizmo.py).\n    float turned = u + 0.5f - floor(u + 0.5f);\n    dst() = float4(u, v, turned, u > 0.1f && u < 0.9f ? 1.0f : 0.0f);\n  \}\n\};\n"
+  useGPUIfAvailable false
   rebuild ""
   EzAtmosDomeUV_dome_row0 {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m\[0]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m\[4]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m\[8]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m\[12]\}]"}}
   EzAtmosDomeUV_dome_row1 {{"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m\[1]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m\[5]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m\[9]\}]"} {"\[python -execlocal \{def local(n, t):\n    import math\n    M = nuke.math.Matrix4\n    def v(k, i):\n        return n\[k].getValueAt(t, i)\n    T = M()\n    T.makeIdentity()\n    T.translate(v('translate', 0), v('translate', 1), v('translate', 2))\n    P = M()\n    P.makeIdentity()\n    P.translate(v('pivot', 0), v('pivot', 1), v('pivot', 2))\n    us = n\['uniform_scale'].getValueAt(t)\n    S = M()\n    S.makeIdentity()\n    S.scale(v('scaling', 0) * us, v('scaling', 1) * us, v('scaling', 2) * us)\n    R = M()\n    R.makeIdentity()\n    for axis in reversed(n\['rot_order'].value()):\n        a = math.radians(v('rotate', 'XYZ'.index(axis)))\n        if axis == 'X':\n            R.rotateX(a)\n        elif axis == 'Y':\n            R.rotateY(a)\n        else:\n            R.rotateZ(a)\n    m = M()\n    m.makeIdentity()\n    for op in n\['xform_order'].value():\n        if op == 'T':\n            m = T * m\n        else:\n            m = P * (S if op == 'S' else R) * P.inverse() * m\n    return m\nt = nuke.frame()\ng = nuke.thisGroup()\nn = g.input(2)\nm = nuke.math.Matrix4()\nm.makeIdentity()\nr = 1.0\nwhile n is not None:\n    p = n.input(1) if n.Class() == 'TransformGeo' else None\n    if p is not None and p.knob('world_matrix'):\n        w = nuke.math.Matrix4()\n        for i in range(16):\n            w\[(i % 4) * 4 + i // 4] = p\['world_matrix'].getValueAt(t, i)\n        m = m * w\n    if n.knob('transform') and n\['transform'].Class() == 'Axis_Knob':\n        m = m * local(n, t)\n    if n.Class() == 'Sphere':\n        r = n\['radius'].getValueAt(t)\n        break\n    n = n.input(0)\n# The camera, through any Dots or NoOps in between.\nc = g.input(3)\nwhile c is not None and not c.knob('world_matrix'):\n    c = c.input(0) if c.inputs() else None\nret = m\[13]\}]"}}
@@ -3126,9 +2626,24 @@ push $N1a700100
   xpos 540
   ypos 5088
  }
-set N1a700121 [stack 0]
-push $N1a700121
-push $N1a70010f
+set N55f0a800 [stack 0]
+ Dot {
+  name LayoutDot152
+  xpos 626
+  ypos 5091
+ }
+ Dot {
+  name LayoutDot153
+  xpos 626
+  ypos 5310
+ }
+ Dot {
+  name LayoutDot154
+  xpos 266
+  ypos 5310
+ }
+push $N55f0a800
+push $N581aa400
  STMap {
   inputs 2
   uv rgb
@@ -3136,8 +2651,27 @@ push $N1a70010f
   xpos 720
   ypos 5148
  }
-set N1a700122 [stack 0]
-push $N1a700121
+ Dot {
+  name LayoutDot158
+  xpos 806
+  ypos 5151
+ }
+ Dot {
+  name LayoutDot159
+  xpos 806
+  ypos 5296
+ }
+ Dot {
+  name LayoutDot160
+  xpos 290
+  ypos 5296
+ }
+ Dot {
+  name LayoutDot161
+  xpos 290
+  ypos 5331
+ }
+push $N55f0a800
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
@@ -3146,30 +2680,22 @@ push $N1a700121
   xpos 540
   ypos 5148
  }
-set N1a700123 [stack 0]
-push $N1a700123
  Dot {
   name LayoutDot155
   xpos 650
   ypos 5151
  }
-set N1a700124 [stack 0]
-push $N1a700124
  Dot {
   name LayoutDot156
   xpos 650
   ypos 5250
  }
-set N1a700125 [stack 0]
-push $N1a700125
  Dot {
   name LayoutDot157
   xpos 266
   ypos 5250
  }
-set N1a700126 [stack 0]
-push $N1a700126
-push $N1a700117
+push $N55f0bc00
  STMap {
   inputs 2
   uv rgb
@@ -3177,90 +2703,24 @@ push $N1a700117
   xpos 180
   ypos 5268
  }
-set N1a700127 [stack 0]
-push $N1a700122
- Dot {
-  name LayoutDot158
-  xpos 806
-  ypos 5151
- }
-set N1a700128 [stack 0]
-push $N1a700128
- Dot {
-  name LayoutDot159
-  xpos 806
-  ypos 5296
- }
-set N1a700129 [stack 0]
-push $N1a700129
- Dot {
-  name LayoutDot160
-  xpos 290
-  ypos 5296
- }
-set N1a70012a [stack 0]
-push $N1a70012a
- Dot {
-  name LayoutDot161
-  xpos 290
-  ypos 5331
- }
-set N1a70012b [stack 0]
-push $N1a700121
- Dot {
-  name LayoutDot152
-  xpos 626
-  ypos 5091
- }
-set N1a70012c [stack 0]
-push $N1a70012c
- Dot {
-  name LayoutDot153
-  xpos 626
-  ypos 5310
- }
-set N1a70012d [stack 0]
-push $N1a70012d
- Dot {
-  name LayoutDot154
-  xpos 266
-  ypos 5310
- }
-set N1a70012e [stack 0]
-push $N1a70012e
-push $N1a70012b
-push $N1a700127
  Keymix {
   inputs 3
   name ToDomeSeam
   xpos 180
   ypos 5328
  }
-set N1a70012f [stack 0]
-push $N1a700120
- Dot {
-  name LayoutDot3
-  xpos 394
-  ypos 5391
- }
-set N1a700130 [stack 0]
-push $N1a700130
-push $N1a70012f
-push $N1a70010a
+push $N55e6aa00
  Switch {
   inputs 3
   which {{"parent.output_mapping==1 && \[exists parent.input2] ? 1 : parent.output_mapping==2 && \[exists parent.input3] ? 2 : 0"}}
   name OutputAs
+  label "output as"
   xpos 0
   ypos 5388
-  label "output as"
  }
-set N1a700131 [stack 0]
-push $N1a700131
  Output {
   name Output1
   xpos 0
   ypos 5448
  }
-set N1a700132 [stack 0]
 end_group

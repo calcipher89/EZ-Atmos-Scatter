@@ -193,6 +193,17 @@ def _add_knobs(group):
     color = nuke.Color_Knob("sun_color", "sun color")
     color.setTooltip("Tint on the HDRI's sun, or the sun colour itself when 'light from HDRI' is off.")
     k.append(color)
+    balance = nuke.Double_Knob("white_balance", "white balance")
+    balance.setRange(0, 1)
+    balance.setTooltip("Balances the sun to white, as a camera's white balance does: the sun's colour after "
+                       "the air it crosses (yellow to orange near the horizon) is divided out, so sunlit cloud "
+                       "and haze come out neutral and the sky shifts the other way. 0: as before (the physical "
+                       "colour); 1: fully white. Only for 'light from HDRI' off or self-lit; an HDRI's sun is "
+                       "already as the camera saw it. EzCloudGen and EzDepthHaze pick it up through this node.")
+    k.append(balance)
+    in_use_color = nuke.Color_Knob("sun_color_in_use", "sun color in use")
+    in_use_color.setFlag(nuke.INVISIBLE)
+    k.append(in_use_color)
     strength = nuke.Double_Knob("sun_strength", "sun strength")
     strength.setRange(0, 4)
     strength.setTooltip("Multiplies the sun's brightness.")
@@ -292,7 +303,7 @@ def _add_knobs(group):
                                    "output_mapping"])
 
     defaults = {
-        "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "sun_strength": 1.0, "sun_boost": 1.0,
+        "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "white_balance": 0.0, "sun_strength": 1.0, "sun_boost": 1.0,
         "sky_light": 1.0, "light_from_hdri": True, "sky_amount": 1.0, "haze_amount": 1.0,
         "haze_glow_size": 1.0, "camera_height": 1.0, "max_distance": 0.0, "quality": 1,
         "viewer_resolution": 1, "render_resolution": 0,
@@ -314,6 +325,27 @@ def _add_knobs(group):
         group["sun_in_use"].setExpression(
             "sun_from==0 ? [sample Light %s 0.5 0.5] : sun_from==1 && [exists input1] ? (%s) : sun_direction.%s"
             % (channel, SUN_FROM_AXIS.replace("nuke.thisGroup()", "nuke.thisNode()") % (3 + 4 * i), axis), i)
+    # The sun colour the kernels use: 'sun color', white balanced by 'white balance'.
+    for i, ch in enumerate("rgb"):
+        group["sun_color_in_use"].setExpression(
+            "[python -execlocal {import math\n"
+            "n = nuke.thisNode()\n"
+            "wb = n['white_balance'].value()\n"
+            "c = n['sun_color'].value(%d) if n['sun_color'].arraySize() > 1 and not n['sun_color'].singleValue() "
+            "else n['sun_color'].value()\n"
+            "ret = c\n"
+            "if wb > 0 and not (n['light_from_hdri'].value() and not n['self_lit'].value()):\n"
+            "    sx, sy, sz = n['sun_in_use'].value(0), n['sun_in_use'].value(1), n['sun_in_use'].value(2)\n"
+            "    el = math.degrees(math.asin(max(min(sy / (math.sqrt(sx * sx + sy * sy + sz * sz) or 1.0), 1.0), -1.0)))\n"
+            "    am = 1.0 / (math.sin(math.radians(max(el, 0.0))) + 0.50572 * (max(el, 0.0) + 6.07995) ** -1.6364)\n"
+            "    hk = n['camera_height'].value() / 1000.0\n"
+            "    tm = n['mie_coefficient'].value() / 0.9 * n['haze_amount'].value() * n['haze_height'].value() * math.exp(-hk / max(n['haze_height'].value(), 1e-3))\n"
+            "    hr = n['sky_amount'].value() * n['rayleigh_scale_height'].value() * math.exp(-hk / n['rayleigh_scale_height'].value())\n"
+            "    rc = n['rayleigh_coefficients']\n"
+            "    tr = [rc.value(0) * hr, rc.value(1) * hr, rc.value(2) * hr]\n"
+            "    t = [math.exp(-(tr[0] + tm) * am), math.exp(-(tr[1] + tm) * am), math.exp(-(tr[2] + tm) * am)]\n"
+            "    lum = 0.2126 * t[0] + 0.7152 * t[1] + 0.0722 * t[2]\n"
+            "    ret = c * (1.0 + wb * (lum / max(t[%d], 1e-6) - 1.0))}]" % (i, i), i)
 
 
 def _link_scatter(node, output):
@@ -325,7 +357,7 @@ def _link_scatter(node, output):
         _link(node, "sun_direction",
               "parent.sun_from==1 && [exists parent.input1] ? (%s) : parent.sun_direction.%s" % (SUN_FROM_AXIS % (3 + 4 * i), axis), i)
     for i, channel in enumerate("rgb"):
-        _link(node, "sun_color", "parent.sun_color.%s" % channel, i)
+        _link(node, "sun_color", "parent.sun_color_in_use.%s" % channel, i)
         _link(node, "rayleigh_coefficients", "parent.rayleigh_coefficients.%s" % "xyz"[i], i)
     _link(node, "sun_intensity", "parent.manual_sun_brightness")
     _link(node, "sun_strength", "parent.sun_strength")
