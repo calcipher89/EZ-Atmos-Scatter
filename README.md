@@ -90,6 +90,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | self-lit (no HDRI) | off | For setups without an HDRI: sky light comes from this atmosphere's own sky, and the sun from *sun color* and *sun strength*. Replaces a second EzAtmosScatter used only as a sky. The hdri input can then be left empty: a black 2048x1024 lat-long stands in |
 | light from HDRI | on | Sun colour and brightness come from the HDRI. Off: *sun color* and *sun strength* set them |
 | sun color | white | Tint on the HDRI's sun, or the sun colour when *light from HDRI* is off |
+| white balance | 0 | Balances the sun to white, like a camera's white balance: the colour the air gives the sun at its height is divided out, so sunlit cloud and haze come out neutral. 0 is the physical colour, 1 fully white. For *light from HDRI* off or self-lit only. EzCloudGen and EzDepthHaze follow it |
 | sun strength | 1 | Multiplies the sun's brightness |
 | sun boost | 1 | Only for clipped suns (JPEGs, LDR captures); scales the brightness estimated from the sky |
 | sky light | 1 | How much of the HDRI sky lights the haze |
