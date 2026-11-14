@@ -198,7 +198,8 @@ Set **output as** to *Camera* to skip the 3D setup: every layer comes out as the
 the `camera` input sees the sky, at the project format and per frame, the same as a
 ScanlineRender of the dome textured with the *Skydome* output. It follows the camera's
 focal length, aperture and window (translate, scale and roll), and matches such a
-ScanlineRender to within filtering. Lens distortion is not applied.
+ScanlineRender to within filtering, in any format (checked at 3:2 with the camera pitched and
+rolled). Lens distortion is not applied.
 
 ### Speed
 

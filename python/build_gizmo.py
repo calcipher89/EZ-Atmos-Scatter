@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLINK = os.path.join(ROOT, "blink")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzAtmosScatter.gizmo")
 # Shown on the node; bump it with each tagged release.
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
           "atmos_haze_color", "atmos_haze_sun", "atmos_haze_sky"]
@@ -845,6 +845,10 @@ def _add_dome_output(stream, hdri):
     # project format. The lat-long is already the view from the camera, so each pixel only needs
     # its view direction.
     frame = nuke.nodes.Reformat(name="CameraFormat", xpos=400, ypos=stream.ypos() + 20)
+    # 'distort': the whole project format, not the 2:1 lat-long fitted into it. Fitted, the box
+    # was letterboxed: CameraUV worked out a 2:1 view inside it (squashed in any other format)
+    # and the rows above and below repeated its edge row (hard vertical seams in the sky).
+    frame["resize"].setValue("distort")
     frame.setInput(0, hdri)
     cam_uv = nuke.nodes.BlinkScript(name="CameraUV", xpos=400, ypos=stream.ypos() + 40)
     cam_uv.setInput(0, frame)
