@@ -3,7 +3,7 @@ the side chains that go left of the trunk, and labels on the Switches."""
 
 MODULES = [
     # (Backdrop label, tile_color, node names it holds as a regex)
-    ("Inputs", 0x4a5a6aff, r"hdri|sun|dome|camera|BlankHDRI|HDRIInput|InputDownscale|HDRISource"),
+    ("Inputs", 0x4a5a6aff, r"hdri|sun|dome|camera|BlankHDRI|HDRIAlpha|HDRIInput|InputDownscale|HDRISource"),
     ("Skydome", 0x4a5a6aff, r"DomeRemap|UseDome"),
     ("Sun light + transmittance LUT", 0x7a6a3aff,
      r"LUTRef|TransmittanceLUT|LightDome.*|UseDomeLight|LightProxy|LightRef|Light"),

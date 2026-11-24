@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLINK = os.path.join(ROOT, "blink")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzAtmosScatter.gizmo")
 # Shown on the node; bump it with each tagged release.
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
           "atmos_haze_color", "atmos_haze_sun", "atmos_haze_sky"]
@@ -890,8 +890,13 @@ def build():
     # passes keep a lat-long shape instead of taking the script's format.
     blank = nuke.nodes.Constant(name="BlankHDRI", xpos=-150, ypos=-400)
     blank["format"].setValue(nuke.addFormat("2048 1024 1 EzAtmos_latlong_2k"))
+    # Many HDRIs are rgb only. The atmos_clouds layer copies the HDRI's alpha, and a Copy of a
+    # channel that isn't there errors "Missing input channel", so make sure there is one (an
+    # alpha already in the HDRI is kept).
+    with_alpha = nuke.nodes.AddChannels(name="HDRIAlpha", channels="rgba", xpos=0, ypos=-385)
+    with_alpha.setInput(0, hdri)
     hdri_input = nuke.nodes.Switch(name="HDRIInput", xpos=0, ypos=-370)
-    hdri_input.setInput(0, hdri)
+    hdri_input.setInput(0, with_alpha)
     hdri_input.setInput(1, blank)
     hdri_input["which"].setExpression("![exists parent.input0]")
     # Everything inside works on the HDRI at the 'downscale' size (HDRISource); the output is
