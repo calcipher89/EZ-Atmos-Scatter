@@ -12,7 +12,13 @@
 // HDRI shows has already been dimmed by the atmosphere, so its irradiance is divided by
 // the sun's transmittance at the camera to get the light arriving at the top of the
 // atmosphere. Sky light adds an isotropic ambient term that stands in for multiple
-// scattering.
+// scattering. Self-lit (multiScatter on), that sky light is the atmosphere's own sky, which
+// is only the second scattering order, so it is raised by Hillaire's (2020) isotropic
+// multiple-scattering factor 1 / (1 - f_ms) (see multiScatterGain).
+//
+// Ozone (v1.1): absorption only, in the Chappuis band (red and green, hardly blue), in a
+// layer 10-40 km up. It turns the low-sun sky away from the sun from yellow-green to blue and
+// lavender. Its optical depth comes from the LUT's blue channel.
 //
 // The optical depth towards the sun comes from the `lut` input, the table written by
 // EzAtmosTransmittanceLUT.blink, instead of a second raymarch at every sample.
@@ -65,6 +71,8 @@ param:
   float planetRadius;
   float atmosphereThickness;
   int viewSamples;
+  float ozone;
+  int multiScatter;
 
 local:
   float pi;
@@ -74,6 +82,8 @@ local:
   float3 betaR;
   float betaMScatter;
   float betaMExtinction;
+  float3 betaO;
+  float3 msGain;
 
   void define()
   {
@@ -102,6 +112,8 @@ local:
     defineParam(planetRadius, "planet_radius_km", 6360.0f);
     defineParam(atmosphereThickness, "atmosphere_thickness_km", 60.0f);
     defineParam(viewSamples, "view_samples", 16);
+    defineParam(ozone, "ozone", 1.0f);
+    defineParam(multiScatter, "multi_scatter", 0);
   }
 
   void init()
@@ -113,6 +125,39 @@ local:
     betaR = rayleighCoefficients * rayleighDensity;
     betaMScatter = mieCoefficient * mieDensity;
     betaMExtinction = betaMScatter / 0.9f;
+    // Ozone absorption per km at the layer's peak (Bruneton 2017, Hillaire 2020).
+    betaO = float3(0.000650f, 0.001881f, 0.000085f) * ozone;
+    msGain = multiScatter != 0 ? multiScatterGain() : float3(1.0f);
+  }
+
+  // Average of 1 - exp(-tau / mu) over the directions of a hemisphere (flat ground).
+  float3 hemisphereOpacity(float3 tau)
+  {
+    float3 sum = float3(0.0f);
+    for (int i = 0; i < 8; i++) {
+      float m = (i + 0.5f) / 8.0f;
+      sum += float3(1.0f) - float3(exp(-tau.x / m), exp(-tau.y / m), exp(-tau.z / m));
+    }
+    return sum / 8.0f;
+  }
+
+  // Hillaire's isotropic multiple-scattering factor at the camera: every bounce scatters a
+  // share f_ms of isotropic light again, so all orders together are 1 / (1 - f_ms) times the
+  // second. f_ms = scattering albedo x the average opacity of the air columns above (ozone
+  // included) and below the camera. Bluer than white, as blue scatters more.
+  float3 multiScatterGain()
+  {
+    float h0 = max(cameraAltitude, 0.0f);
+    float er = exp(-h0 / rayleighScaleHeight);
+    float em = exp(-h0 / mieScaleHeight);
+    float3 upS = betaR * rayleighScaleHeight * er + float3(betaMScatter * mieScaleHeight * em);
+    float3 upT = betaR * rayleighScaleHeight * er + float3(betaMExtinction * mieScaleHeight * em) + betaO * 15.0f;
+    float3 dnS = betaR * rayleighScaleHeight * (1.0f - er) + float3(betaMScatter * mieScaleHeight * (1.0f - em));
+    float3 dnT = betaR * rayleighScaleHeight * (1.0f - er) + float3(betaMExtinction * mieScaleHeight * (1.0f - em));
+    float3 eps = float3(1e-9f);
+    float3 fms = 0.5f * (hemisphereOpacity(upT) * upS / max(upT, eps) + hemisphereOpacity(dnT) * dnS / max(dnT, eps));
+    fms = min(fms, float3(0.9f));
+    return float3(1.0f) / (float3(1.0f) - fms);
   }
 
   float3 exp3(float3 v)
@@ -157,17 +202,17 @@ local:
     return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);
   }
 
-  // Optical depth (Rayleigh in x, Mie in y) from point p towards the sun, read from the
-  // table EzAtmosTransmittanceLUT.blink precomputes. Returns -1 in x if the planet
-  // blocks the sun.
-  float2 sunOpticalDepth(float3 p, float h, float3 sunDir)
+  // Optical depth (Rayleigh in x, Mie in y, ozone in z) from point p towards the sun (or
+  // along any direction) to the top of the atmosphere, read from the table
+  // EzAtmosTransmittanceLUT.blink precomputes. Returns -1 in x if the planet blocks it.
+  float3 sunOpticalDepth(float3 p, float h, float3 sunDir)
   {
     h = clamp(h, 0.0f, atmosphereThickness);
     float r = h + planetRadius;
     float b = dot(p, sunDir) * r / length(p);
     float cGround = h * (r + planetRadius);
     if (groundDistance(b, cGround) > 0.0f)
-      return float2(-1.0f, 0.0f);
+      return float3(-1.0f, 0.0f, 0.0f);
 
     // Inverse of the mapping in EzAtmosTransmittanceLUT.blink.
     float rho = sqrt(max(r * r - planetRadius * planetRadius, 0.0f));
@@ -179,7 +224,7 @@ local:
     float x = lut.bounds.x1 + u * lut.bounds.width() - 0.5f;
     float y = lut.bounds.y1 + v * lut.bounds.height() - 0.5f;
     float4 od = bilinear(lut, x, y);
-    return float2(od.x, od.y);
+    return float3(od.x, od.y, od.z);
   }
 
   float4 lightPixel(int i)
@@ -197,7 +242,7 @@ local:
     float4 hdriSun = lightPixel(0);
     float4 hdriSunIrradiance = lightPixel(1);
     float4 hdriSky = lightPixel(2);
-    float3 skyAverage = float3(hdriSky.x, hdriSky.y, hdriSky.z);
+    float3 skyAverage = float3(hdriSky.x, hdriSky.y, hdriSky.z) * msGain;
 
     float3 sunDir = manualSunDir;
     float3 measuredDir = float3(hdriSun.x, hdriSun.y, hdriSun.z);
@@ -216,10 +261,10 @@ local:
         sun = sunColor * (clearSkyRatio * luminance(skyAverage) * sunBoost * sunStrength);
       } else {
         // Undo the atmosphere between the camera and the sun to get top-of-atmosphere light.
-        float2 od = sunOpticalDepth(origin, h0, sunDir);
+        float3 od = sunOpticalDepth(origin, h0, sunDir);
         float3 tSun = float3(1.0f);
         if (od.x >= 0.0f)
-          tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));
+          tSun = exp3(-(betaR * od.x + betaMExtinction * od.y + betaO * od.z));
         tSun = float3(max(tSun.x, 0.02f), max(tSun.y, 0.02f), max(tSun.z, 0.02f));
         float3 measured = float3(hdriSunIrradiance.x, hdriSunIrradiance.y, hdriSunIrradiance.z);
         sun = sunColor * (measured / tSun) * sunStrength;
@@ -245,10 +290,10 @@ local:
       // evenly, over everything the haze absorbs or scatters away:
       //   hazeColor = (sun * Tsun * scatter(mu) + sky * scatter) / extinction
       // Plate hazing then is plate * T + hazeColor * (1 - T).
-      float2 od = sunOpticalDepth(origin, h0, sunDir);
+      float3 od = sunOpticalDepth(origin, h0, sunDir);
       float3 tSun = float3(0.0f);
       if (od.x >= 0.0f)
-        tSun = exp3(-(betaR * od.x + betaMExtinction * od.y));
+        tSun = exp3(-(betaR * od.x + betaMExtinction * od.y + betaO * od.z));
       float mu = dot(dir, sunDir);
       // Kept above zero: with no air and no haze (both amounts 0) there is nothing to scatter,
       // and 0 / 0 would turn every pass into NaN.
@@ -312,6 +357,14 @@ local:
     float segment = tMax / viewSamples;
     float odR = 0.0f;
     float odM = 0.0f;
+    float odO = 0.0f;
+    // Ozone along the view ray: the LUT's depth from the camera to the top of the atmosphere
+    // minus that from each sample, as the layer is too thin for the view samples. Rays that
+    // hit the ground sum it at the samples instead.
+    bool ozoneFromLut = tGround <= 0.0f && ozone > 0.0f;
+    float ozoneTotal = 0.0f;
+    if (ozoneFromLut)
+      ozoneTotal = max(sunOpticalDepth(origin, h0, dir).z, 0.0f);
     float3 sumR = float3(0.0f);
     float3 sumM = float3(0.0f);
     for (int i = 0; i < viewSamples; i++) {
@@ -321,12 +374,16 @@ local:
       float densM = exp(-h / mieScaleHeight) * segment;
       odR += densR;
       odM += densM;
+      if (ozoneFromLut)
+        odO = max(ozoneTotal - max(sunOpticalDepth(p, h, dir).z, 0.0f), 0.0f);
+      else
+        odO += max(1.0f - fabs(h - 25.0f) / 15.0f, 0.0f) * segment;
 
       if (!needSun)
         continue;
-      float2 sunOd = sunOpticalDepth(p, h, sunDir);
+      float3 sunOd = sunOpticalDepth(p, h, sunDir);
       if (sunOd.x >= 0.0f) {
-        float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y);
+        float3 tau = betaR * (odR + sunOd.x) + betaMExtinction * (odM + sunOd.y) + betaO * (odO + sunOd.z);
         float3 attenuation = exp3(-tau);
         sumR += attenuation * densR;
         sumM += attenuation * densM;
@@ -336,7 +393,14 @@ local:
     float mu = dot(dir, sunDir);
     float3 rayleigh = sun * sumR * betaR * phaseRayleigh(mu);
     float3 mie = sun * sumM * betaMScatter * phaseMie(mu);
-    float3 transmittance = exp3(-(betaR * odR + betaMExtinction * odM));
+    if (ozoneFromLut) {
+      // Up to the end of the ray (the top of the atmosphere, or max distance).
+      float3 pEnd = origin + dir * tMax;
+      float hEnd = length(pEnd) - planetRadius;
+      odO = hEnd >= atmosphereThickness - 1e-3f ? ozoneTotal
+          : max(ozoneTotal - max(sunOpticalDepth(pEnd, hEnd, dir).z, 0.0f), 0.0f);
+    }
+    float3 transmittance = exp3(-(betaR * odR + betaMExtinction * odM + betaO * odO));
     // Sky light scattered into the view ray, treated as isotropic.
     float3 ambient = skyAverage * skyLight * (float3(1.0f) - transmittance);
 

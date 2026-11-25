@@ -3,7 +3,8 @@
 // Precomputes what AtmosScatter.blink would otherwise march towards the sun at every
 // sample of every view ray. Feed it any image of the LUT size (256x64 works well); it
 // writes Rayleigh optical depth in red and Mie optical depth in green, in km of
-// sea-level-density air.
+// sea-level-density air, and ozone optical depth in blue, in km at the ozone layer's peak
+// density (a tent profile: 1 at 25 km, 0 below 10 km and above 40 km, as in Bruneton 2017).
 //
 // Parameterisation from Bruneton, "Precomputed Atmospheric Scattering" (2017 version):
 //   v = rho / H              rho = sqrt(r^2 - Rg^2), H = sqrt(Rt^2 - Rg^2)
@@ -61,12 +62,14 @@ local:
     float segment = d / samples;
     float odR = 0.0f;
     float odM = 0.0f;
+    float odO = 0.0f;
     for (int i = 0; i < samples; i++) {
       float3 q = origin + dir * (segment * (i + 0.5f));
       float h = max(length(q) - planetRadius, 0.0f);
       odR += exp(-h / rayleighScaleHeight) * segment;
       odM += exp(-h / mieScaleHeight) * segment;
+      odO += max(1.0f - fabs(h - 25.0f) / 15.0f, 0.0f) * segment;
     }
-    dst() = float4(odR, odM, 0.0f, 1.0f);
+    dst() = float4(odR, odM, odO, 1.0f);
   }
 };

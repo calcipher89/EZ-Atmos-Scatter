@@ -28,8 +28,64 @@ DEFAULTS = dict(
     planet_radius_km=6360.0,
     atmosphere_thickness_km=60.0,
     view_samples=16,
-    light_samples=8,
+    light_samples=24,
+    # v1.1: ozone (Chappuis band) absorption, per km at the peak of its tent profile, times 'ozone'.
+    ozone=1.0,
+    ozone_coefficients=(0.000650, 0.001881, 0.000085),
+    ozone_centre_km=25.0,
+    ozone_half_width_km=15.0,
+    # Sky light: 0 = none, "average" = v1.0 self-lit (the sky's own average radiance, isotropic),
+    # "multi" = v1.1 multiple-scattering approximation (see render()).
+    sky_light=0.0,
+    sky_light_mode="multi",
+    white_balance=0.0,
 )
+
+
+def ozone_density(h, p):
+    """Ozone tent profile: 1 at ozone_centre_km, 0 at +- ozone_half_width_km."""
+    return np.maximum(0.0, 1.0 - np.abs(h - p["ozone_centre_km"]) / p["ozone_half_width_km"])
+
+
+def multi_scatter_gain(p):
+    """1 / (1 - f_ms) per channel: f_ms is the share of isotropic light at the camera that the air
+    scatters again (single-scattering albedo x the average opacity over the sphere), with a
+    flat-ground column above (ozone included) and below the camera. Matches the kernel."""
+    h0 = p["camera_altitude_km"]
+    Hr, Hm = p["rayleigh_scale_height_km"], p["mie_scale_height_km"]
+    br = np.array(p["rayleigh_coefficients"]) * p["rayleigh_density"]
+    bm = p["mie_coefficient"] * p["mie_density"]
+    bo = np.array(p["ozone_coefficients"]) * p["ozone"]
+    ozone_column = 2 * p["ozone_half_width_km"] * 0.5    # tent area, km at peak density
+    up_s = br * Hr * np.exp(-h0 / Hr) + bm * Hm * np.exp(-h0 / Hm)
+    up_t = br * Hr * np.exp(-h0 / Hr) + bm / 0.9 * Hm * np.exp(-h0 / Hm) + bo * ozone_column
+    dn_s = br * Hr * (1 - np.exp(-h0 / Hr)) + bm * Hm * (1 - np.exp(-h0 / Hm))
+    dn_t = br * Hr * (1 - np.exp(-h0 / Hr)) + bm / 0.9 * Hm * (1 - np.exp(-h0 / Hm))
+    mus = (np.arange(8) + 0.5) / 8
+    def opacity(t):
+        return np.mean([1 - np.exp(-t / m) for m in mus], axis=0)
+    f_ms = 0.5 * (opacity(up_t) * up_s / np.maximum(up_t, 1e-9) + opacity(dn_t) * dn_s / np.maximum(dn_t, 1e-9))
+    return 1.0 / (1.0 - np.minimum(f_ms, 0.9))
+
+
+def white_balance_color(sun_dir, p):
+    """The builder's 'sun color in use' expression (white balance), ozone included from v1.1."""
+    sy = sun_dir[1] / np.linalg.norm(sun_dir)
+    el = np.degrees(np.arcsin(np.clip(sy, -1, 1)))
+    e = max(el, 0.0)
+    am = 1.0 / (np.sin(np.radians(e)) + 0.50572 * (e + 6.07995) ** -1.6364)
+    hk = p["camera_altitude_km"]
+    tm = p["mie_coefficient"] / 0.9 * p["mie_density"] * p["mie_scale_height_km"] * np.exp(-hk / p["mie_scale_height_km"])
+    hr = p["rayleigh_density"] * p["rayleigh_scale_height_km"] * np.exp(-hk / p["rayleigh_scale_height_km"])
+    tr = np.array(p["rayleigh_coefficients"]) * hr
+    # Ozone: a thin shell at 25 km, vertical depth 15 km at peak density; its air mass grows less
+    # towards the horizon than the air's does.
+    am_o = 1.0 / np.sqrt(np.sin(np.radians(e)) ** 2 + 2 * p["ozone_centre_km"] / p["planet_radius_km"])
+    to = np.array(p["ozone_coefficients"]) * p["ozone"] * p["ozone_half_width_km"] * am_o
+    t = np.exp(-(tr + tm) * am - to)
+    lum = 0.2126 * t[0] + 0.7152 * t[1] + 0.0722 * t[2]
+    wb = p["white_balance"]
+    return np.array(p["sun_color"]) * (1.0 + wb * (lum / np.maximum(t, 1e-6) - 1.0))
 
 
 def _exit_distance(b, c):
@@ -53,6 +109,7 @@ def render(width, height, sun_direction, **overrides):
     beta_r = np.array(p["rayleigh_coefficients"], f) * f(p["rayleigh_density"])
     beta_m = f(p["mie_coefficient"] * p["mie_density"])
     beta_m_ext = beta_m / f(0.9)
+    beta_o = np.array(p["ozone_coefficients"], f) * f(p["ozone"])
     sun_dir = np.array(sun_direction, f)
     sun_dir /= np.linalg.norm(sun_dir)
 
@@ -78,6 +135,7 @@ def render(width, height, sun_direction, **overrides):
     seg = t_max / n_view
     od_r = np.zeros_like(seg)
     od_m = np.zeros_like(seg)
+    od_o = np.zeros_like(seg)
     sum_r = np.zeros(seg.shape + (3,), f)
     sum_m = np.zeros(seg.shape + (3,), f)
     for i in range(n_view):
@@ -87,6 +145,10 @@ def render(width, height, sun_direction, **overrides):
         dens_m = np.exp(-h / Hm) * seg
         od_r += dens_r
         od_m += dens_m
+        # Ozone sits in a thin layer, so sub-sample it finely (the kernel reads it from the LUT).
+        for k in range(8):
+            q = origin + d * (seg * (i + (k + 0.5) / 8))[..., None]
+            od_o += ozone_density(np.linalg.norm(q, axis=-1) - Re, p) * seg / 8
 
         # Light ray towards the sun.
         r = h + Re
@@ -95,12 +157,15 @@ def render(width, height, sun_direction, **overrides):
         lseg = _exit_distance(bs, (r - Ra) * (r + Ra)) / n_light
         sod_r = np.zeros_like(lseg)
         sod_m = np.zeros_like(lseg)
+        sod_o = np.zeros_like(lseg)
         for j in range(n_light):
             q = pt + sun_dir * (lseg * (j + 0.5))[..., None]
             hq = np.linalg.norm(q, axis=-1) - Re
             sod_r += np.exp(-hq / Hr) * lseg
             sod_m += np.exp(-hq / Hm) * lseg
-        tau = beta_r * (od_r + sod_r)[..., None] + beta_m_ext * (od_m + sod_m)[..., None]
+            sod_o += ozone_density(hq, p) * lseg
+        tau = (beta_r * (od_r + sod_r)[..., None] + beta_m_ext * (od_m + sod_m)[..., None]
+               + beta_o * (od_o + sod_o)[..., None])
         att = np.exp(-tau) * lit[..., None]
         sum_r += att * dens_r[..., None]
         sum_m += att * dens_m[..., None]
@@ -110,11 +175,26 @@ def render(width, height, sun_direction, **overrides):
     phase_r = 3.0 / (16.0 * np.pi) * (1.0 + mu * mu)
     phase_m = (3.0 / (8.0 * np.pi) * ((1 - g * g) * (1 + mu * mu))
                / ((2 + g * g) * np.maximum(1 + g * g - 2 * g * mu, 1e-6) ** 1.5))
-    sun = np.array(p["sun_color"], f) * f(p["sun_intensity"])
+    sun = white_balance_color(sun_dir, p).astype(f) * f(p["sun_intensity"])
     rayleigh = sun * sum_r * beta_r * phase_r[..., None]
     mie = sun * sum_m * beta_m * phase_m[..., None]
-    trans = np.exp(-(beta_r * od_r[..., None] + beta_m_ext * od_m[..., None]))
-    passes = dict(inscatter=rayleigh + mie, rayleigh=rayleigh, mie=mie, transmittance=trans)
+    trans = np.exp(-(beta_r * od_r[..., None] + beta_m_ext * od_m[..., None] + beta_o * od_o[..., None]))
+    ambient = np.zeros_like(rayleigh)
+    if p["sky_light"] > 0.0:
+        # Self-lit sky light: the average radiance of this sky over the upper hemisphere (outside a
+        # 6 deg sun cone), scattered in isotropically: sky * (1 - T). That is the second
+        # scattering order.
+        sky = rayleigh + mie
+        w = np.cos(lat) * (d[..., 1] > 0) * (mu < np.cos(np.radians(6.0)))
+        avg = (sky * w[..., None]).sum((0, 1)) / max(w.sum(), 1e-9)
+        if p["sky_light_mode"] == "multi":
+            # v1.1: the higher orders, as Hillaire (2020) sums them: each bounce scatters a share
+            # f_ms of isotropic light again, so all orders together are 1 / (1 - f_ms) times the
+            # second. f_ms is bluer than white (blue scatters more), so the sky light turns bluer.
+            avg = avg * multi_scatter_gain(p)
+        ambient = avg * f(p["sky_light"]) * (1.0 - trans)
+    passes = dict(inscatter=rayleigh + mie + ambient, rayleigh=rayleigh, mie=mie, ambient=ambient,
+                  transmittance=trans)
     return {k: np.flipud(v).astype(f) for k, v in passes.items()}
 
 
