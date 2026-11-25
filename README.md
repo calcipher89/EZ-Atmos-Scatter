@@ -10,18 +10,24 @@ Target: Nuke 15.1.
 
 ## Status
 
-Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun colour
-and brightness from the image, sky light). Depth-aware haze and multiple scattering come next.
+v1.1.0. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
+colour and brightness from the image, sky light), with depth haze passes.
+
+New in 1.1: **ozone** absorption, and multiple scattering in the self-lit sky light. With a low
+sun the sky away from the sun now turns blue and lavender instead of yellow-green, and the
+horizon towards the sun stays peach and gold. Day skies change only a little (slightly bluer,
+up to about 10% brighter in the haze near the horizon). Set *ozone* to 0 to get the 1.0 sky
+colours back (the self-lit sky light stays a little bluer).
 
 ## Contents
 
 | Path | What it is |
 | --- | --- |
 | `gizmos/EzAtmosScatter.gizmo` | The node artists use. Built from the kernels by `python/build_gizmo.py` |
-| `blink/AtmosScatter.blink` | BlinkScript kernel: Rayleigh + Mie single scattering per lat-long pixel |
+| `blink/AtmosScatter.blink` | BlinkScript kernel: Rayleigh + Mie single scattering with ozone absorption per lat-long pixel, plus sky light |
 | `blink/EzAtmosLight.blink` | BlinkScript kernel: measures the sun and sky light in the HDRI |
 | `blink/EzAtmosDome.blink`, `blink/EzAtmosDomeUV.blink`, `blink/EzAtmosCameraUV.blink` | BlinkScript kernels: skydome texture to lat-long and back, and lat-long to the camera view (for *output as* Skydome and Camera) |
-| `blink/EzAtmosTransmittanceLUT.blink` | BlinkScript kernel: precomputes the optical depth towards the sun as a 256x64 table |
+| `blink/EzAtmosTransmittanceLUT.blink` | BlinkScript kernel: precomputes the optical depth (air, haze and ozone) towards the sun as a 256x64 table |
 | `python/build_gizmo.py` | Rebuilds the gizmo after a kernel change |
 | `python/node_layout.py`, `python/layout_hints.py` | Lays out the nodes inside the group (trunk, Backdrops, Dots); the build runs it |
 | `init.py`, `menu.py` | Plugin path and the Nodes menu entry |
@@ -93,10 +99,11 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | white balance | 0 | Balances the sun to white, like a camera's white balance: the colour the air gives the sun at its height is divided out, so sunlit cloud and haze come out neutral. 0 is the physical colour, 1 fully white. For *light from HDRI* off or self-lit only. EzCloudGen and EzDepthHaze follow it |
 | sun strength | 1 | Multiplies the sun's brightness |
 | sun boost | 1 | Only for clipped suns (JPEGs, LDR captures); scales the brightness estimated from the sky |
-| sky light | 1 | How much of the HDRI sky lights the haze |
+| sky light | 1 | How much of the HDRI sky lights the haze. Self-lit, the sky light is this atmosphere's own sky raised for the higher scattering orders (Hillaire's multiple-scattering factor), which makes it a little bluer |
 | sky amount | 1 | Air density (Rayleigh) |
 | haze amount | 1 | Haze density (Mie) |
 | haze glow size | 1 | Size of the glow around the sun |
+| ozone | 1 | Ozone high in the atmosphere (10-40 km). It absorbs some red and green but hardly any blue, so it matters with a low sun: the sky away from the sun turns blue and lavender instead of yellow-green, and the twilight blue overhead deepens. 1 is Earth's average, 2 doubles it, 0 is how 1.0 looked. *white balance* includes it |
 | camera height (m) | 1 | Camera height above sea level |
 | max distance (km) | 0 (off) | How far the haze reaches. Use it to add haze up to a set distance instead of a full sky |
 | haze height (km) | 1.2 | How quickly the haze thins with altitude (its scale height). Low keeps it near the ground |
@@ -295,12 +302,17 @@ python3 python/node_layout.py groups/EzAtmosScatter_group.nk gizmos/EzAtmosScatt
 ## Reference renders
 
 `python3 reference/atmos_reference.py --out docs/previews` regenerates the previews.
-The NumPy port mirrors the scattering core of the kernel (a fixed sun, no HDRI lighting
-or sky light), so it is the place to try changes to the model before porting them to
-BlinkScript.
+The NumPy port mirrors the scattering core of the kernel (a fixed sun, no HDRI lighting),
+including ozone, *white balance* and the self-lit sky light (pass `sky_light=1`;
+`sky_light_mode="average"` with `ozone=0` gives the 1.0 model), so it is the place to try
+changes to the model before porting them to BlinkScript. The previews use the defaults
+(ozone 1, no sky light).
 
 ## References
 
 - Sean O'Neil, *Accurate Atmospheric Scattering*, GPU Gems 2, ch. 16
-- Eric Bruneton and Fabrice Neyret, *Precomputed Atmospheric Scattering* (2008)
+- Eric Bruneton and Fabrice Neyret, *Precomputed Atmospheric Scattering* (2008), and
+  Bruneton's 2017 reimplementation (ozone layer)
+- Sébastien Hillaire, *A Scalable and Production Ready Sky and Atmosphere Rendering
+  Technique* (EGSR 2020): isotropic multiple-scattering factor and ozone absorption
 - Leo Cao, [Atmospheric_Scattering](https://github.com/Zhongrui-Cao/Atmospheric_Scattering) (volumetric path-traced reference)

@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLINK = os.path.join(ROOT, "blink")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzAtmosScatter.gizmo")
 # Shown on the node; bump it with each tagged release.
-VERSION = "1.0.2"
+VERSION = "1.1.0"
 
 LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
           "atmos_haze_color", "atmos_haze_sun", "atmos_haze_sky"]
@@ -216,7 +216,8 @@ def _add_knobs(group):
     sky_light = nuke.Double_Knob("sky_light", "sky light")
     sky_light.setRange(0, 2)
     sky_light.setTooltip("Light from the whole HDRI sky scattered into the haze. Fills in what a single "
-                         "bounce from the sun misses.")
+                         "bounce from the sun misses. Self-lit, it is this atmosphere's own sky, raised for "
+                         "the higher scattering orders (multiple scattering), which makes it a little bluer.")
     k.append(sky_light)
 
     k.append(nuke.Text_Knob("atmos_divider", "Atmosphere"))
@@ -224,6 +225,10 @@ def _add_knobs(group):
             ("sky_amount", "sky amount", 0, 4, "Density of the air (Rayleigh). More gives a bluer, brighter sky."),
             ("haze_amount", "haze amount", 0, 10, "Density of the haze (Mie). More gives whiter, thicker air."),
             ("haze_glow_size", "haze glow size", 0, 4, "Size of the glow around the sun. Bigger spreads it wider."),
+            ("ozone", "ozone", 0, 2, "Ozone high in the atmosphere (10-40 km). It absorbs some red and "
+             "green but hardly any blue, so it matters when the sun is low: it turns the sky away from "
+             "the sun blue and lavender instead of yellow-green, and deepens the twilight blue overhead. "
+             "1 is Earth's average; 0 is how v1.0 looked."),
             ("haze_height", "haze height (km)", 0.1, 10, "Height over which the haze thins out by about two thirds "
              "(its scale height). Low keeps it near the ground, so looking up clears quickly; high fills the "
              "air evenly around the camera."),
@@ -304,7 +309,7 @@ def _add_knobs(group):
 
     defaults = {
         "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "white_balance": 0.0, "sun_strength": 1.0, "sun_boost": 1.0,
-        "sky_light": 1.0, "light_from_hdri": True, "sky_amount": 1.0, "haze_amount": 1.0,
+        "sky_light": 1.0, "light_from_hdri": True, "sky_amount": 1.0, "haze_amount": 1.0, "ozone": 1.0,
         "haze_glow_size": 1.0, "camera_height": 1.0, "max_distance": 0.0, "quality": 1,
         "viewer_resolution": 1, "render_resolution": 0,
         "rayleigh_coefficients": [0.0052, 0.0121, 0.0296], "mie_coefficient": 0.021,
@@ -343,7 +348,9 @@ def _add_knobs(group):
             "    hr = n['sky_amount'].value() * n['rayleigh_scale_height'].value() * math.exp(-hk / n['rayleigh_scale_height'].value())\n"
             "    rc = n['rayleigh_coefficients']\n"
             "    tr = [rc.value(0) * hr, rc.value(1) * hr, rc.value(2) * hr]\n"
-            "    t = [math.exp(-(tr[0] + tm) * am), math.exp(-(tr[1] + tm) * am), math.exp(-(tr[2] + tm) * am)]\n"
+            "    amo = 15.0 * n['ozone'].value() / math.sqrt(math.sin(math.radians(max(el, 0.0))) ** 2 + 50.0 / n['planet_radius'].value())\n"
+            "    to = [0.000650 * amo, 0.001881 * amo, 0.000085 * amo]\n"
+            "    t = [math.exp(-(tr[0] + tm) * am - to[0]), math.exp(-(tr[1] + tm) * am - to[1]), math.exp(-(tr[2] + tm) * am - to[2])]\n"
             "    lum = 0.2126 * t[0] + 0.7152 * t[1] + 0.0722 * t[2]\n"
             "    ret = c * (1.0 + wb * (lum / max(t[%d], 1e-6) - 1.0))}]" % (i, i), i)
 
@@ -377,6 +384,8 @@ def _link_scatter(node, output):
     _link(node, "planet_radius_km", "parent.planet_radius")
     _link(node, "atmosphere_thickness_km", "parent.atmosphere_thickness")
     _link(node, "view_samples", "parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32")
+    _link(node, "ozone", "parent.ozone")
+    _link(node, "multi_scatter", "parent.self_lit")
 
 
 def _upscale(node, hdri, name):
