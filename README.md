@@ -120,7 +120,7 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | haze amount | 1 | Haze density (Mie) |
 | haze glow size | 1 | Size of the glow around the sun |
 | aureole | 0 | Share of the haze glow spread into a wide, soft halo round the sun. Moves light out from the sun without adding any; 0 is how 1.1 looked |
-| aureole size | 2 | How far the aureole spreads. Bigger is wider and flatter |
+| aureole size | 2 | How much wider than the haze glow the aureole spreads. Bigger is wider and flatter |
 | ozone | 1 | Ozone high in the atmosphere (10-40 km). It absorbs some red and green but hardly any blue, so it matters with a low sun: the sky away from the sun turns blue and lavender instead of yellow-green, and the twilight blue overhead deepens. 1 is Earth's average, 2 doubles it, 0 is how 1.0 looked. *white balance* includes it |
 | camera height (m) | 1 | Camera height above sea level |
 | max distance (km) | 0 (off) | How far the haze reaches. Use it to add haze up to a set distance instead of a full sky |

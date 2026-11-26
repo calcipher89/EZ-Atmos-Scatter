@@ -269,7 +269,7 @@ def _add_knobs(group):
             ("aureole", "aureole", 0, 1, "Share of the haze glow spread into a wide, soft halo round the sun "
              "(the aureole of a hazy or smoky sky). It moves light out from the sun without adding any. "
              "0 is how v1.1 looked."),
-            ("aureole_size", "aureole size", 0, 4, "How far the aureole spreads. Bigger is wider and flatter."),
+            ("aureole_size", "aureole size", 0, 4, "How much wider than the haze glow the aureole spreads. Bigger is wider and flatter; 0 is the glow's own size."),
             ("ozone", "ozone", 0, 2, "Ozone high in the atmosphere (10-40 km). It absorbs some red and "
              "green but hardly any blue, so it matters when the sun is low: it turns the sky away from "
              "the sun blue and lavender instead of yellow-green, and deepens the twilight blue overhead. "
@@ -426,7 +426,8 @@ def _link_scatter(node, output):
     _link(node, "mie_density", "parent.haze_amount")
     _link(node, "mie_g", "clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)")
     _link(node, "aureole", "clamp(parent.aureole, 0, 1)")
-    _link(node, "aureole_g", "clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)")
+    # Relative to the main lobe, so a bigger aureole size is always wider than the glow.
+    _link(node, "aureole_g", "clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)")
     _link(node, "mie_coefficient", "parent.mie_coefficient")
     _link(node, "rayleigh_scale_height_km", "parent.rayleigh_scale_height")
     _link(node, "mie_scale_height_km", "parent.haze_height")
