@@ -125,7 +125,7 @@ Group {
  addUserKnob {3 baked_last +INVISIBLE}
  addUserKnob {6 bake_valid l "bake valid" -STARTLINE +INVISIBLE}
  addUserKnob {26 version_divider l "" +STARTLINE}
- addUserKnob {26 version T "EzAtmosScatter v1.2.0"}
+ addUserKnob {26 version T "EzAtmosScatter v1.2.1"}
 }
  BackdropNode {
   inputs 0
@@ -314,7 +314,7 @@ Group {
   xpos 0
   ypos 120
  }
-set Nc251b900 [stack 0]
+set Nfc1b900 [stack 0]
  Reformat {
   type "to box"
   box_width {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512))"}}
@@ -326,7 +326,7 @@ set Nc251b900 [stack 0]
   xpos -180
   ypos 180
  }
-push $Nc251b900
+push $Nfc1b900
  Switch {
   inputs 2
   which {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512)) < HDRIInput.width"}}
@@ -335,7 +335,7 @@ push $Nc251b900
   xpos 0
   ypos 240
  }
-set Nc251be00 [stack 0]
+set Nfc1be00 [stack 0]
  Dot {
   name LayoutDot8
   xpos 110
@@ -346,14 +346,14 @@ set Nc251be00 [stack 0]
   xpos 110
   ypos 417
  }
-set Na5347400 [stack 0]
+set N529d7400 [stack 0]
  Dot {
   name LayoutDot10
   xpos 214
   ypos 417
  }
-set Na5347800 [stack 0]
-push $Na5347800
+set N529d7800 [stack 0]
+push $N529d7800
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -371,7 +371,7 @@ push $Na5347800
   xpos 180
   ypos 468
  }
-push $Nc251be00
+push $Nfc1be00
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -380,7 +380,7 @@ push $Nc251be00
   xpos 0
   ypos 528
  }
-set Nc251d200 [stack 0]
+set Nfc1d200 [stack 0]
  Dot {
   name LayoutDot19
   xpos 134
@@ -391,31 +391,31 @@ set Nc251d200 [stack 0]
   xpos 134
   ypos 2637
  }
-set Na63b8000 [stack 0]
+set N52a08000 [stack 0]
  Dot {
   name LayoutDot22
   xpos 134
   ypos 4296
  }
-push $Na5347400
+push $N529d7400
  Dot {
   name LayoutDot11
   xpos 110
   ypos 705
  }
-set Na5347c00 [stack 0]
+set N529d7c00 [stack 0]
  Dot {
   name LayoutDot12
   xpos 214
   ypos 705
  }
-set Na535e000 [stack 0]
+set N529ee000 [stack 0]
  Dot {
   name LayoutDot13
   xpos 394
   ypos 705
  }
-set Na535e400 [stack 0]
+set N529ee400 [stack 0]
  Dot {
   name LayoutDot14
   xpos 574
@@ -455,56 +455,56 @@ set Na535e400 [stack 0]
   xpos 626
   ypos 1323
  }
-set Na6420400 [stack 0]
+set N52a70400 [stack 0]
  Dot {
   name LayoutDot57
   xpos 626
   ypos 2109
  }
-set Na6421400 [stack 0]
+set N52a71400 [stack 0]
  Dot {
   name LayoutDot59
   xpos 916
   ypos 2109
  }
-set Na6421c00 [stack 0]
+set N52a71c00 [stack 0]
  Dot {
   name LayoutDot61
   xpos 1276
   ypos 2109
  }
-set Na643a400 [stack 0]
+set N52a8a400 [stack 0]
  Dot {
   name LayoutDot62
   xpos 1636
   ypos 2109
  }
-set Na643a800 [stack 0]
+set N52a8a800 [stack 0]
  Dot {
   name LayoutDot63
   xpos 1996
   ypos 2109
  }
-set Na643ac00 [stack 0]
+set N52a8ac00 [stack 0]
  Dot {
   name LayoutDot64
   xpos 2356
   ypos 2109
  }
-set Na643b000 [stack 0]
+set N52a8b000 [stack 0]
  Dot {
   name LayoutDot65
   xpos 2716
   ypos 2109
  }
-push $Na6420400
+push $N52a70400
  Dot {
   name LayoutDot54
   xpos 412
   ypos 1323
  }
-set Na6420800 [stack 0]
-push $Na535e000
+set N52a70800 [stack 0]
+push $N529ee000
  Reformat {
   type "to box"
   box_width {{"min(HDRISource.width, 4096)"}}
@@ -516,8 +516,8 @@ push $Na535e000
   xpos 180
   ypos 756
  }
-set Nc2552400 [stack 0]
-push $Nc2552400
+set Nfc52400 [stack 0]
+push $Nfc52400
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -534,7 +534,7 @@ push $Nc2552400
   xpos 180
   ypos 816
  }
-push $Na535e400
+push $N529ee400
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -554,7 +554,7 @@ push $Na535e400
   xpos 360
   ypos 936
  }
-set Nc2553000 [stack 0]
+set Nfc53000 [stack 0]
  Dot {
   name LayoutDot33
   xpos 446
@@ -565,7 +565,7 @@ set Nc2553000 [stack 0]
   xpos 446
   ypos 1038
  }
-push $Nc2553000
+push $Nfc53000
  Reformat {
   type "to box"
   box_width 4
@@ -576,12 +576,12 @@ push $Nc2553000
   xpos 360
   ypos 996
  }
-set Nc2553800 [stack 0]
+set Nfc53800 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
-  KernelDescription "3 \"EzAtmosLight\" iterate pixelWise d86d8533eb5194dc00f699366ffd4d718bac911a06cb2d2cc635f4ab8a56a76a 3 \"ref\" Read Point \"env\" Read Random \"dst\" Write Point 3 \"longitude_offset_deg\" Float 1 AAAAAA== \"sun_cone_deg\" Float 1 AADAQA== \"clip_ratio\" Float 1 AACgQQ== 3 \"longitudeOffset\" 1 1 Default \"sunConeDeg\" 1 1 Default \"clipRatio\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
-  kernelSource "// EzAtmosLight: measures the light in a lat-long HDRI for AtmosScatter.blink.\n//\n// Feed it a small copy of the HDRI (`env`, 512x256 is plenty) and a 4x1 image (`ref`)\n// that sets the output size. It writes four pixels:\n//   0: rgb = direction towards the sun (world, +Y up), a = sun peak luminance\n//   1: rgb = sun irradiance (sum of radiance x solid angle over the sun),\n//      a = 1 when the sun looks clipped (peak not far above the sky), else 0\n//   2: rgb = average sky radiance over the upper hemisphere outside the sun cone\n//   3: unused\n// Every output pixel repeats the same search; the input is small so that is cheap.\n// Uses the same lat-long convention as AtmosScatter.blink.\n\nkernel EzAtmosLight : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> ref;\n  Image<eRead, eAccessRandom, eEdgeClamped> env;\n  Image<eWrite> dst;\n\nparam:\n  float longitudeOffset;\n  float sunConeDeg;\n  float clipRatio;\n\nlocal:\n  float pi;\n\n  void define()\n  \{\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(sunConeDeg, \"sun_cone_deg\", 6.0f);\n    defineParam(clipRatio, \"clip_ratio\", 20.0f);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n  \}\n\n  float luminance(float4 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  float3 direction(int x, int y, float w, float h)\n  \{\n    float lon = ((x + 0.5f) / w - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = ((y + 0.5f) / h - 0.5f) * pi;\n    return float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n  \}\n\n  void process(int2 pos)\n  \{\n    int index = pos.x - ref.bounds.x1;\n    int x1 = env.bounds.x1;\n    int y1 = env.bounds.y1;\n    int w = env.bounds.width();\n    int h = env.bounds.height();\n    float fw = w;\n    float fh = h;\n    // Solid angle of one pixel at the equator; scaled by cos(latitude) per row.\n    float pixelSolidAngle = (2.0f * pi / fw) * (pi / fh);\n    int yHorizon = h / 2;\n\n    // Pass 1: brightest spot above the horizon. A 3x3 average keeps single hot pixels\n    // (glints, specular highlights) from beating the sun.\n    float bestLum = -1.0f;\n    int bestX = 0;\n    int bestY = h - 1;\n    float peak = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      for (int x = 0; x < w; x++) \{\n        float sum = 0.0f;\n        for (int j = -1; j <= 1; j++) \{\n          for (int i = -1; i <= 1; i++) \{\n            int xi = x + i;\n            if (xi < 0) xi += w;\n            if (xi >= w) xi -= w;\n            sum += luminance(env(x1 + xi, y1 + min(max(y + j, 0), h - 1)));\n          \}\n        \}\n        if (sum > bestLum) \{\n          bestLum = sum;\n          bestX = x;\n          bestY = y;\n        \}\n      \}\n    \}\n    for (int j = -1; j <= 1; j++) \{\n      for (int i = -1; i <= 1; i++) \{\n        int xi = bestX + i;\n        if (xi < 0) xi += w;\n        if (xi >= w) xi -= w;\n        peak = max(peak, luminance(env(x1 + xi, y1 + min(max(bestY + j, 0), h - 1))));\n      \}\n    \}\n    float3 peakDir = direction(bestX, bestY, fw, fh);\n\n    // Pass 2: everything inside a small cone around the peak is the sun; its direction is the\n    // centroid of the pixels brighter than half the peak. Everything else above the horizon\n    // is sky.\n    float cosCone = cos(sunConeDeg * pi / 180.0f);\n    float threshold = 0.5f * peak;\n    float3 sunDirSum = float3(0.0f);\n    float3 sunIrradiance = float3(0.0f);\n    float3 skySum = float3(0.0f);\n    float skyWeight = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      float lat = ((y + 0.5f) / fh - 0.5f) * pi;\n      float dOmega = pixelSolidAngle * cos(lat);\n      for (int x = 0; x < w; x++) \{\n        float4 c = env(x1 + x, y1 + y);\n        float3 rgb = float3(c.x, c.y, c.z);\n        float lum = luminance(c);\n        float3 d = direction(x, y, fw, fh);\n        if (dot(d, peakDir) > cosCone) \{\n          // The whole cone counts towards the sun's energy so the glow a downsized or\n          // filtered sun spreads around itself is not mistaken for sky.\n          sunIrradiance += rgb * dOmega;\n          if (lum > threshold)\n            sunDirSum += d * ((lum - threshold) * dOmega);\n        \} else \{\n          skySum += rgb * dOmega;\n          skyWeight += dOmega;\n        \}\n      \}\n    \}\n    float3 sunDir = peakDir;\n    if (length(sunDirSum) > 0.0f)\n      sunDir = normalize(sunDirSum);\n    float3 sky = skyWeight > 0.0f ? skySum / skyWeight : float3(0.0f);\n    float skyLum = 0.2126f * sky.x + 0.7152f * sky.y + 0.0722f * sky.z;\n    float clipped = peak < clipRatio * skyLum ? 1.0f : 0.0f;\n\n    float4 result = float4(0.0f);\n    if (index == 0)\n      result = float4(sunDir.x, sunDir.y, sunDir.z, peak);\n    else if (index == 1)\n      result = float4(sunIrradiance.x, sunIrradiance.y, sunIrradiance.z, clipped);\n    else if (index == 2)\n      result = float4(sky.x, sky.y, sky.z, 0.0f);\n    dst() = result;\n  \}\n\};\n"
+  KernelDescription "3 \"EzAtmosLight\" iterate pixelWise cc15ea976bea1e72ef4cdb207c11e19058f291424116715f379bcc281353525b 3 \"ref\" Read Point \"env\" Read Random \"dst\" Write Point 3 \"longitude_offset_deg\" Float 1 AAAAAA== \"sun_cone_deg\" Float 1 AADAQA== \"clip_ratio\" Float 1 AACgQQ== 3 \"longitudeOffset\" 1 1 Default \"sunConeDeg\" 1 1 Default \"clipRatio\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
+  kernelSource "// EzAtmosLight: measures the light in a lat-long HDRI for AtmosScatter.blink.\n//\n// Feed it a small copy of the HDRI (`env`, 512x256 is plenty) and a 4x1 image (`ref`)\n// that sets the output size. It writes four pixels:\n//   0: rgb = direction towards the sun (world, +Y up), a = sun peak luminance\n//   1: rgb = sun irradiance (sum of radiance x solid angle over the sun),\n//      a = 1 when the sun looks clipped (peak not far above the sky), else 0\n//   2: rgb = average sky radiance over the upper hemisphere outside the sun cone\n//   3: rgb = cosine-weighted sky radiance (the sky's irradiance on a surface facing straight\n//      up, divided by pi): the near-horizon band counts little, so at a low sun it stays\n//      blue where the plain mean (2) goes warm. EzCloudGen lights clouds with its hue.\n// Every output pixel repeats the same search; the input is small so that is cheap.\n// Uses the same lat-long convention as AtmosScatter.blink.\n\nkernel EzAtmosLight : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> ref;\n  Image<eRead, eAccessRandom, eEdgeClamped> env;\n  Image<eWrite> dst;\n\nparam:\n  float longitudeOffset;\n  float sunConeDeg;\n  float clipRatio;\n\nlocal:\n  float pi;\n\n  void define()\n  \{\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(sunConeDeg, \"sun_cone_deg\", 6.0f);\n    defineParam(clipRatio, \"clip_ratio\", 20.0f);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n  \}\n\n  float luminance(float4 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  float3 direction(int x, int y, float w, float h)\n  \{\n    float lon = ((x + 0.5f) / w - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = ((y + 0.5f) / h - 0.5f) * pi;\n    return float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n  \}\n\n  void process(int2 pos)\n  \{\n    int index = pos.x - ref.bounds.x1;\n    int x1 = env.bounds.x1;\n    int y1 = env.bounds.y1;\n    int w = env.bounds.width();\n    int h = env.bounds.height();\n    float fw = w;\n    float fh = h;\n    // Solid angle of one pixel at the equator; scaled by cos(latitude) per row.\n    float pixelSolidAngle = (2.0f * pi / fw) * (pi / fh);\n    int yHorizon = h / 2;\n\n    // Pass 1: brightest spot above the horizon. A 3x3 average keeps single hot pixels\n    // (glints, specular highlights) from beating the sun.\n    float bestLum = -1.0f;\n    int bestX = 0;\n    int bestY = h - 1;\n    float peak = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      for (int x = 0; x < w; x++) \{\n        float sum = 0.0f;\n        for (int j = -1; j <= 1; j++) \{\n          for (int i = -1; i <= 1; i++) \{\n            int xi = x + i;\n            if (xi < 0) xi += w;\n            if (xi >= w) xi -= w;\n            sum += luminance(env(x1 + xi, y1 + min(max(y + j, 0), h - 1)));\n          \}\n        \}\n        if (sum > bestLum) \{\n          bestLum = sum;\n          bestX = x;\n          bestY = y;\n        \}\n      \}\n    \}\n    for (int j = -1; j <= 1; j++) \{\n      for (int i = -1; i <= 1; i++) \{\n        int xi = bestX + i;\n        if (xi < 0) xi += w;\n        if (xi >= w) xi -= w;\n        peak = max(peak, luminance(env(x1 + xi, y1 + min(max(bestY + j, 0), h - 1))));\n      \}\n    \}\n    float3 peakDir = direction(bestX, bestY, fw, fh);\n\n    // Pass 2: everything inside a small cone around the peak is the sun; its direction is the\n    // centroid of the pixels brighter than half the peak. Everything else above the horizon\n    // is sky.\n    float cosCone = cos(sunConeDeg * pi / 180.0f);\n    float threshold = 0.5f * peak;\n    float3 sunDirSum = float3(0.0f);\n    float3 sunIrradiance = float3(0.0f);\n    float3 skySum = float3(0.0f);\n    float skyWeight = 0.0f;\n    float3 skyCosSum = float3(0.0f);\n    float skyCosWeight = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      float lat = ((y + 0.5f) / fh - 0.5f) * pi;\n      float dOmega = pixelSolidAngle * cos(lat);\n      for (int x = 0; x < w; x++) \{\n        float4 c = env(x1 + x, y1 + y);\n        float3 rgb = float3(c.x, c.y, c.z);\n        float lum = luminance(c);\n        float3 d = direction(x, y, fw, fh);\n        if (dot(d, peakDir) > cosCone) \{\n          // The whole cone counts towards the sun's energy so the glow a downsized or\n          // filtered sun spreads around itself is not mistaken for sky.\n          sunIrradiance += rgb * dOmega;\n          if (lum > threshold)\n            sunDirSum += d * ((lum - threshold) * dOmega);\n        \} else \{\n          skySum += rgb * dOmega;\n          skyWeight += dOmega;\n          skyCosSum += rgb * (dOmega * max(d.y, 0.0f));\n          skyCosWeight += dOmega * max(d.y, 0.0f);\n        \}\n      \}\n    \}\n    float3 sunDir = peakDir;\n    if (length(sunDirSum) > 0.0f)\n      sunDir = normalize(sunDirSum);\n    float3 sky = skyWeight > 0.0f ? skySum / skyWeight : float3(0.0f);\n    float skyLum = 0.2126f * sky.x + 0.7152f * sky.y + 0.0722f * sky.z;\n    float clipped = peak < clipRatio * skyLum ? 1.0f : 0.0f;\n\n    float4 result = float4(0.0f);\n    if (index == 0)\n      result = float4(sunDir.x, sunDir.y, sunDir.z, peak);\n    else if (index == 1)\n      result = float4(sunIrradiance.x, sunIrradiance.y, sunIrradiance.z, clipped);\n    else if (index == 2)\n      result = float4(sky.x, sky.y, sky.z, 0.0f);\n    else if (index == 3 && skyCosWeight > 0.0f)\n      result = float4(skyCosSum.x / skyCosWeight, skyCosSum.y / skyCosWeight, skyCosSum.z / skyCosWeight, 0.0f);\n    dst() = result;\n  \}\n\};\n"
   rebuild ""
   EzAtmosLight_longitude_offset_deg {{parent.hdri_rotation}}
   EzAtmosLight_sun_cone_deg {{parent.sun_search_cone}}
@@ -601,20 +601,20 @@ set Nc2553800 [stack 0]
   xpos 494
   ypos 1293
  }
-set Na63ed000 [stack 0]
+set N52a3d000 [stack 0]
  Dot {
   name LayoutDot41
   xpos 394
   ypos 1293
  }
-set Na63ed400 [stack 0]
-push $Na5347c00
+set N52a3d400 [stack 0]
+push $N529d7c00
  Dot {
   name LayoutDot15
   xpos 110
   ypos 1233
  }
-set Na535ec00 [stack 0]
+set N529eec00 [stack 0]
  Dot {
   name LayoutDot16
   xpos 214
@@ -630,7 +630,7 @@ set Na535ec00 [stack 0]
   xpos 180
   ypos 1374
  }
-set Nc2593800 [stack 0]
+set Nfc93800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -671,7 +671,7 @@ set Nc2593800 [stack 0]
   xpos 360
   ypos 1434
  }
-push $Na6420800
+push $N52a70800
  Dot {
   name LayoutDot55
   xpos 314
@@ -682,13 +682,13 @@ push $Na6420800
   xpos 314
   ypos 1437
  }
-push $Na63ed400
+push $N52a3d400
  Dot {
   name LayoutDot42
   xpos 290
   ypos 1293
  }
-set Na63ed800 [stack 0]
+set N52a3d800 [stack 0]
  Dot {
   name LayoutDot44
   xpos 266
@@ -699,7 +699,7 @@ set Na63ed800 [stack 0]
   xpos 266
   ypos 1425
  }
-push $Nc2593800
+push $Nfc93800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -748,7 +748,7 @@ push $Nc2593800
   xpos 180
   ypos 1494
  }
-push $Nc2553800
+push $Nfc53800
  Dot {
   name LayoutDot35
   xpos 470
@@ -772,8 +772,8 @@ push $Nc2553800
  BlinkScript {
   inputs 2
   recompileCount 2
-  KernelDescription "3 \"EzAtmosLight\" iterate pixelWise d86d8533eb5194dc00f699366ffd4d718bac911a06cb2d2cc635f4ab8a56a76a 3 \"ref\" Read Point \"env\" Read Random \"dst\" Write Point 3 \"longitude_offset_deg\" Float 1 AAAAAA== \"sun_cone_deg\" Float 1 AADAQA== \"clip_ratio\" Float 1 AACgQQ== 3 \"longitudeOffset\" 1 1 Default \"sunConeDeg\" 1 1 Default \"clipRatio\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
-  kernelSource "// EzAtmosLight: measures the light in a lat-long HDRI for AtmosScatter.blink.\n//\n// Feed it a small copy of the HDRI (`env`, 512x256 is plenty) and a 4x1 image (`ref`)\n// that sets the output size. It writes four pixels:\n//   0: rgb = direction towards the sun (world, +Y up), a = sun peak luminance\n//   1: rgb = sun irradiance (sum of radiance x solid angle over the sun),\n//      a = 1 when the sun looks clipped (peak not far above the sky), else 0\n//   2: rgb = average sky radiance over the upper hemisphere outside the sun cone\n//   3: unused\n// Every output pixel repeats the same search; the input is small so that is cheap.\n// Uses the same lat-long convention as AtmosScatter.blink.\n\nkernel EzAtmosLight : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> ref;\n  Image<eRead, eAccessRandom, eEdgeClamped> env;\n  Image<eWrite> dst;\n\nparam:\n  float longitudeOffset;\n  float sunConeDeg;\n  float clipRatio;\n\nlocal:\n  float pi;\n\n  void define()\n  \{\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(sunConeDeg, \"sun_cone_deg\", 6.0f);\n    defineParam(clipRatio, \"clip_ratio\", 20.0f);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n  \}\n\n  float luminance(float4 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  float3 direction(int x, int y, float w, float h)\n  \{\n    float lon = ((x + 0.5f) / w - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = ((y + 0.5f) / h - 0.5f) * pi;\n    return float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n  \}\n\n  void process(int2 pos)\n  \{\n    int index = pos.x - ref.bounds.x1;\n    int x1 = env.bounds.x1;\n    int y1 = env.bounds.y1;\n    int w = env.bounds.width();\n    int h = env.bounds.height();\n    float fw = w;\n    float fh = h;\n    // Solid angle of one pixel at the equator; scaled by cos(latitude) per row.\n    float pixelSolidAngle = (2.0f * pi / fw) * (pi / fh);\n    int yHorizon = h / 2;\n\n    // Pass 1: brightest spot above the horizon. A 3x3 average keeps single hot pixels\n    // (glints, specular highlights) from beating the sun.\n    float bestLum = -1.0f;\n    int bestX = 0;\n    int bestY = h - 1;\n    float peak = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      for (int x = 0; x < w; x++) \{\n        float sum = 0.0f;\n        for (int j = -1; j <= 1; j++) \{\n          for (int i = -1; i <= 1; i++) \{\n            int xi = x + i;\n            if (xi < 0) xi += w;\n            if (xi >= w) xi -= w;\n            sum += luminance(env(x1 + xi, y1 + min(max(y + j, 0), h - 1)));\n          \}\n        \}\n        if (sum > bestLum) \{\n          bestLum = sum;\n          bestX = x;\n          bestY = y;\n        \}\n      \}\n    \}\n    for (int j = -1; j <= 1; j++) \{\n      for (int i = -1; i <= 1; i++) \{\n        int xi = bestX + i;\n        if (xi < 0) xi += w;\n        if (xi >= w) xi -= w;\n        peak = max(peak, luminance(env(x1 + xi, y1 + min(max(bestY + j, 0), h - 1))));\n      \}\n    \}\n    float3 peakDir = direction(bestX, bestY, fw, fh);\n\n    // Pass 2: everything inside a small cone around the peak is the sun; its direction is the\n    // centroid of the pixels brighter than half the peak. Everything else above the horizon\n    // is sky.\n    float cosCone = cos(sunConeDeg * pi / 180.0f);\n    float threshold = 0.5f * peak;\n    float3 sunDirSum = float3(0.0f);\n    float3 sunIrradiance = float3(0.0f);\n    float3 skySum = float3(0.0f);\n    float skyWeight = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      float lat = ((y + 0.5f) / fh - 0.5f) * pi;\n      float dOmega = pixelSolidAngle * cos(lat);\n      for (int x = 0; x < w; x++) \{\n        float4 c = env(x1 + x, y1 + y);\n        float3 rgb = float3(c.x, c.y, c.z);\n        float lum = luminance(c);\n        float3 d = direction(x, y, fw, fh);\n        if (dot(d, peakDir) > cosCone) \{\n          // The whole cone counts towards the sun's energy so the glow a downsized or\n          // filtered sun spreads around itself is not mistaken for sky.\n          sunIrradiance += rgb * dOmega;\n          if (lum > threshold)\n            sunDirSum += d * ((lum - threshold) * dOmega);\n        \} else \{\n          skySum += rgb * dOmega;\n          skyWeight += dOmega;\n        \}\n      \}\n    \}\n    float3 sunDir = peakDir;\n    if (length(sunDirSum) > 0.0f)\n      sunDir = normalize(sunDirSum);\n    float3 sky = skyWeight > 0.0f ? skySum / skyWeight : float3(0.0f);\n    float skyLum = 0.2126f * sky.x + 0.7152f * sky.y + 0.0722f * sky.z;\n    float clipped = peak < clipRatio * skyLum ? 1.0f : 0.0f;\n\n    float4 result = float4(0.0f);\n    if (index == 0)\n      result = float4(sunDir.x, sunDir.y, sunDir.z, peak);\n    else if (index == 1)\n      result = float4(sunIrradiance.x, sunIrradiance.y, sunIrradiance.z, clipped);\n    else if (index == 2)\n      result = float4(sky.x, sky.y, sky.z, 0.0f);\n    dst() = result;\n  \}\n\};\n"
+  KernelDescription "3 \"EzAtmosLight\" iterate pixelWise cc15ea976bea1e72ef4cdb207c11e19058f291424116715f379bcc281353525b 3 \"ref\" Read Point \"env\" Read Random \"dst\" Write Point 3 \"longitude_offset_deg\" Float 1 AAAAAA== \"sun_cone_deg\" Float 1 AADAQA== \"clip_ratio\" Float 1 AACgQQ== 3 \"longitudeOffset\" 1 1 Default \"sunConeDeg\" 1 1 Default \"clipRatio\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
+  kernelSource "// EzAtmosLight: measures the light in a lat-long HDRI for AtmosScatter.blink.\n//\n// Feed it a small copy of the HDRI (`env`, 512x256 is plenty) and a 4x1 image (`ref`)\n// that sets the output size. It writes four pixels:\n//   0: rgb = direction towards the sun (world, +Y up), a = sun peak luminance\n//   1: rgb = sun irradiance (sum of radiance x solid angle over the sun),\n//      a = 1 when the sun looks clipped (peak not far above the sky), else 0\n//   2: rgb = average sky radiance over the upper hemisphere outside the sun cone\n//   3: rgb = cosine-weighted sky radiance (the sky's irradiance on a surface facing straight\n//      up, divided by pi): the near-horizon band counts little, so at a low sun it stays\n//      blue where the plain mean (2) goes warm. EzCloudGen lights clouds with its hue.\n// Every output pixel repeats the same search; the input is small so that is cheap.\n// Uses the same lat-long convention as AtmosScatter.blink.\n\nkernel EzAtmosLight : ImageComputationKernel<ePixelWise>\n\{\n  Image<eRead, eAccessPoint, eEdgeClamped> ref;\n  Image<eRead, eAccessRandom, eEdgeClamped> env;\n  Image<eWrite> dst;\n\nparam:\n  float longitudeOffset;\n  float sunConeDeg;\n  float clipRatio;\n\nlocal:\n  float pi;\n\n  void define()\n  \{\n    defineParam(longitudeOffset, \"longitude_offset_deg\", 0.0f);\n    defineParam(sunConeDeg, \"sun_cone_deg\", 6.0f);\n    defineParam(clipRatio, \"clip_ratio\", 20.0f);\n  \}\n\n  void init()\n  \{\n    pi = 3.14159265358979f;\n  \}\n\n  float luminance(float4 c)\n  \{\n    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z;\n  \}\n\n  float3 direction(int x, int y, float w, float h)\n  \{\n    float lon = ((x + 0.5f) / w - 0.5f) * 2.0f * pi + longitudeOffset * pi / 180.0f;\n    float lat = ((y + 0.5f) / h - 0.5f) * pi;\n    return float3(sin(lon) * cos(lat), sin(lat), -cos(lon) * cos(lat));\n  \}\n\n  void process(int2 pos)\n  \{\n    int index = pos.x - ref.bounds.x1;\n    int x1 = env.bounds.x1;\n    int y1 = env.bounds.y1;\n    int w = env.bounds.width();\n    int h = env.bounds.height();\n    float fw = w;\n    float fh = h;\n    // Solid angle of one pixel at the equator; scaled by cos(latitude) per row.\n    float pixelSolidAngle = (2.0f * pi / fw) * (pi / fh);\n    int yHorizon = h / 2;\n\n    // Pass 1: brightest spot above the horizon. A 3x3 average keeps single hot pixels\n    // (glints, specular highlights) from beating the sun.\n    float bestLum = -1.0f;\n    int bestX = 0;\n    int bestY = h - 1;\n    float peak = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      for (int x = 0; x < w; x++) \{\n        float sum = 0.0f;\n        for (int j = -1; j <= 1; j++) \{\n          for (int i = -1; i <= 1; i++) \{\n            int xi = x + i;\n            if (xi < 0) xi += w;\n            if (xi >= w) xi -= w;\n            sum += luminance(env(x1 + xi, y1 + min(max(y + j, 0), h - 1)));\n          \}\n        \}\n        if (sum > bestLum) \{\n          bestLum = sum;\n          bestX = x;\n          bestY = y;\n        \}\n      \}\n    \}\n    for (int j = -1; j <= 1; j++) \{\n      for (int i = -1; i <= 1; i++) \{\n        int xi = bestX + i;\n        if (xi < 0) xi += w;\n        if (xi >= w) xi -= w;\n        peak = max(peak, luminance(env(x1 + xi, y1 + min(max(bestY + j, 0), h - 1))));\n      \}\n    \}\n    float3 peakDir = direction(bestX, bestY, fw, fh);\n\n    // Pass 2: everything inside a small cone around the peak is the sun; its direction is the\n    // centroid of the pixels brighter than half the peak. Everything else above the horizon\n    // is sky.\n    float cosCone = cos(sunConeDeg * pi / 180.0f);\n    float threshold = 0.5f * peak;\n    float3 sunDirSum = float3(0.0f);\n    float3 sunIrradiance = float3(0.0f);\n    float3 skySum = float3(0.0f);\n    float skyWeight = 0.0f;\n    float3 skyCosSum = float3(0.0f);\n    float skyCosWeight = 0.0f;\n    for (int y = yHorizon; y < h; y++) \{\n      float lat = ((y + 0.5f) / fh - 0.5f) * pi;\n      float dOmega = pixelSolidAngle * cos(lat);\n      for (int x = 0; x < w; x++) \{\n        float4 c = env(x1 + x, y1 + y);\n        float3 rgb = float3(c.x, c.y, c.z);\n        float lum = luminance(c);\n        float3 d = direction(x, y, fw, fh);\n        if (dot(d, peakDir) > cosCone) \{\n          // The whole cone counts towards the sun's energy so the glow a downsized or\n          // filtered sun spreads around itself is not mistaken for sky.\n          sunIrradiance += rgb * dOmega;\n          if (lum > threshold)\n            sunDirSum += d * ((lum - threshold) * dOmega);\n        \} else \{\n          skySum += rgb * dOmega;\n          skyWeight += dOmega;\n          skyCosSum += rgb * (dOmega * max(d.y, 0.0f));\n          skyCosWeight += dOmega * max(d.y, 0.0f);\n        \}\n      \}\n    \}\n    float3 sunDir = peakDir;\n    if (length(sunDirSum) > 0.0f)\n      sunDir = normalize(sunDirSum);\n    float3 sky = skyWeight > 0.0f ? skySum / skyWeight : float3(0.0f);\n    float skyLum = 0.2126f * sky.x + 0.7152f * sky.y + 0.0722f * sky.z;\n    float clipped = peak < clipRatio * skyLum ? 1.0f : 0.0f;\n\n    float4 result = float4(0.0f);\n    if (index == 0)\n      result = float4(sunDir.x, sunDir.y, sunDir.z, peak);\n    else if (index == 1)\n      result = float4(sunIrradiance.x, sunIrradiance.y, sunIrradiance.z, clipped);\n    else if (index == 2)\n      result = float4(sky.x, sky.y, sky.z, 0.0f);\n    else if (index == 3 && skyCosWeight > 0.0f)\n      result = float4(skyCosSum.x / skyCosWeight, skyCosSum.y / skyCosWeight, skyCosSum.z / skyCosWeight, 0.0f);\n    dst() = result;\n  \}\n\};\n"
   rebuild ""
   EzAtmosLight_longitude_offset_deg {{0}}
   EzAtmosLight_sun_cone_deg {{parent.sun_search_cone}}
@@ -783,7 +783,7 @@ push $Nc2553800
   xpos 360
   ypos 1554
  }
-push $Na63ed800
+push $N52a3d800
  Dot {
   name LayoutDot43
   xpos 290
@@ -812,19 +812,19 @@ push $Na63ed800
   xpos 1294
   ypos 2019
  }
-set Na64a2000 [stack 0]
+set N52af2000 [stack 0]
  Dot {
   name LayoutDot93
   xpos 1654
   ypos 2019
  }
-set Na64a2400 [stack 0]
+set N52af2400 [stack 0]
  Dot {
   name LayoutDot94
   xpos 2734
   ypos 2019
  }
-push $Na535ec00
+push $N529eec00
  Dot {
   name LayoutDot17
   xpos 110
@@ -855,43 +855,43 @@ push $Na535ec00
   xpos 266
   ypos 2049
  }
-set Na63b9000 [stack 0]
+set N52a09000 [stack 0]
  Dot {
   name LayoutDot26
   xpos 574
   ypos 2049
  }
-set Na63b9800 [stack 0]
+set N52a09800 [stack 0]
  Dot {
   name LayoutDot27
   xpos 934
   ypos 2049
  }
-set Na63b9c00 [stack 0]
+set N52a09c00 [stack 0]
  Dot {
   name LayoutDot28
   xpos 1312
   ypos 2049
  }
-set Na63d4000 [stack 0]
+set N52a24000 [stack 0]
  Dot {
   name LayoutDot29
   xpos 1672
   ypos 2049
  }
-set Na63d4400 [stack 0]
+set N52a24400 [stack 0]
  Dot {
   name LayoutDot30
   xpos 2014
   ypos 2049
  }
-set Na63d4800 [stack 0]
+set N52a24800 [stack 0]
  Dot {
   name LayoutDot31
   xpos 2374
   ypos 2049
  }
-set Na63d4c00 [stack 0]
+set N52a24c00 [stack 0]
  Dot {
   name LayoutDot32
   xpos 2752
@@ -937,7 +937,7 @@ set Na63d4c00 [stack 0]
   xpos 2700
   ypos 2160
  }
-set Na510c000 [stack 0]
+set N527bc000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -962,7 +962,7 @@ set Na510c000 [stack 0]
   xpos 2880
   ypos 2340
  }
-push $Na510c000
+push $N527bc000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -994,7 +994,7 @@ push $Na510c000
   xpos 2700
   ypos 2400
  }
-push $Na510c000
+push $N527bc000
  Dot {
   name LayoutDot136
   xpos 2786
@@ -1022,38 +1022,38 @@ push $Na510c000
   xpos 2966
   ypos 4257
  }
-push $Na643b000
-push $Na63ed000
+push $N52a8b000
+push $N52a3d000
  Dot {
   name LayoutDot46
   xpos 494
   ypos 2079
  }
-set Na6408800 [stack 0]
+set N52a58800 [stack 0]
  Dot {
   name LayoutDot47
   xpos 592
   ypos 2079
  }
-set Na6408c00 [stack 0]
+set N52a58c00 [stack 0]
  Dot {
   name LayoutDot49
   xpos 952
   ypos 2079
  }
-set Na6409400 [stack 0]
+set N52a59400 [stack 0]
  Dot {
   name LayoutDot50
   xpos 2032
   ypos 2079
  }
-set Na6409800 [stack 0]
+set N52a59800 [stack 0]
  Dot {
   name LayoutDot51
   xpos 2392
   ypos 2079
  }
-push $Na63d4c00
+push $N52a24c00
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1094,7 +1094,7 @@ push $Na63d4c00
   xpos 2340
   ypos 2160
  }
-set Na5097800 [stack 0]
+set N52747800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1119,7 +1119,7 @@ set Na5097800 [stack 0]
   xpos 2520
   ypos 2340
  }
-push $Na5097800
+push $N52747800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1151,7 +1151,7 @@ push $Na5097800
   xpos 2340
   ypos 2400
  }
-push $Na5097800
+push $N52747800
  Dot {
   name LayoutDot132
   xpos 2426
@@ -1179,9 +1179,9 @@ push $Na5097800
   xpos 2606
   ypos 4197
  }
-push $Na643a800
-push $Na64a2400
-push $Na63d4400
+push $N52a8a800
+push $N52af2400
+push $N52a24400
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1222,7 +1222,7 @@ push $Na63d4400
   xpos 1620
   ypos 2160
  }
-set Na505f000 [stack 0]
+set N5270f000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1247,7 +1247,7 @@ set Na505f000 [stack 0]
   xpos 1800
   ypos 2340
  }
-push $Na505f000
+push $N5270f000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1279,7 +1279,7 @@ push $Na505f000
   xpos 1620
   ypos 2400
  }
-push $Na505f000
+push $N5270f000
  Dot {
   name LayoutDot112
   xpos 1706
@@ -1307,37 +1307,37 @@ push $Na505f000
   xpos 1886
   ypos 2787
  }
-set Na64d9c00 [stack 0]
+set N662f9c00 [stack 0]
  Dot {
   name LayoutDot117
   xpos 1886
   ypos 3555
  }
-set Na64ee400 [stack 0]
+set N6630e400 [stack 0]
  Dot {
   name LayoutDot119
   xpos 1886
   ypos 4137
  }
-push $Na6421400
+push $N52a71400
  Dot {
   name LayoutDot58
   xpos 556
   ypos 2109
  }
-set Na6421800 [stack 0]
+set N52a71800 [stack 0]
  Dot {
   name LayoutDot60
   xpos 196
   ypos 2109
  }
-push $Na6408800
+push $N52a58800
  Dot {
   name LayoutDot48
   xpos 232
   ypos 2079
  }
-push $Na63b9000
+push $N52a09000
  Dot {
   name LayoutDot25
   xpos 214
@@ -1383,7 +1383,7 @@ push $Na63b9000
   xpos 180
   ypos 2160
  }
-set Na4fda000 [stack 0]
+set N5269a000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1408,7 +1408,7 @@ set Na4fda000 [stack 0]
   xpos 360
   ypos 2340
  }
-push $Na4fda000
+push $N5269a000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1440,7 +1440,7 @@ push $Na4fda000
   xpos 180
   ypos 2400
  }
-push $Na4fda000
+push $N5269a000
  Dot {
   name LayoutDot66
   xpos 266
@@ -1468,21 +1468,21 @@ push $Na4fda000
   xpos 446
   ypos 2667
  }
-set Na6454400 [stack 0]
+set N52aa4400 [stack 0]
  Dot {
   name LayoutDot71
   xpos 446
   ypos 3405
  }
-set Na6454c00 [stack 0]
+set N52aa4c00 [stack 0]
  Dot {
   name LayoutDot73
   xpos 446
   ypos 4077
  }
-push $Na643a400
-push $Na64a2000
-push $Na63d4000
+push $N52a8a400
+push $N52af2000
+push $N52a24000
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1523,7 +1523,7 @@ push $Na63d4000
   xpos 1260
   ypos 2160
  }
-set Na5006800 [stack 0]
+set N526c6800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1548,7 +1548,7 @@ set Na5006800 [stack 0]
   xpos 1440
   ypos 2340
  }
-push $Na5006800
+push $N526c6800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1580,7 +1580,7 @@ push $Na5006800
   xpos 1260
   ypos 2400
  }
-push $Na5006800
+push $N526c6800
  Dot {
   name LayoutDot95
   xpos 1346
@@ -1608,21 +1608,21 @@ push $Na5006800
   xpos 1526
   ypos 2757
  }
-set Na64a3800 [stack 0]
+set N52af3800 [stack 0]
  Dot {
   name LayoutDot101
   xpos 1526
   ypos 3525
  }
-set Na64ba400 [stack 0]
+set N662da400 [stack 0]
  Dot {
   name LayoutDot103
   xpos 1526
   ypos 4017
  }
-push $Na6421c00
-push $Na6409400
-push $Na63b9c00
+push $N52a71c00
+push $N52a59400
+push $N52a09c00
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1663,7 +1663,7 @@ push $Na63b9c00
   xpos 900
   ypos 2160
  }
-set Na4f65800 [stack 0]
+set N52625800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1688,7 +1688,7 @@ set Na4f65800 [stack 0]
   xpos 1080
   ypos 2340
  }
-push $Na4f65800
+push $N52625800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1720,7 +1720,7 @@ push $Na4f65800
   xpos 900
   ypos 2400
  }
-push $Na4f65800
+push $N52625800
  Dot {
   name LayoutDot82
   xpos 986
@@ -1748,21 +1748,21 @@ push $Na4f65800
   xpos 1166
   ypos 2727
  }
-set Na6488400 [stack 0]
+set N52ad8400 [stack 0]
  Dot {
   name LayoutDot87
   xpos 1166
   ypos 3495
  }
-set Na6488c00 [stack 0]
+set N52ad8c00 [stack 0]
  Dot {
   name LayoutDot89
   xpos 1166
   ypos 3957
  }
-push $Na6421800
-push $Na6408c00
-push $Na63b9800
+push $N52a71800
+push $N52a58c00
+push $N52a09800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1803,7 +1803,7 @@ push $Na63b9800
   xpos 540
   ypos 2160
  }
-set Nc25c1000 [stack 0]
+set Nfcc1000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1828,7 +1828,7 @@ set Nc25c1000 [stack 0]
   xpos 720
   ypos 2340
  }
-push $Nc25c1000
+push $Nfcc1000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1860,7 +1860,7 @@ push $Nc25c1000
   xpos 540
   ypos 2400
  }
-push $Nc25c1000
+push $Nfcc1000
  Dot {
   name LayoutDot74
   xpos 626
@@ -1888,19 +1888,19 @@ push $Nc25c1000
   xpos 806
   ypos 2697
  }
-set Na646e400 [stack 0]
+set N52abe400 [stack 0]
  Dot {
   name LayoutDot79
   xpos 806
   ypos 3465
  }
-set Na646ec00 [stack 0]
+set N52abec00 [stack 0]
  Dot {
   name LayoutDot81
   xpos 806
   ypos 3897
  }
-push $Na64a3800
+push $N52af3800
  Dot {
   name LayoutDot99
   xpos 470
@@ -1911,13 +1911,13 @@ push $Na64a3800
   xpos 470
   ypos 2919
  }
-push $Na6488400
+push $N52ad8400
  Dot {
   name LayoutDot86
   xpos 412
   ypos 2727
  }
-push $Na646e400
+push $N52abe400
  Dot {
   name LayoutDot78
   xpos 394
@@ -1937,7 +1937,7 @@ push $Na646e400
   xpos 360
   ypos 2928
  }
-set Na5181400 [stack 0]
+set N52831400 [stack 0]
  Dot {
   name LayoutDot104
   xpos 494
@@ -1948,20 +1948,20 @@ set Na5181400 [stack 0]
   xpos 494
   ypos 3435
  }
-set Na64bb400 [stack 0]
+set N662db400 [stack 0]
  Dot {
   name LayoutDot107
   xpos 494
   ypos 3837
  }
-push $Na5181400
-push $Na6454400
+push $N52831400
+push $N52aa4400
  Dot {
   name LayoutDot70
   xpos 232
   ypos 2667
  }
-push $Na63b8000
+push $N52a08000
  Dot {
   name LayoutDot21
   xpos 214
@@ -1983,7 +1983,7 @@ push $Na63b8000
   xpos 180
   ypos 2988
  }
-set Na5181c00 [stack 0]
+set N52831c00 [stack 0]
  Dot {
   name LayoutDot108
   xpos 266
@@ -1994,10 +1994,10 @@ set Na5181c00 [stack 0]
   xpos 266
   ypos 3150
  }
-set Na64d8400 [stack 0]
-push $Na643ac00
-push $Na6409800
-push $Na63d4800
+set N662f8400 [stack 0]
+push $N52a8ac00
+push $N52a59800
+push $N52a24800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -2038,7 +2038,7 @@ push $Na63d4800
   xpos 1980
   ypos 2160
  }
-set Na513e800 [stack 0]
+set N527ee800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -2063,7 +2063,7 @@ set Na513e800 [stack 0]
   xpos 2160
   ypos 2340
  }
-push $Na513e800
+push $N527ee800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -2095,7 +2095,7 @@ push $Na513e800
   xpos 1980
   ypos 2400
  }
-push $Na513e800
+push $N527ee800
  Dot {
   name LayoutDot120
   xpos 2066
@@ -2128,14 +2128,14 @@ push $Na513e800
   xpos 574
   ypos 2817
  }
-set Na6508000 [stack 0]
+set N66328000 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 540
   ypos 2868
  }
-push $Na64d9c00
+push $N662f9c00
  Dot {
   name LayoutDot116
   xpos 754
@@ -2154,7 +2154,7 @@ push $Na64d9c00
   xpos 754
   ypos 3111
  }
-push $Na6508000
+push $N66328000
  Dot {
   name LayoutDot125
   xpos 290
@@ -2165,7 +2165,7 @@ push $Na6508000
   xpos 290
   ypos 3051
  }
-push $Na5181c00
+push $N52831c00
  Merge2 {
   inputs 2
   operation multiply
@@ -2204,43 +2204,43 @@ push $Na5181c00
   xpos 232
   ypos 3375
  }
-push $Na64ee400
+push $N6630e400
  Dot {
   name LayoutDot118
   xpos 286
   ypos 3555
  }
-push $Na6454c00
+push $N52aa4c00
  Dot {
   name LayoutDot72
   xpos 196
   ypos 3405
  }
-push $Na64ba400
+push $N662da400
  Dot {
   name LayoutDot102
   xpos 160
   ypos 3525
  }
-push $Na6488c00
+push $N52ad8c00
  Dot {
   name LayoutDot88
   xpos 268
   ypos 3495
  }
-push $Na646ec00
+push $N52abec00
  Dot {
   name LayoutDot80
   xpos 178
   ypos 3465
  }
-push $Na64bb400
+push $N662db400
  Dot {
   name LayoutDot106
   xpos 250
   ypos 3435
  }
-push $Na64d8400
+push $N662f8400
  Dot {
   name LayoutDot110
   xpos 266
@@ -2269,7 +2269,7 @@ push $Na64d8400
   xpos 266
   ypos 3777
  }
-push $Nc251d200
+push $Nfc1d200
  Copy {
   inputs 2
   channels rgb
@@ -2396,7 +2396,7 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   xpos 0
   ypos 4314
  }
-set Na521b400 [stack 0]
+set N528cb400 [stack 0]
  Dot {
   name LayoutDot140
   xpos 110
@@ -2427,7 +2427,7 @@ set Na521b400 [stack 0]
   xpos 360
   ypos 4542
  }
-push $Nc251b900
+push $Nfc1b900
  Dot {
   name LayoutDot4
   xpos 86
@@ -2443,7 +2443,7 @@ push $Nc251b900
   xpos 574
   ypos 5067
  }
-set Na5346800 [stack 0]
+set N529d6800 [stack 0]
  Dot {
   name LayoutDot7
   xpos 934
@@ -2474,7 +2474,7 @@ set Na5346800 [stack 0]
   xpos 900
   ypos 5208
  }
-set Na52e3c00 [stack 0]
+set N52973c00 [stack 0]
  Dot {
   name LayoutDot162
   xpos 986
@@ -2495,7 +2495,7 @@ set Na52e3c00 [stack 0]
   xpos 446
   ypos 5379
  }
-push $Na52e3c00
+push $N52973c00
  Read {
   inputs 0
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -2510,7 +2510,7 @@ push $Na52e3c00
   xpos 180
   ypos 4542
  }
-push $Na521b400
+push $N528cb400
  Switch {
   inputs 2
   which {{"parent.use_baked && parent.bake_valid"}}
@@ -2519,7 +2519,7 @@ push $Na521b400
   xpos 0
   ypos 4602
  }
-set Na51e2a00 [stack 0]
+set N52892a00 [stack 0]
  Dot {
   name LayoutDot143
   xpos 110
@@ -2546,7 +2546,7 @@ set Na51e2a00 [stack 0]
   xpos 180
   ypos 4830
  }
-push $Na51e2a00
+push $N52892a00
  Switch {
   inputs 2
   which {{"HDRISource.width < HDRIInput.width"}}
@@ -2555,7 +2555,7 @@ push $Na51e2a00
   xpos 0
   ypos 4890
  }
-set Na51e2f00 [stack 0]
+set N52892f00 [stack 0]
  Dot {
   name LayoutDot146
   xpos 110
@@ -2571,19 +2571,19 @@ set Na51e2f00 [stack 0]
   xpos 214
   ypos 5097
  }
-set Na6556000 [stack 0]
+set N66376000 [stack 0]
  Dot {
   name LayoutDot149
   xpos 394
   ypos 5097
  }
-set Na6556400 [stack 0]
+set N66376400 [stack 0]
  Dot {
   name LayoutDot150
   xpos 754
   ypos 5097
  }
-set Na6556800 [stack 0]
+set N66376800 [stack 0]
  Dot {
   name LayoutDot151
   xpos 1114
@@ -2606,7 +2606,7 @@ set Na6556800 [stack 0]
   xpos 1166
   ypos 5391
  }
-push $Na52e3c00
+push $N52973c00
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
@@ -2620,7 +2620,7 @@ push $Na52e3c00
   xpos 394
   ypos 5271
  }
-push $Na6556400
+push $N66376400
  Crop {
   box {{input.width/2} {0} {input.width} {input.height}}
   name RollRightCrop
@@ -2634,7 +2634,7 @@ push $Na6556400
   xpos 360
   ypos 5208
  }
-push $Na6556000
+push $N66376000
  Crop {
   box {{0} {0} {input.width/2} {input.height}}
   name RollLeftCrop
@@ -2656,7 +2656,7 @@ push $Na6556000
   xpos 180
   ypos 5268
  }
-set Na52e2000 [stack 0]
+set N52972000 [stack 0]
  STMap {
   inputs 2
   uv rgb
@@ -2675,7 +2675,7 @@ set Na52e2000 [stack 0]
   xpos 394
   ypos 5451
  }
-push $Na5346800
+push $N529d6800
  BlinkScript {
   recompileCount 2
   KernelDescription "3 \"EzAtmosDomeUV\" iterate pixelWise 37e4f8031dadbe05054e12de6d0bd18cd608f8656abb24698d0e1f2da23c61f8 2 \"ref\" Read Point \"dst\" Write Point 5 \"dome_row0\" Float 4 AACAPwAAAAAAAAAAAAAAAA== \"dome_row1\" Float 4 AAAAAAAAgD8AAAAAAAAAAA== \"dome_row2\" Float 4 AAAAAAAAAAAAAIA/AAAAAA== \"eye\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"radius\" Float 1 AACAPw== 5 \"domeRow0\" 4 1 Default \"domeRow1\" 4 1 Default \"domeRow2\" 4 1 Default \"eye\" 3 1 Default \"radius\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
@@ -2692,7 +2692,7 @@ push $Na5346800
   xpos 540
   ypos 5148
  }
-set Na528ec00 [stack 0]
+set N5291ec00 [stack 0]
  Dot {
   name LayoutDot152
   xpos 626
@@ -2708,8 +2708,8 @@ set Na528ec00 [stack 0]
   xpos 266
   ypos 5370
  }
-push $Na528ec00
-push $Na6556800
+push $N5291ec00
+push $N66376800
  STMap {
   inputs 2
   uv rgb
@@ -2737,7 +2737,7 @@ push $Na6556800
   xpos 290
   ypos 5391
  }
-push $Na528ec00
+push $N5291ec00
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
@@ -2761,7 +2761,7 @@ push $Na528ec00
   xpos 266
   ypos 5310
  }
-push $Na52e2000
+push $N52972000
  STMap {
   inputs 2
   uv rgb
@@ -2775,7 +2775,7 @@ push $Na52e2000
   xpos 180
   ypos 5388
  }
-push $Na51e2f00
+push $N52892f00
  Switch {
   inputs 3
   which {{"parent.output_mapping==1 && \[exists parent.input2] ? 1 : parent.output_mapping==2 && \[exists parent.input3] ? 2 : 0"}}
