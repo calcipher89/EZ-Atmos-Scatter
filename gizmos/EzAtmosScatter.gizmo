@@ -69,7 +69,7 @@ Gizmo {
  addUserKnob {7 haze_glow_size l "haze glow size" t "Size of the glow around the sun. Bigger spreads it wider." R 0 4}
  haze_glow_size 1
  addUserKnob {7 aureole t "Share of the haze glow spread into a wide, soft halo round the sun (the aureole of a hazy or smoky sky). It moves light out from the sun without adding any. 0 is how v1.1 looked."}
- addUserKnob {7 aureole_size l "aureole size" t "How far the aureole spreads. Bigger is wider and flatter." R 0 4}
+ addUserKnob {7 aureole_size l "aureole size" t "How much wider than the haze glow the aureole spreads. Bigger is wider and flatter; 0 is the glow's own size." R 0 4}
  aureole_size 2
  addUserKnob {7 ozone t "Ozone high in the atmosphere (10-40 km). It absorbs some red and green but hardly any blue, so it matters when the sun is low: it turns the sky away from the sun blue and lavender instead of yellow-green, and deepens the twilight blue overhead. 1 is Earth's average; 0 is how v1.0 looked." R 0 2}
  ozone 1
@@ -314,7 +314,7 @@ Gizmo {
   xpos 0
   ypos 120
  }
-set Ncccdb900 [stack 0]
+set Nc251b900 [stack 0]
  Reformat {
   type "to box"
   box_width {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512))"}}
@@ -326,7 +326,7 @@ set Ncccdb900 [stack 0]
   xpos -180
   ypos 180
  }
-push $Ncccdb900
+push $Nc251b900
  Switch {
   inputs 2
   which {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512)) < HDRIInput.width"}}
@@ -335,7 +335,7 @@ push $Ncccdb900
   xpos 0
   ypos 240
  }
-set Ncccdbe00 [stack 0]
+set Nc251be00 [stack 0]
  Dot {
   name LayoutDot8
   xpos 110
@@ -346,14 +346,14 @@ set Ncccdbe00 [stack 0]
   xpos 110
   ypos 417
  }
-set N94c77400 [stack 0]
+set Na5347400 [stack 0]
  Dot {
   name LayoutDot10
   xpos 214
   ypos 417
  }
-set N94c77800 [stack 0]
-push $N94c77800
+set Na5347800 [stack 0]
+push $Na5347800
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -371,7 +371,7 @@ push $N94c77800
   xpos 180
   ypos 468
  }
-push $Ncccdbe00
+push $Nc251be00
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -380,7 +380,7 @@ push $Ncccdbe00
   xpos 0
   ypos 528
  }
-set Ncccdd200 [stack 0]
+set Nc251d200 [stack 0]
  Dot {
   name LayoutDot19
   xpos 134
@@ -391,31 +391,31 @@ set Ncccdd200 [stack 0]
   xpos 134
   ypos 2637
  }
-set N94ca8000 [stack 0]
+set Na63b8000 [stack 0]
  Dot {
   name LayoutDot22
   xpos 134
   ypos 4296
  }
-push $N94c77400
+push $Na5347400
  Dot {
   name LayoutDot11
   xpos 110
   ypos 705
  }
-set N94c77c00 [stack 0]
+set Na5347c00 [stack 0]
  Dot {
   name LayoutDot12
   xpos 214
   ypos 705
  }
-set N94c8e000 [stack 0]
+set Na535e000 [stack 0]
  Dot {
   name LayoutDot13
   xpos 394
   ypos 705
  }
-set N94c8e400 [stack 0]
+set Na535e400 [stack 0]
  Dot {
   name LayoutDot14
   xpos 574
@@ -455,56 +455,56 @@ set N94c8e400 [stack 0]
   xpos 626
   ypos 1323
  }
-set N94d10400 [stack 0]
+set Na6420400 [stack 0]
  Dot {
   name LayoutDot57
   xpos 626
   ypos 2109
  }
-set N94d11400 [stack 0]
+set Na6421400 [stack 0]
  Dot {
   name LayoutDot59
   xpos 916
   ypos 2109
  }
-set N94d11c00 [stack 0]
+set Na6421c00 [stack 0]
  Dot {
   name LayoutDot61
   xpos 1276
   ypos 2109
  }
-set N94d2a400 [stack 0]
+set Na643a400 [stack 0]
  Dot {
   name LayoutDot62
   xpos 1636
   ypos 2109
  }
-set N94d2a800 [stack 0]
+set Na643a800 [stack 0]
  Dot {
   name LayoutDot63
   xpos 1996
   ypos 2109
  }
-set N94d2ac00 [stack 0]
+set Na643ac00 [stack 0]
  Dot {
   name LayoutDot64
   xpos 2356
   ypos 2109
  }
-set N94d2b000 [stack 0]
+set Na643b000 [stack 0]
  Dot {
   name LayoutDot65
   xpos 2716
   ypos 2109
  }
-push $N94d10400
+push $Na6420400
  Dot {
   name LayoutDot54
   xpos 412
   ypos 1323
  }
-set N94d10800 [stack 0]
-push $N94c8e000
+set Na6420800 [stack 0]
+push $Na535e000
  Reformat {
   type "to box"
   box_width {{"min(HDRISource.width, 4096)"}}
@@ -516,8 +516,8 @@ push $N94c8e000
   xpos 180
   ypos 756
  }
-set Nccd12400 [stack 0]
-push $Nccd12400
+set Nc2552400 [stack 0]
+push $Nc2552400
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -534,7 +534,7 @@ push $Nccd12400
   xpos 180
   ypos 816
  }
-push $N94c8e400
+push $Na535e400
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -554,7 +554,7 @@ push $N94c8e400
   xpos 360
   ypos 936
  }
-set Nccd13000 [stack 0]
+set Nc2553000 [stack 0]
  Dot {
   name LayoutDot33
   xpos 446
@@ -565,7 +565,7 @@ set Nccd13000 [stack 0]
   xpos 446
   ypos 1038
  }
-push $Nccd13000
+push $Nc2553000
  Reformat {
   type "to box"
   box_width 4
@@ -576,7 +576,7 @@ push $Nccd13000
   xpos 360
   ypos 996
  }
-set Nccd13800 [stack 0]
+set Nc2553800 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -601,20 +601,20 @@ set Nccd13800 [stack 0]
   xpos 494
   ypos 1293
  }
-set N94cdd000 [stack 0]
+set Na63ed000 [stack 0]
  Dot {
   name LayoutDot41
   xpos 394
   ypos 1293
  }
-set N94cdd400 [stack 0]
-push $N94c77c00
+set Na63ed400 [stack 0]
+push $Na5347c00
  Dot {
   name LayoutDot15
   xpos 110
   ypos 1233
  }
-set N94c8ec00 [stack 0]
+set Na535ec00 [stack 0]
  Dot {
   name LayoutDot16
   xpos 214
@@ -630,7 +630,7 @@ set N94c8ec00 [stack 0]
   xpos 180
   ypos 1374
  }
-set Nccd53800 [stack 0]
+set Nc2593800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -660,7 +660,7 @@ set Nccd53800 [stack 0]
   AtmosScatter_mie_scale_height_km {{parent.haze_height}}
   AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
   AtmosScatter_aureole {{"clamp(parent.aureole, 0, 1)"}}
-  AtmosScatter_aureole_g {{"clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)"}}
+  AtmosScatter_aureole_g {{"clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)"}}
   AtmosScatter_planet_radius_km {{parent.planet_radius}}
   AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
   AtmosScatter_view_samples {{8}}
@@ -671,7 +671,7 @@ set Nccd53800 [stack 0]
   xpos 360
   ypos 1434
  }
-push $N94d10800
+push $Na6420800
  Dot {
   name LayoutDot55
   xpos 314
@@ -682,13 +682,13 @@ push $N94d10800
   xpos 314
   ypos 1437
  }
-push $N94cdd400
+push $Na63ed400
  Dot {
   name LayoutDot42
   xpos 290
   ypos 1293
  }
-set N94cdd800 [stack 0]
+set Na63ed800 [stack 0]
  Dot {
   name LayoutDot44
   xpos 266
@@ -699,7 +699,7 @@ set N94cdd800 [stack 0]
   xpos 266
   ypos 1425
  }
-push $Nccd53800
+push $Nc2593800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -729,7 +729,7 @@ push $Nccd53800
   AtmosScatter_mie_scale_height_km {{parent.haze_height}}
   AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
   AtmosScatter_aureole {{"clamp(parent.aureole, 0, 1)"}}
-  AtmosScatter_aureole_g {{"clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)"}}
+  AtmosScatter_aureole_g {{"clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)"}}
   AtmosScatter_planet_radius_km {{parent.planet_radius}}
   AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
   AtmosScatter_view_samples {{8}}
@@ -748,7 +748,7 @@ push $Nccd53800
   xpos 180
   ypos 1494
  }
-push $Nccd13800
+push $Nc2553800
  Dot {
   name LayoutDot35
   xpos 470
@@ -783,7 +783,7 @@ push $Nccd13800
   xpos 360
   ypos 1554
  }
-push $N94cdd800
+push $Na63ed800
  Dot {
   name LayoutDot43
   xpos 290
@@ -812,19 +812,19 @@ push $N94cdd800
   xpos 1294
   ypos 2019
  }
-set N94d92000 [stack 0]
+set Na64a2000 [stack 0]
  Dot {
   name LayoutDot93
   xpos 1654
   ypos 2019
  }
-set N94d92400 [stack 0]
+set Na64a2400 [stack 0]
  Dot {
   name LayoutDot94
   xpos 2734
   ypos 2019
  }
-push $N94c8ec00
+push $Na535ec00
  Dot {
   name LayoutDot17
   xpos 110
@@ -855,43 +855,43 @@ push $N94c8ec00
   xpos 266
   ypos 2049
  }
-set N94ca9000 [stack 0]
+set Na63b9000 [stack 0]
  Dot {
   name LayoutDot26
   xpos 574
   ypos 2049
  }
-set N94ca9800 [stack 0]
+set Na63b9800 [stack 0]
  Dot {
   name LayoutDot27
   xpos 934
   ypos 2049
  }
-set N94ca9c00 [stack 0]
+set Na63b9c00 [stack 0]
  Dot {
   name LayoutDot28
   xpos 1312
   ypos 2049
  }
-set N94cc4000 [stack 0]
+set Na63d4000 [stack 0]
  Dot {
   name LayoutDot29
   xpos 1672
   ypos 2049
  }
-set N94cc4400 [stack 0]
+set Na63d4400 [stack 0]
  Dot {
   name LayoutDot30
   xpos 2014
   ypos 2049
  }
-set N94cc4800 [stack 0]
+set Na63d4800 [stack 0]
  Dot {
   name LayoutDot31
   xpos 2374
   ypos 2049
  }
-set N94cc4c00 [stack 0]
+set Na63d4c00 [stack 0]
  Dot {
   name LayoutDot32
   xpos 2752
@@ -926,7 +926,7 @@ set N94cc4c00 [stack 0]
   AtmosScatter_mie_scale_height_km {{parent.haze_height}}
   AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
   AtmosScatter_aureole {{"clamp(parent.aureole, 0, 1)"}}
-  AtmosScatter_aureole_g {{"clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)"}}
+  AtmosScatter_aureole_g {{"clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)"}}
   AtmosScatter_planet_radius_km {{parent.planet_radius}}
   AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
@@ -937,7 +937,7 @@ set N94cc4c00 [stack 0]
   xpos 2700
   ypos 2160
  }
-set N94a5c000 [stack 0]
+set Na510c000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -962,7 +962,7 @@ set N94a5c000 [stack 0]
   xpos 2880
   ypos 2340
  }
-push $N94a5c000
+push $Na510c000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -994,7 +994,7 @@ push $N94a5c000
   xpos 2700
   ypos 2400
  }
-push $N94a5c000
+push $Na510c000
  Dot {
   name LayoutDot136
   xpos 2786
@@ -1022,38 +1022,38 @@ push $N94a5c000
   xpos 2966
   ypos 4257
  }
-push $N94d2b000
-push $N94cdd000
+push $Na643b000
+push $Na63ed000
  Dot {
   name LayoutDot46
   xpos 494
   ypos 2079
  }
-set N94cf8800 [stack 0]
+set Na6408800 [stack 0]
  Dot {
   name LayoutDot47
   xpos 592
   ypos 2079
  }
-set N94cf8c00 [stack 0]
+set Na6408c00 [stack 0]
  Dot {
   name LayoutDot49
   xpos 952
   ypos 2079
  }
-set N94cf9400 [stack 0]
+set Na6409400 [stack 0]
  Dot {
   name LayoutDot50
   xpos 2032
   ypos 2079
  }
-set N94cf9800 [stack 0]
+set Na6409800 [stack 0]
  Dot {
   name LayoutDot51
   xpos 2392
   ypos 2079
  }
-push $N94cc4c00
+push $Na63d4c00
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1083,7 +1083,7 @@ push $N94cc4c00
   AtmosScatter_mie_scale_height_km {{parent.haze_height}}
   AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
   AtmosScatter_aureole {{"clamp(parent.aureole, 0, 1)"}}
-  AtmosScatter_aureole_g {{"clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)"}}
+  AtmosScatter_aureole_g {{"clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)"}}
   AtmosScatter_planet_radius_km {{parent.planet_radius}}
   AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
@@ -1094,7 +1094,7 @@ push $N94cc4c00
   xpos 2340
   ypos 2160
  }
-set N949e7800 [stack 0]
+set Na5097800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1119,7 +1119,7 @@ set N949e7800 [stack 0]
   xpos 2520
   ypos 2340
  }
-push $N949e7800
+push $Na5097800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1151,7 +1151,7 @@ push $N949e7800
   xpos 2340
   ypos 2400
  }
-push $N949e7800
+push $Na5097800
  Dot {
   name LayoutDot132
   xpos 2426
@@ -1179,9 +1179,9 @@ push $N949e7800
   xpos 2606
   ypos 4197
  }
-push $N94d2a800
-push $N94d92400
-push $N94cc4400
+push $Na643a800
+push $Na64a2400
+push $Na63d4400
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1211,7 +1211,7 @@ push $N94cc4400
   AtmosScatter_mie_scale_height_km {{parent.haze_height}}
   AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
   AtmosScatter_aureole {{"clamp(parent.aureole, 0, 1)"}}
-  AtmosScatter_aureole_g {{"clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)"}}
+  AtmosScatter_aureole_g {{"clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)"}}
   AtmosScatter_planet_radius_km {{parent.planet_radius}}
   AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
@@ -1222,7 +1222,7 @@ push $N94cc4400
   xpos 1620
   ypos 2160
  }
-set N949af000 [stack 0]
+set Na505f000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1247,7 +1247,7 @@ set N949af000 [stack 0]
   xpos 1800
   ypos 2340
  }
-push $N949af000
+push $Na505f000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1279,7 +1279,7 @@ push $N949af000
   xpos 1620
   ypos 2400
  }
-push $N949af000
+push $Na505f000
  Dot {
   name LayoutDot112
   xpos 1706
@@ -1307,37 +1307,37 @@ push $N949af000
   xpos 1886
   ypos 2787
  }
-set N94dc9c00 [stack 0]
+set Na64d9c00 [stack 0]
  Dot {
   name LayoutDot117
   xpos 1886
   ypos 3555
  }
-set N94dde400 [stack 0]
+set Na64ee400 [stack 0]
  Dot {
   name LayoutDot119
   xpos 1886
   ypos 4137
  }
-push $N94d11400
+push $Na6421400
  Dot {
   name LayoutDot58
   xpos 556
   ypos 2109
  }
-set N94d11800 [stack 0]
+set Na6421800 [stack 0]
  Dot {
   name LayoutDot60
   xpos 196
   ypos 2109
  }
-push $N94cf8800
+push $Na6408800
  Dot {
   name LayoutDot48
   xpos 232
   ypos 2079
  }
-push $N94ca9000
+push $Na63b9000
  Dot {
   name LayoutDot25
   xpos 214
@@ -1372,7 +1372,7 @@ push $N94ca9000
   AtmosScatter_mie_scale_height_km {{parent.haze_height}}
   AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
   AtmosScatter_aureole {{"clamp(parent.aureole, 0, 1)"}}
-  AtmosScatter_aureole_g {{"clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)"}}
+  AtmosScatter_aureole_g {{"clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)"}}
   AtmosScatter_planet_radius_km {{parent.planet_radius}}
   AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
@@ -1383,7 +1383,7 @@ push $N94ca9000
   xpos 180
   ypos 2160
  }
-set N9109a000 [stack 0]
+set Na4fda000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1408,7 +1408,7 @@ set N9109a000 [stack 0]
   xpos 360
   ypos 2340
  }
-push $N9109a000
+push $Na4fda000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1440,7 +1440,7 @@ push $N9109a000
   xpos 180
   ypos 2400
  }
-push $N9109a000
+push $Na4fda000
  Dot {
   name LayoutDot66
   xpos 266
@@ -1468,21 +1468,21 @@ push $N9109a000
   xpos 446
   ypos 2667
  }
-set N94d44400 [stack 0]
+set Na6454400 [stack 0]
  Dot {
   name LayoutDot71
   xpos 446
   ypos 3405
  }
-set N94d44c00 [stack 0]
+set Na6454c00 [stack 0]
  Dot {
   name LayoutDot73
   xpos 446
   ypos 4077
  }
-push $N94d2a400
-push $N94d92000
-push $N94cc4000
+push $Na643a400
+push $Na64a2000
+push $Na63d4000
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1512,7 +1512,7 @@ push $N94cc4000
   AtmosScatter_mie_scale_height_km {{parent.haze_height}}
   AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
   AtmosScatter_aureole {{"clamp(parent.aureole, 0, 1)"}}
-  AtmosScatter_aureole_g {{"clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)"}}
+  AtmosScatter_aureole_g {{"clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)"}}
   AtmosScatter_planet_radius_km {{parent.planet_radius}}
   AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
@@ -1523,7 +1523,7 @@ push $N94cc4000
   xpos 1260
   ypos 2160
  }
-set N910c6800 [stack 0]
+set Na5006800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1548,7 +1548,7 @@ set N910c6800 [stack 0]
   xpos 1440
   ypos 2340
  }
-push $N910c6800
+push $Na5006800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1580,7 +1580,7 @@ push $N910c6800
   xpos 1260
   ypos 2400
  }
-push $N910c6800
+push $Na5006800
  Dot {
   name LayoutDot95
   xpos 1346
@@ -1608,21 +1608,21 @@ push $N910c6800
   xpos 1526
   ypos 2757
  }
-set N94d93800 [stack 0]
+set Na64a3800 [stack 0]
  Dot {
   name LayoutDot101
   xpos 1526
   ypos 3525
  }
-set N94daa400 [stack 0]
+set Na64ba400 [stack 0]
  Dot {
   name LayoutDot103
   xpos 1526
   ypos 4017
  }
-push $N94d11c00
-push $N94cf9400
-push $N94ca9c00
+push $Na6421c00
+push $Na6409400
+push $Na63b9c00
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1652,7 +1652,7 @@ push $N94ca9c00
   AtmosScatter_mie_scale_height_km {{parent.haze_height}}
   AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
   AtmosScatter_aureole {{"clamp(parent.aureole, 0, 1)"}}
-  AtmosScatter_aureole_g {{"clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)"}}
+  AtmosScatter_aureole_g {{"clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)"}}
   AtmosScatter_planet_radius_km {{parent.planet_radius}}
   AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
@@ -1663,7 +1663,7 @@ push $N94ca9c00
   xpos 900
   ypos 2160
  }
-set N91025800 [stack 0]
+set Na4f65800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1688,7 +1688,7 @@ set N91025800 [stack 0]
   xpos 1080
   ypos 2340
  }
-push $N91025800
+push $Na4f65800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1720,7 +1720,7 @@ push $N91025800
   xpos 900
   ypos 2400
  }
-push $N91025800
+push $Na4f65800
  Dot {
   name LayoutDot82
   xpos 986
@@ -1748,21 +1748,21 @@ push $N91025800
   xpos 1166
   ypos 2727
  }
-set N94d78400 [stack 0]
+set Na6488400 [stack 0]
  Dot {
   name LayoutDot87
   xpos 1166
   ypos 3495
  }
-set N94d78c00 [stack 0]
+set Na6488c00 [stack 0]
  Dot {
   name LayoutDot89
   xpos 1166
   ypos 3957
  }
-push $N94d11800
-push $N94cf8c00
-push $N94ca9800
+push $Na6421800
+push $Na6408c00
+push $Na63b9800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1792,7 +1792,7 @@ push $N94ca9800
   AtmosScatter_mie_scale_height_km {{parent.haze_height}}
   AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
   AtmosScatter_aureole {{"clamp(parent.aureole, 0, 1)"}}
-  AtmosScatter_aureole_g {{"clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)"}}
+  AtmosScatter_aureole_g {{"clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)"}}
   AtmosScatter_planet_radius_km {{parent.planet_radius}}
   AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
@@ -1803,7 +1803,7 @@ push $N94ca9800
   xpos 540
   ypos 2160
  }
-set Nccd81000 [stack 0]
+set Nc25c1000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1828,7 +1828,7 @@ set Nccd81000 [stack 0]
   xpos 720
   ypos 2340
  }
-push $Nccd81000
+push $Nc25c1000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1860,7 +1860,7 @@ push $Nccd81000
   xpos 540
   ypos 2400
  }
-push $Nccd81000
+push $Nc25c1000
  Dot {
   name LayoutDot74
   xpos 626
@@ -1888,19 +1888,19 @@ push $Nccd81000
   xpos 806
   ypos 2697
  }
-set N94d5e400 [stack 0]
+set Na646e400 [stack 0]
  Dot {
   name LayoutDot79
   xpos 806
   ypos 3465
  }
-set N94d5ec00 [stack 0]
+set Na646ec00 [stack 0]
  Dot {
   name LayoutDot81
   xpos 806
   ypos 3897
  }
-push $N94d93800
+push $Na64a3800
  Dot {
   name LayoutDot99
   xpos 470
@@ -1911,13 +1911,13 @@ push $N94d93800
   xpos 470
   ypos 2919
  }
-push $N94d78400
+push $Na6488400
  Dot {
   name LayoutDot86
   xpos 412
   ypos 2727
  }
-push $N94d5e400
+push $Na646e400
  Dot {
   name LayoutDot78
   xpos 394
@@ -1937,7 +1937,7 @@ push $N94d5e400
   xpos 360
   ypos 2928
  }
-set N94ad1400 [stack 0]
+set Na5181400 [stack 0]
  Dot {
   name LayoutDot104
   xpos 494
@@ -1948,20 +1948,20 @@ set N94ad1400 [stack 0]
   xpos 494
   ypos 3435
  }
-set N94dab400 [stack 0]
+set Na64bb400 [stack 0]
  Dot {
   name LayoutDot107
   xpos 494
   ypos 3837
  }
-push $N94ad1400
-push $N94d44400
+push $Na5181400
+push $Na6454400
  Dot {
   name LayoutDot70
   xpos 232
   ypos 2667
  }
-push $N94ca8000
+push $Na63b8000
  Dot {
   name LayoutDot21
   xpos 214
@@ -1983,7 +1983,7 @@ push $N94ca8000
   xpos 180
   ypos 2988
  }
-set N94ad1c00 [stack 0]
+set Na5181c00 [stack 0]
  Dot {
   name LayoutDot108
   xpos 266
@@ -1994,10 +1994,10 @@ set N94ad1c00 [stack 0]
   xpos 266
   ypos 3150
  }
-set N94dc8400 [stack 0]
-push $N94d2ac00
-push $N94cf9800
-push $N94cc4800
+set Na64d8400 [stack 0]
+push $Na643ac00
+push $Na6409800
+push $Na63d4800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -2027,7 +2027,7 @@ push $N94cc4800
   AtmosScatter_mie_scale_height_km {{parent.haze_height}}
   AtmosScatter_mie_g {{"clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)"}}
   AtmosScatter_aureole {{"clamp(parent.aureole, 0, 1)"}}
-  AtmosScatter_aureole_g {{"clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)"}}
+  AtmosScatter_aureole_g {{"clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)"}}
   AtmosScatter_planet_radius_km {{parent.planet_radius}}
   AtmosScatter_atmosphere_thickness_km {{parent.atmosphere_thickness}}
   AtmosScatter_view_samples {{"parent.quality==0 ? 8 : parent.quality==1 ? 16 : 32"}}
@@ -2038,7 +2038,7 @@ push $N94cc4800
   xpos 1980
   ypos 2160
  }
-set N94a8e800 [stack 0]
+set Na513e800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -2063,7 +2063,7 @@ set N94a8e800 [stack 0]
   xpos 2160
   ypos 2340
  }
-push $N94a8e800
+push $Na513e800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -2095,7 +2095,7 @@ push $N94a8e800
   xpos 1980
   ypos 2400
  }
-push $N94a8e800
+push $Na513e800
  Dot {
   name LayoutDot120
   xpos 2066
@@ -2128,14 +2128,14 @@ push $N94a8e800
   xpos 574
   ypos 2817
  }
-set N94df8000 [stack 0]
+set Na6508000 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 540
   ypos 2868
  }
-push $N94dc9c00
+push $Na64d9c00
  Dot {
   name LayoutDot116
   xpos 754
@@ -2154,7 +2154,7 @@ push $N94dc9c00
   xpos 754
   ypos 3111
  }
-push $N94df8000
+push $Na6508000
  Dot {
   name LayoutDot125
   xpos 290
@@ -2165,7 +2165,7 @@ push $N94df8000
   xpos 290
   ypos 3051
  }
-push $N94ad1c00
+push $Na5181c00
  Merge2 {
   inputs 2
   operation multiply
@@ -2204,43 +2204,43 @@ push $N94ad1c00
   xpos 232
   ypos 3375
  }
-push $N94dde400
+push $Na64ee400
  Dot {
   name LayoutDot118
   xpos 286
   ypos 3555
  }
-push $N94d44c00
+push $Na6454c00
  Dot {
   name LayoutDot72
   xpos 196
   ypos 3405
  }
-push $N94daa400
+push $Na64ba400
  Dot {
   name LayoutDot102
   xpos 160
   ypos 3525
  }
-push $N94d78c00
+push $Na6488c00
  Dot {
   name LayoutDot88
   xpos 268
   ypos 3495
  }
-push $N94d5ec00
+push $Na646ec00
  Dot {
   name LayoutDot80
   xpos 178
   ypos 3465
  }
-push $N94dab400
+push $Na64bb400
  Dot {
   name LayoutDot106
   xpos 250
   ypos 3435
  }
-push $N94dc8400
+push $Na64d8400
  Dot {
   name LayoutDot110
   xpos 266
@@ -2269,7 +2269,7 @@ push $N94dc8400
   xpos 266
   ypos 3777
  }
-push $Ncccdd200
+push $Nc251d200
  Copy {
   inputs 2
   channels rgb
@@ -2396,7 +2396,7 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   xpos 0
   ypos 4314
  }
-set N94b6b400 [stack 0]
+set Na521b400 [stack 0]
  Dot {
   name LayoutDot140
   xpos 110
@@ -2427,7 +2427,7 @@ set N94b6b400 [stack 0]
   xpos 360
   ypos 4542
  }
-push $Ncccdb900
+push $Nc251b900
  Dot {
   name LayoutDot4
   xpos 86
@@ -2443,7 +2443,7 @@ push $Ncccdb900
   xpos 574
   ypos 5067
  }
-set N94c76800 [stack 0]
+set Na5346800 [stack 0]
  Dot {
   name LayoutDot7
   xpos 934
@@ -2474,7 +2474,7 @@ set N94c76800 [stack 0]
   xpos 900
   ypos 5208
  }
-set N94c13c00 [stack 0]
+set Na52e3c00 [stack 0]
  Dot {
   name LayoutDot162
   xpos 986
@@ -2495,7 +2495,7 @@ set N94c13c00 [stack 0]
   xpos 446
   ypos 5379
  }
-push $N94c13c00
+push $Na52e3c00
  Read {
   inputs 0
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -2510,7 +2510,7 @@ push $N94c13c00
   xpos 180
   ypos 4542
  }
-push $N94b6b400
+push $Na521b400
  Switch {
   inputs 2
   which {{"parent.use_baked && parent.bake_valid"}}
@@ -2519,7 +2519,7 @@ push $N94b6b400
   xpos 0
   ypos 4602
  }
-set N94b32a00 [stack 0]
+set Na51e2a00 [stack 0]
  Dot {
   name LayoutDot143
   xpos 110
@@ -2546,7 +2546,7 @@ set N94b32a00 [stack 0]
   xpos 180
   ypos 4830
  }
-push $N94b32a00
+push $Na51e2a00
  Switch {
   inputs 2
   which {{"HDRISource.width < HDRIInput.width"}}
@@ -2555,7 +2555,7 @@ push $N94b32a00
   xpos 0
   ypos 4890
  }
-set N94b32f00 [stack 0]
+set Na51e2f00 [stack 0]
  Dot {
   name LayoutDot146
   xpos 110
@@ -2571,19 +2571,19 @@ set N94b32f00 [stack 0]
   xpos 214
   ypos 5097
  }
-set N94e46000 [stack 0]
+set Na6556000 [stack 0]
  Dot {
   name LayoutDot149
   xpos 394
   ypos 5097
  }
-set N94e46400 [stack 0]
+set Na6556400 [stack 0]
  Dot {
   name LayoutDot150
   xpos 754
   ypos 5097
  }
-set N94e46800 [stack 0]
+set Na6556800 [stack 0]
  Dot {
   name LayoutDot151
   xpos 1114
@@ -2606,7 +2606,7 @@ set N94e46800 [stack 0]
   xpos 1166
   ypos 5391
  }
-push $N94c13c00
+push $Na52e3c00
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
@@ -2620,7 +2620,7 @@ push $N94c13c00
   xpos 394
   ypos 5271
  }
-push $N94e46400
+push $Na6556400
  Crop {
   box {{input.width/2} {0} {input.width} {input.height}}
   name RollRightCrop
@@ -2634,7 +2634,7 @@ push $N94e46400
   xpos 360
   ypos 5208
  }
-push $N94e46000
+push $Na6556000
  Crop {
   box {{0} {0} {input.width/2} {input.height}}
   name RollLeftCrop
@@ -2656,7 +2656,7 @@ push $N94e46000
   xpos 180
   ypos 5268
  }
-set N94c12000 [stack 0]
+set Na52e2000 [stack 0]
  STMap {
   inputs 2
   uv rgb
@@ -2675,7 +2675,7 @@ set N94c12000 [stack 0]
   xpos 394
   ypos 5451
  }
-push $N94c76800
+push $Na5346800
  BlinkScript {
   recompileCount 2
   KernelDescription "3 \"EzAtmosDomeUV\" iterate pixelWise 37e4f8031dadbe05054e12de6d0bd18cd608f8656abb24698d0e1f2da23c61f8 2 \"ref\" Read Point \"dst\" Write Point 5 \"dome_row0\" Float 4 AACAPwAAAAAAAAAAAAAAAA== \"dome_row1\" Float 4 AAAAAAAAgD8AAAAAAAAAAA== \"dome_row2\" Float 4 AAAAAAAAAAAAAIA/AAAAAA== \"eye\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"radius\" Float 1 AACAPw== 5 \"domeRow0\" 4 1 Default \"domeRow1\" 4 1 Default \"domeRow2\" 4 1 Default \"eye\" 3 1 Default \"radius\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
@@ -2692,7 +2692,7 @@ push $N94c76800
   xpos 540
   ypos 5148
  }
-set N94bbec00 [stack 0]
+set Na528ec00 [stack 0]
  Dot {
   name LayoutDot152
   xpos 626
@@ -2708,8 +2708,8 @@ set N94bbec00 [stack 0]
   xpos 266
   ypos 5370
  }
-push $N94bbec00
-push $N94e46800
+push $Na528ec00
+push $Na6556800
  STMap {
   inputs 2
   uv rgb
@@ -2737,7 +2737,7 @@ push $N94e46800
   xpos 290
   ypos 5391
  }
-push $N94bbec00
+push $Na528ec00
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
@@ -2761,7 +2761,7 @@ push $N94bbec00
   xpos 266
   ypos 5310
  }
-push $N94c12000
+push $Na52e2000
  STMap {
   inputs 2
   uv rgb
@@ -2775,7 +2775,7 @@ push $N94c12000
   xpos 180
   ypos 5388
  }
-push $N94b32f00
+push $Na51e2f00
  Switch {
   inputs 3
   which {{"parent.output_mapping==1 && \[exists parent.input2] ? 1 : parent.output_mapping==2 && \[exists parent.input3] ? 2 : 0"}}
