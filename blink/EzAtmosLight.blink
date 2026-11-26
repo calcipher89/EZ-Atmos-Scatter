@@ -6,7 +6,9 @@
 //   1: rgb = sun irradiance (sum of radiance x solid angle over the sun),
 //      a = 1 when the sun looks clipped (peak not far above the sky), else 0
 //   2: rgb = average sky radiance over the upper hemisphere outside the sun cone
-//   3: unused
+//   3: rgb = cosine-weighted sky radiance (the sky's irradiance on a surface facing straight
+//      up, divided by pi): the near-horizon band counts little, so at a low sun it stays
+//      blue where the plain mean (2) goes warm. EzCloudGen lights clouds with its hue.
 // Every output pixel repeats the same search; the input is small so that is cheap.
 // Uses the same lat-long convention as AtmosScatter.blink.
 
@@ -104,6 +106,8 @@ local:
     float3 sunIrradiance = float3(0.0f);
     float3 skySum = float3(0.0f);
     float skyWeight = 0.0f;
+    float3 skyCosSum = float3(0.0f);
+    float skyCosWeight = 0.0f;
     for (int y = yHorizon; y < h; y++) {
       float lat = ((y + 0.5f) / fh - 0.5f) * pi;
       float dOmega = pixelSolidAngle * cos(lat);
@@ -121,6 +125,8 @@ local:
         } else {
           skySum += rgb * dOmega;
           skyWeight += dOmega;
+          skyCosSum += rgb * (dOmega * max(d.y, 0.0f));
+          skyCosWeight += dOmega * max(d.y, 0.0f);
         }
       }
     }
@@ -138,6 +144,8 @@ local:
       result = float4(sunIrradiance.x, sunIrradiance.y, sunIrradiance.z, clipped);
     else if (index == 2)
       result = float4(sky.x, sky.y, sky.z, 0.0f);
+    else if (index == 3 && skyCosWeight > 0.0f)
+      result = float4(skyCosSum.x / skyCosWeight, skyCosSum.y / skyCosWeight, skyCosSum.z / skyCosWeight, 0.0f);
     dst() = result;
   }
 };
