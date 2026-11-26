@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLINK = os.path.join(ROOT, "blink")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzAtmosScatter.gizmo")
 # Shown on the node; bump it with each tagged release.
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
           "atmos_haze_color", "atmos_haze_sun", "atmos_haze_sky"]
@@ -109,6 +109,37 @@ def _link(node, param, expression, channel=None):
 _USER_KNOBS = set()
 
 
+# Easy sliders (python/easy_mode.py does the work): (knob, label, min, max, tooltip).
+EASY_SLIDERS = [
+    ("easy_exposure", "exposure", -3, 3, "Brightness of the sun and the sky light together, in stops. "
+     "Moves 'sun strength' and 'sky light'."),
+    ("easy_sky", "sky", 0, 3, "More or less air: a bluer, brighter sky and more blue in the distance. "
+     "Multiplies 'sky amount'."),
+    ("easy_haze", "haze", 0, 4, "More or less haze: whiter, thicker air and a bigger glow. Multiplies 'haze amount'."),
+    ("easy_warmth", "warmth", -1, 1, "Tints the sun orange (up) or blue (down). Moves 'sun color'."),
+    ("easy_glow", "glow size", 0, 4, "Size of the glow round the sun. Multiplies 'haze glow size'."),
+    ("easy_halo", "halo", 0, 1, "Spreads a share of the glow into a wide, soft halo round the sun, as in "
+     "a hazy or smoky sky. Adds to 'aureole'."),
+]
+EASY_NEUTRAL = {"easy_exposure": 0.0, "easy_sky": 1.0, "easy_haze": 1.0, "easy_warmth": 0.0,
+                "easy_glow": 1.0, "easy_halo": 0.0}
+
+
+def _easy_code():
+    """python/easy_mode.py, base64-encoded for the hidden tool_code knob."""
+    import base64
+    with open(os.path.join(ROOT, "python", "easy_mode.py")) as f:
+        return base64.b64encode(f.read().encode()).decode()
+
+
+# knobChanged: hand the Easy sliders and the knobs they write to python/easy_mode.py.
+_EASY_DISPATCH = ("_k = nuke.thisKnob().name()\n"
+                  "if _k in %r and nuke.thisNode().knob('tool_code') is not None and not getattr(nuke, '_ezatmos_busy', False):\n"
+                  "    _eza = {}\n"
+                  "    exec(__import__('base64').b64decode(nuke.thisNode()['tool_code'].value()).decode(), _eza)\n"
+                  "    _eza['on_knob'](nuke.thisNode(), _k)\n")
+
+
 def _analyze_script():
     """The analyze button's script: python/analyze_shot.py, embedded so no module is needed."""
     with open(os.path.join(ROOT, "python", "analyze_shot.py")) as f:
@@ -136,6 +167,16 @@ def _add_knobs(group):
                        "camera sees the sky, at the project format, per frame: what a ScanlineRender of the "
                        "skydome would give, without the 3D setup.")
     k.append(mapping)
+    k.append(nuke.Text_Knob("easy_divider", "Easy"))
+    for name, label, lo, hi, tip in EASY_SLIDERS:
+        knob = nuke.Double_Knob(name, label)
+        knob.setRange(lo, hi)
+        knob.setTooltip(tip)
+        k.append(knob)
+    for name in ("easy_base", "tool_code"):
+        hidden = nuke.String_Knob(name, name.replace("_", " "))
+        hidden.setFlag(nuke.INVISIBLE)
+        k.append(hidden)
     k.append(nuke.Text_Knob("analyze_divider", "Analyze"))
     analyze = nuke.PyScript_Knob("analyze", "analyze", _analyze_script())
     analyze.setTooltip("Looks at the camera, skydome and HDRI and sets the node up for depth hazing this shot: "
@@ -225,6 +266,10 @@ def _add_knobs(group):
             ("sky_amount", "sky amount", 0, 4, "Density of the air (Rayleigh). More gives a bluer, brighter sky."),
             ("haze_amount", "haze amount", 0, 10, "Density of the haze (Mie). More gives whiter, thicker air."),
             ("haze_glow_size", "haze glow size", 0, 4, "Size of the glow around the sun. Bigger spreads it wider."),
+            ("aureole", "aureole", 0, 1, "Share of the haze glow spread into a wide, soft halo round the sun "
+             "(the aureole of a hazy or smoky sky). It moves light out from the sun without adding any. "
+             "0 is how v1.1 looked."),
+            ("aureole_size", "aureole size", 0, 4, "How much wider than the haze glow the aureole spreads. Bigger is wider and flatter; 0 is the glow's own size."),
             ("ozone", "ozone", 0, 2, "Ozone high in the atmosphere (10-40 km). It absorbs some red and "
              "green but hardly any blue, so it matters when the sun is low: it turns the sky away from "
              "the sun blue and lavender instead of yellow-green, and deepens the twilight blue overhead. "
@@ -305,12 +350,12 @@ def _add_knobs(group):
     # Analyze only sets other knobs; its own settings don't shape the output.
     # The skydome output is applied after the bake, so it does not change what is baked.
     _USER_KNOBS.difference_update(["analyze", "scene_scale", "ground_height", "reset_sun", "sun_in_use", "units_confirmed",
-                                   "output_mapping"])
+                                   "output_mapping"] + [e[0] for e in EASY_SLIDERS] + ["easy_base", "tool_code"])
 
     defaults = {
         "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "white_balance": 0.0, "sun_strength": 1.0, "sun_boost": 1.0,
         "sky_light": 1.0, "light_from_hdri": True, "sky_amount": 1.0, "haze_amount": 1.0, "ozone": 1.0,
-        "haze_glow_size": 1.0, "camera_height": 1.0, "max_distance": 0.0, "quality": 1,
+        "haze_glow_size": 1.0, "aureole": 0.0, "aureole_size": 2.0, "camera_height": 1.0, "max_distance": 0.0, "quality": 1,
         "viewer_resolution": 1, "render_resolution": 0,
         "rayleigh_coefficients": [0.0052, 0.0121, 0.0296], "mie_coefficient": 0.021,
         "rayleigh_scale_height": 8.5, "haze_height": 1.2, "haze_distance": 5.0, "planet_radius": 6360.0,
@@ -319,6 +364,9 @@ def _add_knobs(group):
     }
     for name, value in defaults.items():
         group[name].setValue(value)
+    for name, value in EASY_NEUTRAL.items():
+        group[name].setValue(value)
+    group["tool_code"].setValue(_easy_code())
     res = "(%s==0 ? 1 : %s==1 ? 0.5 : 0.25)"
     group["scatter_scale"].setExpression("min(($gui ? %s : %s) * %s, 1)" % (res % ("viewer_resolution", "viewer_resolution"),
                                                                              res % ("render_resolution", "render_resolution"),
@@ -377,6 +425,9 @@ def _link_scatter(node, output):
     _link(node, "rayleigh_density", "parent.sky_amount")
     _link(node, "mie_density", "parent.haze_amount")
     _link(node, "mie_g", "clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)")
+    _link(node, "aureole", "clamp(parent.aureole, 0, 1)")
+    # Relative to the main lobe, so a bigger aureole size is always wider than the glow.
+    _link(node, "aureole_g", "clamp(1 - 0.24 * parent.haze_glow_size - 0.2 * parent.aureole_size, 0, 0.99)")
     _link(node, "mie_coefficient", "parent.mie_coefficient")
     _link(node, "rayleigh_scale_height_km", "parent.rayleigh_scale_height")
     _link(node, "mie_scale_height_km", "parent.haze_height")
@@ -520,7 +571,9 @@ def _check_code(names):
 def _knob_changed_script(names):
     # Re-check the bake when a setting, the inputs or the bake knobs change.
     watched = list(names) + ["use_baked", "bake_file", "bake_folder", "baked_hash", "baked_first", "inputChange"]
-    return ("if nuke.thisKnob().name() in %r:\n" % (watched,) +
+    easy = [e[0] for e in EASY_SLIDERS] + ["sun_strength", "sky_light", "sky_amount", "haze_amount", "sun_color",
+                                           "haze_glow_size", "aureole"]
+    return (_EASY_DISPATCH % (easy,) +"if nuke.thisKnob().name() in %r:\n" % (watched,) +
             "".join("    " + line + "\n" for line in _check_code(names).splitlines()))
 
 

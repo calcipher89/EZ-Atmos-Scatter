@@ -10,8 +10,17 @@ Target: Nuke 15.1.
 
 ## Status
 
-v1.1.0. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
+v1.2.0. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
 colour and brightness from the image, sky light), with depth haze passes.
+
+New in 1.2:
+- **Easy sliders** (exposure, sky, haze, warmth, glow size, halo) at the top of the panel, in
+  EzDepthHaze's pattern. They move the Sun and Atmosphere knobs from a starting point, so the
+  knobs always show what they did. Editing one of those knobs by hand makes it the new starting
+  point. EzMatch's match buttons move only these sliders.
+- **aureole**, a wide, soft halo round the sun for hazy or smoky skies. It spreads a share of
+  the haze glow into a second, broader lobe, so the light round the sun reaches further without
+  the image getting brighter overall. It is 0 by default, which looks exactly like 1.1.
 
 New in 1.1: **ozone** absorption, and multiple scattering in the self-lit sky light. With a low
 sun the sky away from the sun now turns blue and lavender instead of yellow-green, and the
@@ -30,6 +39,7 @@ colours back (the self-lit sky light stays a little bluer).
 | `blink/EzAtmosTransmittanceLUT.blink` | BlinkScript kernel: precomputes the optical depth (air, haze and ozone) towards the sun as a 256x64 table |
 | `python/build_gizmo.py` | Rebuilds the gizmo after a kernel change |
 | `python/node_layout.py`, `python/layout_hints.py` | Lays out the nodes inside the group (trunk, Backdrops, Dots); the build runs it |
+| `python/easy_mode.py` | The Easy sliders, stored in the node's hidden `tool_code` knob. `python3 tests/test_easy_mode.py` checks it without Nuke |
 | `init.py`, `menu.py` | Plugin path and the Nodes menu entry |
 | `reference/atmos_reference.py` | NumPy port of the scattering core for checking the math outside Nuke |
 | `docs/previews/contact_sheet.png` | Reference renders: inscatter, Mie and transmittance at 45°, 10°, 2° and -2° sun elevation |
@@ -85,6 +95,12 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | Knob | Default | What it does |
 | --- | --- | --- |
 | view output | Scatter Preview Comp | What the main rgba shows |
+| exposure (Easy) | 0 | Sun and sky light together, in stops (moves *sun strength* and *sky light*) |
+| sky (Easy) | 1 | More or less air: bluer, brighter sky (multiplies *sky amount*) |
+| haze (Easy) | 1 | More or less haze: whiter, thicker air (multiplies *haze amount*) |
+| warmth (Easy) | 0 | Tints the sun orange (up) or blue (down) (moves *sun color*) |
+| glow size (Easy) | 1 | Size of the glow round the sun (multiplies *haze glow size*) |
+| halo (Easy) | 0 | Spreads a share of the glow into a wide, soft halo (adds to *aureole*) |
 | passes | Depth Haze | *Atmosphere*: rays run through the whole sky down to the ground. *Depth Haze*: every pass describes the haze around the camera out to *haze distance*, with no ground and no horizon line |
 | output as | Lat-long | *Skydome* lays every layer out as the texture of the dome in the `dome` input, so it goes back on the same Sphere. *Camera* gives every layer as the shot camera sees it, at the project format: the sky plate a ScanlineRender of the skydome would give (see Skydome below) |
 | sun from | Auto (HDRI) | Where the sun direction comes from: the HDRI, the Axis input or the manual knob |
@@ -103,6 +119,8 @@ The Scatter Preview Comp is `hdri * atmos_transmittance + atmos_inscatter`.
 | sky amount | 1 | Air density (Rayleigh) |
 | haze amount | 1 | Haze density (Mie) |
 | haze glow size | 1 | Size of the glow around the sun |
+| aureole | 0 | Share of the haze glow spread into a wide, soft halo round the sun. Moves light out from the sun without adding any; 0 is how 1.1 looked |
+| aureole size | 2 | How much wider than the haze glow the aureole spreads. Bigger is wider and flatter |
 | ozone | 1 | Ozone high in the atmosphere (10-40 km). It absorbs some red and green but hardly any blue, so it matters with a low sun: the sky away from the sun turns blue and lavender instead of yellow-green, and the twilight blue overhead deepens. 1 is Earth's average, 2 doubles it, 0 is how 1.0 looked. *white balance* includes it |
 | camera height (m) | 1 | Camera height above sea level |
 | max distance (km) | 0 (off) | How far the haze reaches. Use it to add haze up to a set distance instead of a full sky |
