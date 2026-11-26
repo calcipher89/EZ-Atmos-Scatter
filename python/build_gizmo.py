@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLINK = os.path.join(ROOT, "blink")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzAtmosScatter.gizmo")
 # Shown on the node; bump it with each tagged release.
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
           "atmos_haze_color", "atmos_haze_sun", "atmos_haze_sky"]
@@ -225,6 +225,10 @@ def _add_knobs(group):
             ("sky_amount", "sky amount", 0, 4, "Density of the air (Rayleigh). More gives a bluer, brighter sky."),
             ("haze_amount", "haze amount", 0, 10, "Density of the haze (Mie). More gives whiter, thicker air."),
             ("haze_glow_size", "haze glow size", 0, 4, "Size of the glow around the sun. Bigger spreads it wider."),
+            ("aureole", "aureole", 0, 1, "Share of the haze glow spread into a wide, soft halo round the sun "
+             "(the aureole of a hazy or smoky sky). It moves light out from the sun without adding any. "
+             "0 is how v1.1 looked."),
+            ("aureole_size", "aureole size", 0, 4, "How far the aureole spreads. Bigger is wider and flatter."),
             ("ozone", "ozone", 0, 2, "Ozone high in the atmosphere (10-40 km). It absorbs some red and "
              "green but hardly any blue, so it matters when the sun is low: it turns the sky away from "
              "the sun blue and lavender instead of yellow-green, and deepens the twilight blue overhead. "
@@ -310,7 +314,7 @@ def _add_knobs(group):
     defaults = {
         "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "white_balance": 0.0, "sun_strength": 1.0, "sun_boost": 1.0,
         "sky_light": 1.0, "light_from_hdri": True, "sky_amount": 1.0, "haze_amount": 1.0, "ozone": 1.0,
-        "haze_glow_size": 1.0, "camera_height": 1.0, "max_distance": 0.0, "quality": 1,
+        "haze_glow_size": 1.0, "aureole": 0.0, "aureole_size": 2.0, "camera_height": 1.0, "max_distance": 0.0, "quality": 1,
         "viewer_resolution": 1, "render_resolution": 0,
         "rayleigh_coefficients": [0.0052, 0.0121, 0.0296], "mie_coefficient": 0.021,
         "rayleigh_scale_height": 8.5, "haze_height": 1.2, "haze_distance": 5.0, "planet_radius": 6360.0,
@@ -377,6 +381,8 @@ def _link_scatter(node, output):
     _link(node, "rayleigh_density", "parent.sky_amount")
     _link(node, "mie_density", "parent.haze_amount")
     _link(node, "mie_g", "clamp(1 - 0.24 * parent.haze_glow_size, 0, 0.99)")
+    _link(node, "aureole", "clamp(parent.aureole, 0, 1)")
+    _link(node, "aureole_g", "clamp(0.9 - 0.2 * parent.aureole_size, 0, 0.99)")
     _link(node, "mie_coefficient", "parent.mie_coefficient")
     _link(node, "rayleigh_scale_height_km", "parent.rayleigh_scale_height")
     _link(node, "mie_scale_height_km", "parent.haze_height")

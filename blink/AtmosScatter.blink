@@ -68,6 +68,8 @@ param:
   float rayleighScaleHeight;
   float mieScaleHeight;
   float mieG;
+  float aureole;
+  float aureoleG;
   float planetRadius;
   float atmosphereThickness;
   int viewSamples;
@@ -109,6 +111,8 @@ local:
     defineParam(rayleighScaleHeight, "rayleigh_scale_height_km", 8.5f);
     defineParam(mieScaleHeight, "mie_scale_height_km", 1.2f);
     defineParam(mieG, "mie_g", 0.76f);
+    defineParam(aureole, "aureole", 0.0f);
+    defineParam(aureoleG, "aureole_g", 0.5f);
     defineParam(planetRadius, "planet_radius_km", 6360.0f);
     defineParam(atmosphereThickness, "atmosphere_thickness_km", 60.0f);
     defineParam(viewSamples, "view_samples", 16);
@@ -195,11 +199,21 @@ local:
   }
 
   // Cornette-Shanks approximation of the Mie phase function.
+  float cornetteShanks(float mu, float g)
+  {
+    float g2 = g * g;
+    float denom = pow(max(1.0f + g2 - 2.0f * g * mu, 1e-6f), 1.5f);
+    return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);
+  }
+
+  // The haze's glow, plus a share ('aureole') of it spread into a wider, softer lobe. Both
+  // lobes are normalised, so the aureole moves light out from the sun without adding any.
   float phaseMie(float mu)
   {
-    float g2 = mieG * mieG;
-    float denom = pow(max(1.0f + g2 - 2.0f * mieG * mu, 1e-6f), 1.5f);
-    return 3.0f / (8.0f * pi) * ((1.0f - g2) * (1.0f + mu * mu)) / ((2.0f + g2) * denom);
+    float tight = cornetteShanks(mu, mieG);
+    if (aureole <= 0.0f)
+      return tight;
+    return tight + aureole * (cornetteShanks(mu, aureoleG) - tight);
   }
 
   // Optical depth (Rayleigh in x, Mie in y, ozone in z) from point p towards the sun (or
