@@ -109,6 +109,37 @@ def _link(node, param, expression, channel=None):
 _USER_KNOBS = set()
 
 
+# Easy sliders (python/easy_mode.py does the work): (knob, label, min, max, tooltip).
+EASY_SLIDERS = [
+    ("easy_exposure", "exposure", -3, 3, "Brightness of the sun and the sky light together, in stops. "
+     "Moves 'sun strength' and 'sky light'."),
+    ("easy_sky", "sky", 0, 3, "More or less air: a bluer, brighter sky and more blue in the distance. "
+     "Multiplies 'sky amount'."),
+    ("easy_haze", "haze", 0, 4, "More or less haze: whiter, thicker air and a bigger glow. Multiplies 'haze amount'."),
+    ("easy_warmth", "warmth", -1, 1, "Tints the sun orange (up) or blue (down). Moves 'sun color'."),
+    ("easy_glow", "glow size", 0, 4, "Size of the glow round the sun. Multiplies 'haze glow size'."),
+    ("easy_halo", "halo", 0, 1, "Spreads a share of the glow into a wide, soft halo round the sun, as in "
+     "a hazy or smoky sky. Adds to 'aureole'."),
+]
+EASY_NEUTRAL = {"easy_exposure": 0.0, "easy_sky": 1.0, "easy_haze": 1.0, "easy_warmth": 0.0,
+                "easy_glow": 1.0, "easy_halo": 0.0}
+
+
+def _easy_code():
+    """python/easy_mode.py, base64-encoded for the hidden tool_code knob."""
+    import base64
+    with open(os.path.join(ROOT, "python", "easy_mode.py")) as f:
+        return base64.b64encode(f.read().encode()).decode()
+
+
+# knobChanged: hand the Easy sliders and the knobs they write to python/easy_mode.py.
+_EASY_DISPATCH = ("_k = nuke.thisKnob().name()\n"
+                  "if _k in %r and nuke.thisNode().knob('tool_code') is not None and not getattr(nuke, '_ezatmos_busy', False):\n"
+                  "    _eza = {}\n"
+                  "    exec(__import__('base64').b64decode(nuke.thisNode()['tool_code'].value()).decode(), _eza)\n"
+                  "    _eza['on_knob'](nuke.thisNode(), _k)\n")
+
+
 def _analyze_script():
     """The analyze button's script: python/analyze_shot.py, embedded so no module is needed."""
     with open(os.path.join(ROOT, "python", "analyze_shot.py")) as f:
@@ -136,6 +167,16 @@ def _add_knobs(group):
                        "camera sees the sky, at the project format, per frame: what a ScanlineRender of the "
                        "skydome would give, without the 3D setup.")
     k.append(mapping)
+    k.append(nuke.Text_Knob("easy_divider", "Easy"))
+    for name, label, lo, hi, tip in EASY_SLIDERS:
+        knob = nuke.Double_Knob(name, label)
+        knob.setRange(lo, hi)
+        knob.setTooltip(tip)
+        k.append(knob)
+    for name in ("easy_base", "tool_code"):
+        hidden = nuke.String_Knob(name, name.replace("_", " "))
+        hidden.setFlag(nuke.INVISIBLE)
+        k.append(hidden)
     k.append(nuke.Text_Knob("analyze_divider", "Analyze"))
     analyze = nuke.PyScript_Knob("analyze", "analyze", _analyze_script())
     analyze.setTooltip("Looks at the camera, skydome and HDRI and sets the node up for depth hazing this shot: "
@@ -309,7 +350,7 @@ def _add_knobs(group):
     # Analyze only sets other knobs; its own settings don't shape the output.
     # The skydome output is applied after the bake, so it does not change what is baked.
     _USER_KNOBS.difference_update(["analyze", "scene_scale", "ground_height", "reset_sun", "sun_in_use", "units_confirmed",
-                                   "output_mapping"])
+                                   "output_mapping"] + [e[0] for e in EASY_SLIDERS] + ["easy_base", "tool_code"])
 
     defaults = {
         "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "white_balance": 0.0, "sun_strength": 1.0, "sun_boost": 1.0,
@@ -323,6 +364,9 @@ def _add_knobs(group):
     }
     for name, value in defaults.items():
         group[name].setValue(value)
+    for name, value in EASY_NEUTRAL.items():
+        group[name].setValue(value)
+    group["tool_code"].setValue(_easy_code())
     res = "(%s==0 ? 1 : %s==1 ? 0.5 : 0.25)"
     group["scatter_scale"].setExpression("min(($gui ? %s : %s) * %s, 1)" % (res % ("viewer_resolution", "viewer_resolution"),
                                                                              res % ("render_resolution", "render_resolution"),
@@ -526,7 +570,9 @@ def _check_code(names):
 def _knob_changed_script(names):
     # Re-check the bake when a setting, the inputs or the bake knobs change.
     watched = list(names) + ["use_baked", "bake_file", "bake_folder", "baked_hash", "baked_first", "inputChange"]
-    return ("if nuke.thisKnob().name() in %r:\n" % (watched,) +
+    easy = [e[0] for e in EASY_SLIDERS] + ["sun_strength", "sky_light", "sky_amount", "haze_amount", "sun_color",
+                                           "haze_glow_size", "aureole"]
+    return (_EASY_DISPATCH % (easy,) +"if nuke.thisKnob().name() in %r:\n" % (watched,) +
             "".join("    " + line + "\n" for line in _check_code(names).splitlines()))
 
 
