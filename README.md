@@ -10,8 +10,13 @@ Target: Nuke 15.1.
 
 ## Status
 
-v1.2.0. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
+v1.2.1. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
 colour and brightness from the image, sky light), with depth haze passes.
+
+New in 1.2.1: the Light pass also measures a **cosine-weighted sky** (the light falling on a
+surface facing up). At a low sun it stays blue where the plain sky mean goes warm from the
+bright band at the horizon. EzCloudGen 0.52 lights clouds with its hue, so thin high cloud at
+sunset no longer comes out brown. The atmos's own look is unchanged.
 
 New in 1.2:
 - **Easy sliders** (exposure, sky, haze, warmth, glow size, halo) at the top of the panel, in
