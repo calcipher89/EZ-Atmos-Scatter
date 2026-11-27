@@ -10,8 +10,12 @@ Target: Nuke 15.1.
 
 ## Status
 
-v1.2.1. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
+v1.2.2. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
 colour and brightness from the image, sky light), with depth haze passes.
+
+New in 1.2.2: EzMatch's match sky renders each try at Draft quality and Quarter resolution
+(`match_begin` / `match_end` in the Easy code), and puts 'quality', 'viewer resolution' and
+'render resolution' back after. A sky try took about 19 s at full quality.
 
 New in 1.2.1: the Light pass also measures a **cosine-weighted sky** (the light falling on a
 surface facing up). At a low sun it stays blue where the plain sky mean goes warm from the

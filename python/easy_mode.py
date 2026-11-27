@@ -101,6 +101,38 @@ def apply_easy(n):
         n["aureole"].setValue(min(max(b["aureole"] + e["easy_halo"], 0.0), 1.0))
 
 
+# What EzMatch drops while it tries (each try re-renders the comp), and puts back after.
+MATCH_DRAFT = {"quality": "Draft", "viewer_resolution": "Quarter", "render_resolution": "Quarter"}
+
+
+def match_begin(n):
+    """Before a match: Draft samples at Quarter resolution, so each try renders fast. The sky
+    and haze are smooth, so their measured ratios barely move."""
+    try:
+        b = json.loads(n["easy_base"].value() or "{}")
+    except ValueError:
+        b = {}
+    b["_match_keep"] = dict((k, n[k].value()) for k in MATCH_DRAFT if n.knob(k) is not None)
+    with _Busy():
+        n["easy_base"].setValue(json.dumps(b))
+        for k, v in MATCH_DRAFT.items():
+            if n.knob(k) is not None:
+                n[k].setValue(v)
+
+
+def match_end(n):
+    """After a match: the render settings as they were."""
+    try:
+        b = json.loads(n["easy_base"].value() or "{}")
+    except ValueError:
+        b = {}
+    keep = b.pop("_match_keep", None)
+    with _Busy():
+        n["easy_base"].setValue(json.dumps(b))
+        for k, v in (keep or {}).items():
+            n[k].setValue(v)
+
+
 def on_knob(n, k):
     """knobChanged, for a knob the sliders look after."""
     if busy():
