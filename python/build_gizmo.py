@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLINK = os.path.join(ROOT, "blink")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzAtmosScatter.gizmo")
 # Shown on the node; bump it with each tagged release.
-VERSION = "1.2.1"
+VERSION = "1.3.0"
 
 LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
           "atmos_haze_color", "atmos_haze_sun", "atmos_haze_sky"]
@@ -115,7 +115,8 @@ EASY_SLIDERS = [
      "Moves 'sun strength' and 'sky light'."),
     ("easy_sky", "sky", 0, 3, "More or less air: a bluer, brighter sky and more blue in the distance. "
      "Multiplies 'sky amount'."),
-    ("easy_haze", "haze", 0, 4, "More or less haze: whiter, thicker air and a bigger glow. Multiplies 'haze amount'."),
+    ("easy_haze", "haze", 0, 4, "More or less haze: whiter, thicker, taller air and a bigger glow. Multiplies "
+     "'haze amount', and moves 'haze height' by its square root (0.5x to 2x)."),
     ("easy_warmth", "warmth", -1, 1, "Tints the sun orange (up) or blue (down). Moves 'sun color'."),
     ("easy_glow", "glow size", 0, 4, "Size of the glow round the sun. Multiplies 'haze glow size'."),
     ("easy_halo", "halo", 0, 1, "Spreads a share of the glow into a wide, soft halo round the sun, as in "
