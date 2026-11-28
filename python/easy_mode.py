@@ -113,11 +113,10 @@ LOOKS = {
                       "light": {"haze_amount": 2.0, "haze_height": 2.0, "haze_glow_size": 1.5}},
     # Aerial Day: a fair-weather day from high above. A little more, taller haze than the
     # defaults, so the far land still sits in air from a camera km up (planner r19 GUESS, to be
-    # tuned once on our demo fair-weather render). Pass 2 (r19): sun strength 0.5, a day sky that
-    # doesn't clip white in a scene without a grade after it.
-    "Aerial Day": {"sky": {"haze_amount": 1.5, "haze_height": 1.5, "haze_glow_size": 1.0, "sun_strength": 0.5},
-                   "haze": {"haze_amount": 1.0, "haze_height": 1.5, "haze_glow_size": 0.5, "sun_strength": 0.5},
-                   "light": {"haze_amount": 1.0, "haze_height": 1.5, "haze_glow_size": 1.0, "sun_strength": 0.5}},
+    # tuned once on our demo fair-weather render).
+    "Aerial Day": {"sky": {"haze_amount": 1.5, "haze_height": 1.5, "haze_glow_size": 1.0},
+                   "haze": {"haze_amount": 1.0, "haze_height": 1.5, "haze_glow_size": 0.5},
+                   "light": {"haze_amount": 1.0, "haze_height": 1.5, "haze_glow_size": 1.0}},
 }
 LOOK_NAMES = sorted(LOOKS)
 ROLE_NAMES = {"sky": "sky", "haze": "haze light", "light": "lighting lat-long"}
