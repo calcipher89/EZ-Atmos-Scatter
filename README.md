@@ -10,14 +10,8 @@ Target: Nuke 15.1.
 
 ## Status
 
-v1.3.0. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
+v1.2.1. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
 colour and brightness from the image, sky light), with depth haze passes.
-
-New in 1.3.0: the **haze** Easy slider also raises or lowers the haze layer: 'haze height'
-follows the square root of the slider (0.5x to 2x its base), with 'haze amount' as before. Seen
-from a high camera (an aerial at 4 km), the layer's height matters more than its amount: a
-1.2 km layer leaves almost no haze at the camera. At neutral the knobs are exactly as before. A
-base stored by 1.2 (no haze height) takes the knob's height as its base.
 
 New in 1.2.1: the Light pass also measures a **cosine-weighted sky** (the light falling on a
 surface facing up). At a low sun it stays blue where the plain sky mean goes warm from the

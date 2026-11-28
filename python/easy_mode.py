@@ -18,13 +18,7 @@ SLIDERS = [("easy_exposure", 0.0), ("easy_sky", 1.0), ("easy_haze", 1.0), ("easy
            ("easy_glow", 1.0), ("easy_halo", 0.0)]
 EASY_KNOBS = [name for name, _ in SLIDERS]
 # The knobs the sliders write.
-LOOK_KNOBS = ["sun_strength", "sky_light", "sky_amount", "haze_amount", "haze_height", "sun_color", "haze_glow_size",
-              "aureole"]
-# The haze slider also raises or lowers the haze layer: haze height = base x haze ^ this power
-# (the haze clamped to 0.25-4, so 0.5x to 2x the base height). At a high camera the layer's height
-# matters more than its amount (planner r14: 1.2 -> 2 km is about 4x the haze at a 4.1 km camera).
-# 0 turns it off.
-HAZE_HEIGHT_POWER = 0.5
+LOOK_KNOBS = ["sun_strength", "sky_light", "sky_amount", "haze_amount", "sun_color", "haze_glow_size", "aureole"]
 # Brightness knobs: the base holds them without the exposure slider.
 EXPOSED = ("sun_strength", "sky_light")
 
@@ -80,11 +74,6 @@ def _base(n):
         b = json.loads(n["easy_base"].value() or "{}")
     except ValueError:
         b = {}
-    if b and "haze_height" not in b and all(k in b for k in LOOK_KNOBS if k != "haze_height"):
-        # A base stored before the haze slider moved the haze height: the knob still holds its base.
-        b["haze_height"] = _value(n, "haze_height")
-        with _Busy():
-            n["easy_base"].setValue(json.dumps(b))
     if not all(k in b for k in LOOK_KNOBS):
         # Never set up: the knobs still hold the look the slider just moved away from.
         b = _store(n, exposure_in_knobs=False)
@@ -104,9 +93,6 @@ def apply_easy(n):
         # Sky: the air (bluer, brighter sky). Haze: the Mie haze (whiter, thicker air).
         n["sky_amount"].setValue(max(b["sky_amount"] * e["easy_sky"], 0.0))
         n["haze_amount"].setValue(max(b["haze_amount"] * e["easy_haze"], 0.0))
-        # ... and a taller (or lower) haze layer with it.
-        hz = max(0.25, min(4.0, e["easy_haze"]))
-        n["haze_height"].setValue(min(max(b["haze_height"] * hz ** HAZE_HEIGHT_POWER, 0.1), 10.0))
         # Warmth: an orange or blue tint on the sun.
         tint = (1.0 + 0.4 * w, 1.0 + 0.05 * w, 1.0 - 0.4 * w)
         n["sun_color"].setValue([c * t for c, t in zip(b["sun_color"], tint)])
