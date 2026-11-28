@@ -112,12 +112,13 @@ LOOKS = {
     "Aerial Sunset": {"sky": {"haze_amount": 4.0, "haze_height": 2.0, "haze_glow_size": 1.5},
                       "haze": {"haze_amount": 2.0, "haze_height": 2.0, "haze_glow_size": 0.5},
                       "light": {"haze_amount": 2.0, "haze_height": 2.0, "haze_glow_size": 1.5}},
-    # Aerial Day: a fair-weather day from high above. A little more, taller haze than the
-    # defaults, so the far land still sits in air from a camera km up (planner r19 GUESS, to be
-    # tuned once on our demo fair-weather render).
-    "Aerial Day": {"sky": {"haze_amount": 1.5, "haze_height": 1.5, "haze_glow_size": 1.0},
+    # Aerial Day: a clear fair-weather day from high above. The sky and lighting rows are the
+    # tool's own defaults written out (so a node coming from Aerial Sunset is reset): a thicker sky
+    # haze whitened a clear day sky (planner r21). The haze light gets a taller, thinner haze so
+    # the far land still sits in air from a camera km up.
+    "Aerial Day": {"sky": {"haze_amount": 1.0, "haze_height": 1.2, "haze_glow_size": 1.0},
                    "haze": {"haze_amount": 1.0, "haze_height": 1.5, "haze_glow_size": 0.5},
-                   "light": {"haze_amount": 1.0, "haze_height": 1.5, "haze_glow_size": 1.0}},
+                   "light": {"haze_amount": 1.0, "haze_height": 1.2, "haze_glow_size": 1.0}},
 }
 LOOK_NAMES = sorted(LOOKS)
 ROLE_NAMES = {"sky": "sky", "haze": "haze light", "light": "lighting lat-long"}

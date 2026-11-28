@@ -174,8 +174,8 @@ def _add_knobs(group):
         knob.setTooltip(tip)
         k.append(knob)
     look = nuke.Enumeration_Knob("easy_look", "starting look", ["Aerial Day", "Aerial Sunset"])
-    look.setTooltip("A starting point for a kind of shot. Aerial Day: a fair-weather day from high above, a little "
-                    "more and taller haze (1.5, 1.5 km). Aerial Sunset: from high above toward a low sun, "
+    look.setTooltip("A starting point for a kind of shot. Aerial Day: a clear fair-weather day from high above "
+                    "(the sky at the defaults; a node feeding EzDepthHaze gets a taller haze, 1.5 km). Aerial Sunset: from high above toward a low sun, "
                     "a thicker, taller haze (haze amount 4, haze height 2 km) and a bigger glow. Wire the node first: "
                     "a node feeding EzDepthHaze gets the thinner haze light (haze amount 2, glow size 0.5), "
                     "any other Lat-long node the lighting values (haze amount 2). Pair it with "
