@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BLINK = os.path.join(ROOT, "blink")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzAtmosScatter.gizmo")
 # Shown on the node; bump it with each tagged release.
-VERSION = "1.2.1"
+VERSION = "1.3.0"
 
 LAYERS = ["atmos_inscatter", "atmos_rayleigh", "atmos_mie", "atmos_ambient", "atmos_transmittance",
           "atmos_haze_color", "atmos_haze_sun", "atmos_haze_sky"]
@@ -173,6 +173,20 @@ def _add_knobs(group):
         knob.setRange(lo, hi)
         knob.setTooltip(tip)
         k.append(knob)
+    look = nuke.Enumeration_Knob("easy_look", "starting look", ["Aerial Sunset"])
+    look.setTooltip("A starting point for a kind of shot. Aerial Sunset: from high above toward a low sun, "
+                    "a thicker, taller haze (haze amount 4, haze height 2 km) and a bigger glow. Wire the node first: "
+                    "a node feeding EzDepthHaze gets the thinner haze light (haze amount 2, glow size 0.5), "
+                    "a Lat-long node the lighting values (haze amount 2). Pair it with "
+                    "EzDepthHaze's Aerial Sunset look, then let EzMatch's match all fit the Easy sliders.")
+    k.append(look)
+    apply_look = nuke.PyScript_Knob("apply_easy_look", "apply look",
+                                    "_n = nuke.thisNode()\n_eza = {}\n"
+                                    "exec(__import__('base64').b64decode(_n['tool_code'].value()).decode(), _eza)\n"
+                                    "_r = _eza['apply_look'](_n)\n"
+                                    "if _r:\n    nuke.message('Starting look: ' + _r)\n")
+    apply_look.setTooltip("Sets the starting look's knobs and centres the Easy sliders on it.")
+    k.append(apply_look)
     for name in ("easy_base", "tool_code"):
         hidden = nuke.String_Knob(name, name.replace("_", " "))
         hidden.setFlag(nuke.INVISIBLE)
@@ -350,7 +364,8 @@ def _add_knobs(group):
     # Analyze only sets other knobs; its own settings don't shape the output.
     # The skydome output is applied after the bake, so it does not change what is baked.
     _USER_KNOBS.difference_update(["analyze", "scene_scale", "ground_height", "reset_sun", "sun_in_use", "units_confirmed",
-                                   "output_mapping"] + [e[0] for e in EASY_SLIDERS] + ["easy_base", "tool_code"])
+                                   "output_mapping", "easy_look", "apply_easy_look"] + [e[0] for e in EASY_SLIDERS] +
+                                  ["easy_base", "tool_code"])
 
     defaults = {
         "sun_direction": [0.0, 0.5, -1.0], "sun_color": 1.0, "white_balance": 0.0, "sun_strength": 1.0, "sun_boost": 1.0,

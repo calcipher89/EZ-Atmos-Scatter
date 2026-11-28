@@ -24,6 +24,9 @@ class Node(dict):
     def __getitem__(self, k):
         return dict.__getitem__(self, k)
 
+    def knob(self, k):
+        return self.get(k)
+
     def vals(self, *ks):
         return [round(v, 4) if not isinstance(v, list) else [round(c, 4) for c in v]
                 for v in (self[k].v for k in ks)]
@@ -69,6 +72,69 @@ def main():
     n["easy_glow"].v = 10.0
     ns["on_knob"](n, "easy_glow")
     ok &= check("glow clamps to the knob range", n.vals("haze_glow_size"), [4.0])
+    # Starting look: its knobs set, sliders centred on them.
+    n["easy_haze"].v = 2.0
+    for k in ("haze_height",):
+        n[k] = Knob(1.2)
+    n["easy_look"] = Knob("Aerial Sunset")
+    ns["apply_look"](n)
+    ok &= check("Aerial Sunset: haze 4, height 2, glow 1.5, sliders centred",
+                n.vals("haze_amount", "haze_height", "haze_glow_size", "easy_haze"), [4.0, 2.0, 1.5, 1.0])
+    n["easy_haze"].v = 1.5
+    ns["on_knob"](n, "easy_haze")
+    ok &= check("then haze 1.5 multiplies the look's haze", n.vals("haze_amount"), [6.0])
+    # Roles from the node's own wiring.
+    nuke = sys.modules["nuke"]
+    nuke.INPUTS, nuke.HIDDEN_INPUTS = 1, 2
+
+    class Fake(Node):
+        def __init__(self, cls, outs=(), knobs=(), boom=False):
+            Node.__init__(self)
+            self.cls, self.outs, self.boom = cls, list(outs), boom
+            for k in knobs:
+                self[k] = Knob(0.0)
+
+        def Class(self):
+            return self.cls
+
+        def dependent(self, what=None, forceEvaluate=True):
+            if self.boom:
+                raise RuntimeError("no")
+            return self.outs
+
+    hz = Fake("Group", knobs=("easy_haze", "easy_fog"))
+    cg = Fake("Group", knobs=("easy_cover",))
+
+    def role(outs, mapping="Camera", boom=False):
+        m = Fake("Group", outs, boom=boom)
+        m["output_mapping"] = Knob(mapping)
+        return ns["look_role"](m)
+
+    ok &= check("roles: dots to EzDepthHaze / lat-long / EzCloudGen / Merge / none / error",
+                [role([Fake("Dot", [Fake("Dot", [hz])])]), role([hz], "Lat-long"), role([cg]),
+                 role([Fake("Merge2", [hz])]), role([]), role([hz], boom=True)],
+                ["haze", "light", "sky", "sky", "sky", "sky"])
+    chain = hz
+    for _ in range(7):
+        chain = Fake("Dot", [chain])
+    ok &= check("past 6 hops is sky", [role([chain])], ["sky"])
+    n.outs, n.cls, n.boom = [Fake("Dot", [hz])], "Group", False
+    n.Class = lambda: "Group"
+    n.dependent = lambda what=None, forceEvaluate=True: n.outs
+    n["output_mapping"] = Knob("Camera")
+    n["easy_haze"].v = 2.0
+    got = ns["apply_look"](n, "Aerial Sunset")
+    ok &= check("haze node: haze 2, height 2, glow 0.5", n.vals("haze_amount", "haze_height", "haze_glow_size", "easy_haze"),
+                [2.0, 2.0, 0.5, 1.0])
+    ok &= check("names the role", [got], ["Aerial Sunset (haze light)"])
+    n["easy_haze"].v = 0.93
+    ns["on_knob"](n, "easy_haze")
+    ok &= check("haze node: haze 0.93 -> 1.86", n.vals("haze_amount"), [1.86])
+    n["output_mapping"].v = "Lat-long"
+    n["easy_haze"].v = 1.0
+    ns["apply_look"](n, "Aerial Sunset")
+    ok &= check("lat-long node: haze 2, glow 1.5", n.vals("haze_amount", "haze_glow_size"), [2.0, 1.5])
+    ok &= check("unknown look", [ns["apply_look"](n, "Nope")], [None])
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
 

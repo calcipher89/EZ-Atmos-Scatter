@@ -101,6 +101,58 @@ def apply_easy(n):
         n["aureole"].setValue(min(max(b["aureole"] + e["easy_halo"], 0.0), 1.0))
 
 
+# Starting looks: knob values a look sets before the Easy sliders (and EzMatch) take over.
+# Aerial Sunset: from high above toward a low sun (the Rocky sunset r27 sky): a thicker, taller
+# haze layer, so a camera km over the land still looks through haze, and a bigger glow.
+# Each look has a row per role, which the node works out from its own wiring (look_role): "sky"
+# draws the sky (or lights EzCloudGen), "haze" feeds EzDepthHaze's atmos input (a thinner haze light
+# and a smaller glow), "light" is a Lat-long node lighting the terrain.
+LOOKS = {
+    "Aerial Sunset": {"sky": {"haze_amount": 4.0, "haze_height": 2.0, "haze_glow_size": 1.5},
+                      "haze": {"haze_amount": 2.0, "haze_height": 2.0, "haze_glow_size": 0.5},
+                      "light": {"haze_amount": 2.0, "haze_height": 2.0, "haze_glow_size": 1.5}},
+}
+LOOK_NAMES = sorted(LOOKS)
+ROLE_NAMES = {"sky": "sky", "haze": "haze light", "light": "lighting lat-long"}
+PASS_THROUGH = ("Dot", "NoOp")
+ROLE_HOPS = 6
+
+
+def _feeds_depth_haze(n, hops):
+    if hops <= 0:
+        return False
+    for d in n.dependent(nuke.INPUTS | nuke.HIDDEN_INPUTS, forceEvaluate=False):
+        if d.knob("easy_haze") is not None and d.knob("easy_fog") is not None:
+            return True
+        if d.Class() in PASS_THROUGH and _feeds_depth_haze(d, hops - 1):
+            return True
+    return False
+
+
+def look_role(n):
+    """'light' for a Lat-long node, 'haze' when it feeds an EzDepthHaze (through Dots), else 'sky'."""
+    try:
+        if n.knob("output_mapping") is not None and n["output_mapping"].value() == "Lat-long":
+            return "light"
+        return "haze" if _feeds_depth_haze(n, ROLE_HOPS) else "sky"
+    except Exception:
+        return "sky"
+
+
+def apply_look(n, name=None):
+    """Set the picked starting look's knobs for this node's role, then make them the Easy
+    sliders' base (centred). Returns 'look (role)', or None for an unknown look."""
+    name = name or (n["easy_look"].value() if n.knob("easy_look") is not None else None)
+    if name not in LOOKS:
+        return None
+    role = look_role(n)
+    with _Busy():
+        for k, v in LOOKS[name][role].items():
+            n[k].setValue(v)
+    rebase(n)
+    return "%s (%s)" % (name, ROLE_NAMES[role])
+
+
 def on_knob(n, k):
     """knobChanged, for a knob the sliders look after."""
     if busy():

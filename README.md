@@ -10,8 +10,16 @@ Target: Nuke 15.1.
 
 ## Status
 
-v1.2.1. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
+v1.3.0. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
 colour and brightness from the image, sky light), with depth haze passes.
+
+New in 1.3.0: a **starting look** menu with an **apply look** button in the Easy section.
+**Aerial Sunset** (from high above toward a low sun) sets a thicker, taller haze (haze amount 4,
+haze height 2 km) and a bigger glow, and centres the Easy sliders on it. Wire the node first: a
+node feeding EzDepthHaze (through Dots) gets the thinner haze light (haze amount 2, glow size 0.5)
+and a Lat-long node the lighting values (haze amount 2); the button says which it picked. With EzDepthHaze's Aerial
+Sunset look it is EzMatch's starting point for a sunset aerial: from midday defaults the Easy
+sliders can't reach that look.
 
 New in 1.2.1: the Light pass also measures a **cosine-weighted sky** (the light falling on a
 surface facing up). At a low sun it stays blue where the plain sky mean goes warm from the
