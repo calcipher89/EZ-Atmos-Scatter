@@ -29,11 +29,11 @@ Group {
  addUserKnob {7 easy_glow l "glow size" t "Size of the glow round the sun. Multiplies 'haze glow size'." R 0 4}
  easy_glow 1
  addUserKnob {7 easy_halo l halo t "Spreads a share of the glow into a wide, soft halo round the sun, as in a hazy or smoky sky. Adds to 'aureole'."}
- addUserKnob {4 easy_look l "starting look" t "A starting point for a kind of shot. Aerial Sunset: from high above toward a low sun, a thicker, taller haze (haze amount 4, haze height 2 km) and a bigger glow. Pair it with EzDepthHaze's Aerial Sunset look, then let EzMatch's match all fit the Easy sliders." M {"Aerial Sunset"}}
- addUserKnob {22 apply_easy_look l "apply look" t "Sets the starting look's knobs and centres the Easy sliders on it." -STARTLINE T "_n = nuke.thisNode()\n_eza = \{\}\nexec(__import__('base64').b64decode(_n\['tool_code'].value()).decode(), _eza)\n_eza\['apply_look'](_n)\n"}
+ addUserKnob {4 easy_look l "starting look" t "A starting point for a kind of shot. Aerial Sunset: from high above toward a low sun, a thicker, taller haze (haze amount 4, haze height 2 km) and a bigger glow. Wire the node first: a node feeding EzDepthHaze gets the thinner haze light (haze amount 2, glow size 0.5), a Lat-long node the lighting values (haze amount 2). Pair it with EzDepthHaze's Aerial Sunset look, then let EzMatch's match all fit the Easy sliders." M {"Aerial Sunset"}}
+ addUserKnob {22 apply_easy_look l "apply look" t "Sets the starting look's knobs and centres the Easy sliders on it." -STARTLINE T "_n = nuke.thisNode()\n_eza = \{\}\nexec(__import__('base64').b64decode(_n\['tool_code'].value()).decode(), _eza)\n_r = _eza\['apply_look'](_n)\nif _r:\n    nuke.message('Starting look: ' + _r)\n"}
  addUserKnob {1 easy_base l "easy base" +INVISIBLE}
  addUserKnob {1 tool_code l "tool code" +INVISIBLE}
- tool_code IiIiRWFzeSBzbGlkZXJzOiBhIGZldyBhcnRpc3QtbGFuZ3VhZ2Ugc2xpZGVycyBvdmVyIHRoZSBBdG1vc3BoZXJlIGFuZCBTdW4ga25vYnMuCgpidWlsZF9naXptby5weSBzdG9yZXMgdGhpcyBmaWxlIGJhc2U2NC1lbmNvZGVkIGluIHRoZSBoaWRkZW4gdG9vbF9jb2RlIGtub2I7IGtub2JDaGFuZ2VkIHJ1bnMKaXQgZnJvbSB0aGVyZSwgc28gdGhlIG5vZGUgbmVlZHMgbm8gUHl0aG9uIG1vZHVsZSBhdCB0aGUgc3R1ZGlvLiBPdGhlciB0b29scyAoRXpNYXRjaCkgcnVuIGl0CnRoZSBzYW1lIHdheSBhbmQgY2FsbCBhcHBseV9lYXN5IC8gcmViYXNlLCBzbyB0aGV5IG9ubHkgZXZlciBtb3ZlIHRoZXNlIHNsaWRlcnMuCgpUaGUgc2xpZGVycyBhcmUgcmVsYXRpdmUgdG8gYSBiYXNlIGtlcHQgaW4gdGhlIGhpZGRlbiBlYXN5X2Jhc2Uga25vYiAoSlNPTik6IHRoZSBrbm9iIHZhbHVlcwp0aGUgc2xpZGVycyBzdGFydGVkIGZyb20uIEV2ZXJ5IHNsaWRlciBjaGFuZ2UgcmV3cml0ZXMgdGhlIGtub2JzIGZyb20gdGhlIGJhc2UsIHNvIHRoZSBrbm9icwphbHdheXMgc2hvdyBleGFjdGx5IHdoYXQgdGhlIHNsaWRlcnMgZGlkLiBFZGl0aW5nIG9uZSBvZiB0aG9zZSBrbm9icyBieSBoYW5kIG1ha2VzIHRoZSBuZXcKdmFsdWVzIHRoZSBiYXNlIGFuZCBjZW50cmVzIHRoZSBzbGlkZXJzIChleHBvc3VyZSBzdGF5cyB3aGVyZSBpdCBpcykuCiIiIgppbXBvcnQganNvbgoKaW1wb3J0IG51a2UKCiMgKGtub2IsIG5ldXRyYWwgdmFsdWUpClNMSURFUlMgPSBbKCJlYXN5X2V4cG9zdXJlIiwgMC4wKSwgKCJlYXN5X3NreSIsIDEuMCksICgiZWFzeV9oYXplIiwgMS4wKSwgKCJlYXN5X3dhcm10aCIsIDAuMCksCiAgICAgICAgICAgKCJlYXN5X2dsb3ciLCAxLjApLCAoImVhc3lfaGFsbyIsIDAuMCldCkVBU1lfS05PQlMgPSBbbmFtZSBmb3IgbmFtZSwgXyBpbiBTTElERVJTXQojIFRoZSBrbm9icyB0aGUgc2xpZGVycyB3cml0ZS4KTE9PS19LTk9CUyA9IFsic3VuX3N0cmVuZ3RoIiwgInNreV9saWdodCIsICJza3lfYW1vdW50IiwgImhhemVfYW1vdW50IiwgInN1bl9jb2xvciIsICJoYXplX2dsb3dfc2l6ZSIsICJhdXJlb2xlIl0KIyBCcmlnaHRuZXNzIGtub2JzOiB0aGUgYmFzZSBob2xkcyB0aGVtIHdpdGhvdXQgdGhlIGV4cG9zdXJlIHNsaWRlci4KRVhQT1NFRCA9ICgic3VuX3N0cmVuZ3RoIiwgInNreV9saWdodCIpCgoKY2xhc3MgX0J1c3kob2JqZWN0KToKICAgICIiIldoaWxlIHRoZSBzbGlkZXJzIHNldCBrbm9icywga25vYkNoYW5nZWQgbGVhdmVzIHRoZW0gYWxvbmUgKHRoZSBmbGFnIGxpdmVzIG9uIHRoZSBudWtlCiAgICBtb2R1bGUsIHRoZSBvbmUgdGhpbmcgdGhhdCBvdXRsYXN0cyBlYWNoIGtub2JDaGFuZ2VkIHJ1bikuIiIiCgogICAgZGVmIF9fZW50ZXJfXyhzZWxmKToKICAgICAgICBzZWxmLndhcyA9IGdldGF0dHIobnVrZSwgIl9lemF0bW9zX2J1c3kiLCBGYWxzZSkKICAgICAgICBudWtlLl9lemF0bW9zX2J1c3kgPSBUcnVlCgogICAgZGVmIF9fZXhpdF9fKHNlbGYsICphcmdzKToKICAgICAgICBudWtlLl9lemF0bW9zX2J1c3kgPSBzZWxmLndhcwoKCmRlZiBidXN5KCk6CiAgICByZXR1cm4gZ2V0YXR0cihudWtlLCAiX2V6YXRtb3NfYnVzeSIsIEZhbHNlKQoKCmRlZiBfdmFsdWUobiwgbmFtZSk6CiAgICB2ID0gbltuYW1lXS52YWx1ZSgpCiAgICBpZiBpc2luc3RhbmNlKHYsIChsaXN0LCB0dXBsZSkpOgogICAgICAgIHJldHVybiBsaXN0KHYpCiAgICBpZiBuYW1lID09ICJzdW5fY29sb3IiOgogICAgICAgICMgQSBDb2xvcl9Lbm9iIHJlYWRzIGJhY2sgYXMgb25lIG51bWJlciB3aGlsZSBpdHMgY2hhbm5lbHMgYXJlIGVxdWFsLgogICAgICAgIHJldHVybiBbdiwgdiwgdl0KICAgIHJldHVybiB2CgoKZGVmIF9zdG9yZShuLCBleHBvc3VyZV9pbl9rbm9icz1UcnVlKToKICAgIGUgPSAyLjAgKiogblsiZWFzeV9leHBvc3VyZSJdLnZhbHVlKCkgaWYgZXhwb3N1cmVfaW5fa25vYnMgZWxzZSAxLjAKICAgIGJhc2UgPSBkaWN0KChrLCBfdmFsdWUobiwgaykpIGZvciBrIGluIExPT0tfS05PQlMpCiAgICBmb3IgayBpbiBFWFBPU0VEOgogICAgICAgIGJhc2Vba10gPSBiYXNlW2tdIC8gZQogICAgd2l0aCBfQnVzeSgpOgogICAgICAgIG5bImVhc3lfYmFzZSJdLnNldFZhbHVlKGpzb24uZHVtcHMoYmFzZSkpCiAgICByZXR1cm4gYmFzZQoKCmRlZiByZWJhc2UobiwgY2VudHJlPVRydWUpOgogICAgIiIiTWFrZSB0aGUga25vYnMnIGN1cnJlbnQgdmFsdWVzIHRoZSBiYXNlLCBhbmQgY2VudHJlIHRoZSBzbGlkZXJzIChleHBvc3VyZSBzdGF5cykuIiIiCiAgICBfc3RvcmUobikKICAgIGlmIGNlbnRyZToKICAgICAgICB3aXRoIF9CdXN5KCk6CiAgICAgICAgICAgIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlM6CiAgICAgICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2V4cG9zdXJlIjoKICAgICAgICAgICAgICAgICAgICBuW25hbWVdLnNldFZhbHVlKG5ldXRyYWwpCgoKZGVmIF9iYXNlKG4pOgogICAgdHJ5OgogICAgICAgIGIgPSBqc29uLmxvYWRzKG5bImVhc3lfYmFzZSJdLnZhbHVlKCkgb3IgInt9IikKICAgIGV4Y2VwdCBWYWx1ZUVycm9yOgogICAgICAgIGIgPSB7fQogICAgaWYgbm90IGFsbChrIGluIGIgZm9yIGsgaW4gTE9PS19LTk9CUyk6CiAgICAgICAgIyBOZXZlciBzZXQgdXA6IHRoZSBrbm9icyBzdGlsbCBob2xkIHRoZSBsb29rIHRoZSBzbGlkZXIganVzdCBtb3ZlZCBhd2F5IGZyb20uCiAgICAgICAgYiA9IF9zdG9yZShuLCBleHBvc3VyZV9pbl9rbm9icz1GYWxzZSkKICAgIHJldHVybiBiCgoKZGVmIGFwcGx5X2Vhc3kobik6CiAgICAiIiJSZXdyaXRlIHRoZSBrbm9icyBmcm9tIHRoZSBiYXNlIGFuZCB0aGUgc2xpZGVycy4iIiIKICAgIGIgPSBfYmFzZShuKQogICAgZSA9IGRpY3QoKG5hbWUsIG5bbmFtZV0udmFsdWUoKSkgZm9yIG5hbWUsIF8gaW4gU0xJREVSUykKICAgIGdhaW4gPSAyLjAgKiogZVsiZWFzeV9leHBvc3VyZSJdCiAgICB3ID0gbWF4KC0xLjAsIG1pbigxLjAsIGVbImVhc3lfd2FybXRoIl0pKQogICAgd2l0aCBfQnVzeSgpOgogICAgICAgICMgRXhwb3N1cmU6IHRoZSBzdW4gYW5kIHRoZSBza3kgbGlnaHQgdG9nZXRoZXIsIGluIHN0b3BzLgogICAgICAgIG5bInN1bl9zdHJlbmd0aCJdLnNldFZhbHVlKGJbInN1bl9zdHJlbmd0aCJdICogZ2FpbikKICAgICAgICBuWyJza3lfbGlnaHQiXS5zZXRWYWx1ZShiWyJza3lfbGlnaHQiXSAqIGdhaW4pCiAgICAgICAgIyBTa3k6IHRoZSBhaXIgKGJsdWVyLCBicmlnaHRlciBza3kpLiBIYXplOiB0aGUgTWllIGhhemUgKHdoaXRlciwgdGhpY2tlciBhaXIpLgogICAgICAgIG5bInNreV9hbW91bnQiXS5zZXRWYWx1ZShtYXgoYlsic2t5X2Ftb3VudCJdICogZVsiZWFzeV9za3kiXSwgMC4wKSkKICAgICAgICBuWyJoYXplX2Ftb3VudCJdLnNldFZhbHVlKG1heChiWyJoYXplX2Ftb3VudCJdICogZVsiZWFzeV9oYXplIl0sIDAuMCkpCiAgICAgICAgIyBXYXJtdGg6IGFuIG9yYW5nZSBvciBibHVlIHRpbnQgb24gdGhlIHN1bi4KICAgICAgICB0aW50ID0gKDEuMCArIDAuNCAqIHcsIDEuMCArIDAuMDUgKiB3LCAxLjAgLSAwLjQgKiB3KQogICAgICAgIG5bInN1bl9jb2xvciJdLnNldFZhbHVlKFtjICogdCBmb3IgYywgdCBpbiB6aXAoYlsic3VuX2NvbG9yIl0sIHRpbnQpXSkKICAgICAgICAjIEdsb3c6IHRoZSBzaXplIG9mIHRoZSBoYXplIGdsb3cgcm91bmQgdGhlIHN1bi4gSGFsbzogc3ByZWFkcyBhIHNoYXJlIG9mIGl0IHdpZGUuCiAgICAgICAgblsiaGF6ZV9nbG93X3NpemUiXS5zZXRWYWx1ZShtaW4obWF4KGJbImhhemVfZ2xvd19zaXplIl0gKiBlWyJlYXN5X2dsb3ciXSwgMC4wKSwgNC4wKSkKICAgICAgICBuWyJhdXJlb2xlIl0uc2V0VmFsdWUobWluKG1heChiWyJhdXJlb2xlIl0gKyBlWyJlYXN5X2hhbG8iXSwgMC4wKSwgMS4wKSkKCgojIFN0YXJ0aW5nIGxvb2tzOiBrbm9iIHZhbHVlcyBhIGxvb2sgc2V0cyBiZWZvcmUgdGhlIEVhc3kgc2xpZGVycyAoYW5kIEV6TWF0Y2gpIHRha2Ugb3Zlci4KIyBBZXJpYWwgU3Vuc2V0OiBmcm9tIGhpZ2ggYWJvdmUgdG93YXJkIGEgbG93IHN1biAodGhlIFJvY2t5IHN1bnNldCByMjcgc2t5KTogYSB0aGlja2VyLCB0YWxsZXIKIyBoYXplIGxheWVyLCBzbyBhIGNhbWVyYSBrbSBvdmVyIHRoZSBsYW5kIHN0aWxsIGxvb2tzIHRocm91Z2ggaGF6ZSwgYW5kIGEgYmlnZ2VyIGdsb3cuCkxPT0tTID0gewogICAgIkFlcmlhbCBTdW5zZXQiOiB7ImhhemVfYW1vdW50IjogNC4wLCAiaGF6ZV9oZWlnaHQiOiAyLjAsICJoYXplX2dsb3dfc2l6ZSI6IDEuNX0sCn0KTE9PS19OQU1FUyA9IHNvcnRlZChMT09LUykKCgpkZWYgYXBwbHlfbG9vayhuLCBuYW1lPU5vbmUpOgogICAgIiIiU2V0IHRoZSBwaWNrZWQgc3RhcnRpbmcgbG9vaydzIGtub2JzLCB0aGVuIG1ha2UgdGhlbSB0aGUgRWFzeSBzbGlkZXJzJyBiYXNlIChjZW50cmVkKS4iIiIKICAgIG5hbWUgPSBuYW1lIG9yIChuWyJlYXN5X2xvb2siXS52YWx1ZSgpIGlmIG4ua25vYigiZWFzeV9sb29rIikgaXMgbm90IE5vbmUgZWxzZSBOb25lKQogICAgaWYgbmFtZSBub3QgaW4gTE9PS1M6CiAgICAgICAgcmV0dXJuIE5vbmUKICAgIHdpdGggX0J1c3koKToKICAgICAgICBmb3IgaywgdiBpbiBMT09LU1tuYW1lXS5pdGVtcygpOgogICAgICAgICAgICBuW2tdLnNldFZhbHVlKHYpCiAgICByZWJhc2UobikKICAgIHJldHVybiBuYW1lCgoKZGVmIG9uX2tub2Iobiwgayk6CiAgICAiIiJrbm9iQ2hhbmdlZCwgZm9yIGEga25vYiB0aGUgc2xpZGVycyBsb29rIGFmdGVyLiIiIgogICAgaWYgYnVzeSgpOgogICAgICAgIHJldHVybgogICAgaWYgayBpbiBFQVNZX0tOT0JTOgogICAgICAgIGFwcGx5X2Vhc3kobikKICAgIGVsaWYgayBpbiBMT09LX0tOT0JTOgogICAgICAgICMgVHVuZWQgYnkgaGFuZDogdGhhdCBiZWNvbWVzIHRoZSBzbGlkZXJzJyBzdGFydGluZyBwb2ludC4KICAgICAgICByZWJhc2UobikK
+ tool_code IiIiRWFzeSBzbGlkZXJzOiBhIGZldyBhcnRpc3QtbGFuZ3VhZ2Ugc2xpZGVycyBvdmVyIHRoZSBBdG1vc3BoZXJlIGFuZCBTdW4ga25vYnMuCgpidWlsZF9naXptby5weSBzdG9yZXMgdGhpcyBmaWxlIGJhc2U2NC1lbmNvZGVkIGluIHRoZSBoaWRkZW4gdG9vbF9jb2RlIGtub2I7IGtub2JDaGFuZ2VkIHJ1bnMKaXQgZnJvbSB0aGVyZSwgc28gdGhlIG5vZGUgbmVlZHMgbm8gUHl0aG9uIG1vZHVsZSBhdCB0aGUgc3R1ZGlvLiBPdGhlciB0b29scyAoRXpNYXRjaCkgcnVuIGl0CnRoZSBzYW1lIHdheSBhbmQgY2FsbCBhcHBseV9lYXN5IC8gcmViYXNlLCBzbyB0aGV5IG9ubHkgZXZlciBtb3ZlIHRoZXNlIHNsaWRlcnMuCgpUaGUgc2xpZGVycyBhcmUgcmVsYXRpdmUgdG8gYSBiYXNlIGtlcHQgaW4gdGhlIGhpZGRlbiBlYXN5X2Jhc2Uga25vYiAoSlNPTik6IHRoZSBrbm9iIHZhbHVlcwp0aGUgc2xpZGVycyBzdGFydGVkIGZyb20uIEV2ZXJ5IHNsaWRlciBjaGFuZ2UgcmV3cml0ZXMgdGhlIGtub2JzIGZyb20gdGhlIGJhc2UsIHNvIHRoZSBrbm9icwphbHdheXMgc2hvdyBleGFjdGx5IHdoYXQgdGhlIHNsaWRlcnMgZGlkLiBFZGl0aW5nIG9uZSBvZiB0aG9zZSBrbm9icyBieSBoYW5kIG1ha2VzIHRoZSBuZXcKdmFsdWVzIHRoZSBiYXNlIGFuZCBjZW50cmVzIHRoZSBzbGlkZXJzIChleHBvc3VyZSBzdGF5cyB3aGVyZSBpdCBpcykuCiIiIgppbXBvcnQganNvbgoKaW1wb3J0IG51a2UKCiMgKGtub2IsIG5ldXRyYWwgdmFsdWUpClNMSURFUlMgPSBbKCJlYXN5X2V4cG9zdXJlIiwgMC4wKSwgKCJlYXN5X3NreSIsIDEuMCksICgiZWFzeV9oYXplIiwgMS4wKSwgKCJlYXN5X3dhcm10aCIsIDAuMCksCiAgICAgICAgICAgKCJlYXN5X2dsb3ciLCAxLjApLCAoImVhc3lfaGFsbyIsIDAuMCldCkVBU1lfS05PQlMgPSBbbmFtZSBmb3IgbmFtZSwgXyBpbiBTTElERVJTXQojIFRoZSBrbm9icyB0aGUgc2xpZGVycyB3cml0ZS4KTE9PS19LTk9CUyA9IFsic3VuX3N0cmVuZ3RoIiwgInNreV9saWdodCIsICJza3lfYW1vdW50IiwgImhhemVfYW1vdW50IiwgInN1bl9jb2xvciIsICJoYXplX2dsb3dfc2l6ZSIsICJhdXJlb2xlIl0KIyBCcmlnaHRuZXNzIGtub2JzOiB0aGUgYmFzZSBob2xkcyB0aGVtIHdpdGhvdXQgdGhlIGV4cG9zdXJlIHNsaWRlci4KRVhQT1NFRCA9ICgic3VuX3N0cmVuZ3RoIiwgInNreV9saWdodCIpCgoKY2xhc3MgX0J1c3kob2JqZWN0KToKICAgICIiIldoaWxlIHRoZSBzbGlkZXJzIHNldCBrbm9icywga25vYkNoYW5nZWQgbGVhdmVzIHRoZW0gYWxvbmUgKHRoZSBmbGFnIGxpdmVzIG9uIHRoZSBudWtlCiAgICBtb2R1bGUsIHRoZSBvbmUgdGhpbmcgdGhhdCBvdXRsYXN0cyBlYWNoIGtub2JDaGFuZ2VkIHJ1bikuIiIiCgogICAgZGVmIF9fZW50ZXJfXyhzZWxmKToKICAgICAgICBzZWxmLndhcyA9IGdldGF0dHIobnVrZSwgIl9lemF0bW9zX2J1c3kiLCBGYWxzZSkKICAgICAgICBudWtlLl9lemF0bW9zX2J1c3kgPSBUcnVlCgogICAgZGVmIF9fZXhpdF9fKHNlbGYsICphcmdzKToKICAgICAgICBudWtlLl9lemF0bW9zX2J1c3kgPSBzZWxmLndhcwoKCmRlZiBidXN5KCk6CiAgICByZXR1cm4gZ2V0YXR0cihudWtlLCAiX2V6YXRtb3NfYnVzeSIsIEZhbHNlKQoKCmRlZiBfdmFsdWUobiwgbmFtZSk6CiAgICB2ID0gbltuYW1lXS52YWx1ZSgpCiAgICBpZiBpc2luc3RhbmNlKHYsIChsaXN0LCB0dXBsZSkpOgogICAgICAgIHJldHVybiBsaXN0KHYpCiAgICBpZiBuYW1lID09ICJzdW5fY29sb3IiOgogICAgICAgICMgQSBDb2xvcl9Lbm9iIHJlYWRzIGJhY2sgYXMgb25lIG51bWJlciB3aGlsZSBpdHMgY2hhbm5lbHMgYXJlIGVxdWFsLgogICAgICAgIHJldHVybiBbdiwgdiwgdl0KICAgIHJldHVybiB2CgoKZGVmIF9zdG9yZShuLCBleHBvc3VyZV9pbl9rbm9icz1UcnVlKToKICAgIGUgPSAyLjAgKiogblsiZWFzeV9leHBvc3VyZSJdLnZhbHVlKCkgaWYgZXhwb3N1cmVfaW5fa25vYnMgZWxzZSAxLjAKICAgIGJhc2UgPSBkaWN0KChrLCBfdmFsdWUobiwgaykpIGZvciBrIGluIExPT0tfS05PQlMpCiAgICBmb3IgayBpbiBFWFBPU0VEOgogICAgICAgIGJhc2Vba10gPSBiYXNlW2tdIC8gZQogICAgd2l0aCBfQnVzeSgpOgogICAgICAgIG5bImVhc3lfYmFzZSJdLnNldFZhbHVlKGpzb24uZHVtcHMoYmFzZSkpCiAgICByZXR1cm4gYmFzZQoKCmRlZiByZWJhc2UobiwgY2VudHJlPVRydWUpOgogICAgIiIiTWFrZSB0aGUga25vYnMnIGN1cnJlbnQgdmFsdWVzIHRoZSBiYXNlLCBhbmQgY2VudHJlIHRoZSBzbGlkZXJzIChleHBvc3VyZSBzdGF5cykuIiIiCiAgICBfc3RvcmUobikKICAgIGlmIGNlbnRyZToKICAgICAgICB3aXRoIF9CdXN5KCk6CiAgICAgICAgICAgIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlM6CiAgICAgICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2V4cG9zdXJlIjoKICAgICAgICAgICAgICAgICAgICBuW25hbWVdLnNldFZhbHVlKG5ldXRyYWwpCgoKZGVmIF9iYXNlKG4pOgogICAgdHJ5OgogICAgICAgIGIgPSBqc29uLmxvYWRzKG5bImVhc3lfYmFzZSJdLnZhbHVlKCkgb3IgInt9IikKICAgIGV4Y2VwdCBWYWx1ZUVycm9yOgogICAgICAgIGIgPSB7fQogICAgaWYgbm90IGFsbChrIGluIGIgZm9yIGsgaW4gTE9PS19LTk9CUyk6CiAgICAgICAgIyBOZXZlciBzZXQgdXA6IHRoZSBrbm9icyBzdGlsbCBob2xkIHRoZSBsb29rIHRoZSBzbGlkZXIganVzdCBtb3ZlZCBhd2F5IGZyb20uCiAgICAgICAgYiA9IF9zdG9yZShuLCBleHBvc3VyZV9pbl9rbm9icz1GYWxzZSkKICAgIHJldHVybiBiCgoKZGVmIGFwcGx5X2Vhc3kobik6CiAgICAiIiJSZXdyaXRlIHRoZSBrbm9icyBmcm9tIHRoZSBiYXNlIGFuZCB0aGUgc2xpZGVycy4iIiIKICAgIGIgPSBfYmFzZShuKQogICAgZSA9IGRpY3QoKG5hbWUsIG5bbmFtZV0udmFsdWUoKSkgZm9yIG5hbWUsIF8gaW4gU0xJREVSUykKICAgIGdhaW4gPSAyLjAgKiogZVsiZWFzeV9leHBvc3VyZSJdCiAgICB3ID0gbWF4KC0xLjAsIG1pbigxLjAsIGVbImVhc3lfd2FybXRoIl0pKQogICAgd2l0aCBfQnVzeSgpOgogICAgICAgICMgRXhwb3N1cmU6IHRoZSBzdW4gYW5kIHRoZSBza3kgbGlnaHQgdG9nZXRoZXIsIGluIHN0b3BzLgogICAgICAgIG5bInN1bl9zdHJlbmd0aCJdLnNldFZhbHVlKGJbInN1bl9zdHJlbmd0aCJdICogZ2FpbikKICAgICAgICBuWyJza3lfbGlnaHQiXS5zZXRWYWx1ZShiWyJza3lfbGlnaHQiXSAqIGdhaW4pCiAgICAgICAgIyBTa3k6IHRoZSBhaXIgKGJsdWVyLCBicmlnaHRlciBza3kpLiBIYXplOiB0aGUgTWllIGhhemUgKHdoaXRlciwgdGhpY2tlciBhaXIpLgogICAgICAgIG5bInNreV9hbW91bnQiXS5zZXRWYWx1ZShtYXgoYlsic2t5X2Ftb3VudCJdICogZVsiZWFzeV9za3kiXSwgMC4wKSkKICAgICAgICBuWyJoYXplX2Ftb3VudCJdLnNldFZhbHVlKG1heChiWyJoYXplX2Ftb3VudCJdICogZVsiZWFzeV9oYXplIl0sIDAuMCkpCiAgICAgICAgIyBXYXJtdGg6IGFuIG9yYW5nZSBvciBibHVlIHRpbnQgb24gdGhlIHN1bi4KICAgICAgICB0aW50ID0gKDEuMCArIDAuNCAqIHcsIDEuMCArIDAuMDUgKiB3LCAxLjAgLSAwLjQgKiB3KQogICAgICAgIG5bInN1bl9jb2xvciJdLnNldFZhbHVlKFtjICogdCBmb3IgYywgdCBpbiB6aXAoYlsic3VuX2NvbG9yIl0sIHRpbnQpXSkKICAgICAgICAjIEdsb3c6IHRoZSBzaXplIG9mIHRoZSBoYXplIGdsb3cgcm91bmQgdGhlIHN1bi4gSGFsbzogc3ByZWFkcyBhIHNoYXJlIG9mIGl0IHdpZGUuCiAgICAgICAgblsiaGF6ZV9nbG93X3NpemUiXS5zZXRWYWx1ZShtaW4obWF4KGJbImhhemVfZ2xvd19zaXplIl0gKiBlWyJlYXN5X2dsb3ciXSwgMC4wKSwgNC4wKSkKICAgICAgICBuWyJhdXJlb2xlIl0uc2V0VmFsdWUobWluKG1heChiWyJhdXJlb2xlIl0gKyBlWyJlYXN5X2hhbG8iXSwgMC4wKSwgMS4wKSkKCgojIFN0YXJ0aW5nIGxvb2tzOiBrbm9iIHZhbHVlcyBhIGxvb2sgc2V0cyBiZWZvcmUgdGhlIEVhc3kgc2xpZGVycyAoYW5kIEV6TWF0Y2gpIHRha2Ugb3Zlci4KIyBBZXJpYWwgU3Vuc2V0OiBmcm9tIGhpZ2ggYWJvdmUgdG93YXJkIGEgbG93IHN1biAodGhlIFJvY2t5IHN1bnNldCByMjcgc2t5KTogYSB0aGlja2VyLCB0YWxsZXIKIyBoYXplIGxheWVyLCBzbyBhIGNhbWVyYSBrbSBvdmVyIHRoZSBsYW5kIHN0aWxsIGxvb2tzIHRocm91Z2ggaGF6ZSwgYW5kIGEgYmlnZ2VyIGdsb3cuCiMgRWFjaCBsb29rIGhhcyBhIHJvdyBwZXIgcm9sZSwgd2hpY2ggdGhlIG5vZGUgd29ya3Mgb3V0IGZyb20gaXRzIG93biB3aXJpbmcgKGxvb2tfcm9sZSk6ICJza3kiCiMgZHJhd3MgdGhlIHNreSAob3IgbGlnaHRzIEV6Q2xvdWRHZW4pLCAiaGF6ZSIgZmVlZHMgRXpEZXB0aEhhemUncyBhdG1vcyBpbnB1dCAoYSB0aGlubmVyIGhhemUgbGlnaHQKIyBhbmQgYSBzbWFsbGVyIGdsb3cpLCAibGlnaHQiIGlzIGEgTGF0LWxvbmcgbm9kZSBsaWdodGluZyB0aGUgdGVycmFpbi4KTE9PS1MgPSB7CiAgICAiQWVyaWFsIFN1bnNldCI6IHsic2t5IjogeyJoYXplX2Ftb3VudCI6IDQuMCwgImhhemVfaGVpZ2h0IjogMi4wLCAiaGF6ZV9nbG93X3NpemUiOiAxLjV9LAogICAgICAgICAgICAgICAgICAgICAgImhhemUiOiB7ImhhemVfYW1vdW50IjogMi4wLCAiaGF6ZV9oZWlnaHQiOiAyLjAsICJoYXplX2dsb3dfc2l6ZSI6IDAuNX0sCiAgICAgICAgICAgICAgICAgICAgICAibGlnaHQiOiB7ImhhemVfYW1vdW50IjogMi4wLCAiaGF6ZV9oZWlnaHQiOiAyLjAsICJoYXplX2dsb3dfc2l6ZSI6IDEuNX19LAp9CkxPT0tfTkFNRVMgPSBzb3J0ZWQoTE9PS1MpClJPTEVfTkFNRVMgPSB7InNreSI6ICJza3kiLCAiaGF6ZSI6ICJoYXplIGxpZ2h0IiwgImxpZ2h0IjogImxpZ2h0aW5nIGxhdC1sb25nIn0KUEFTU19USFJPVUdIID0gKCJEb3QiLCAiTm9PcCIpClJPTEVfSE9QUyA9IDYKCgpkZWYgX2ZlZWRzX2RlcHRoX2hhemUobiwgaG9wcyk6CiAgICBpZiBob3BzIDw9IDA6CiAgICAgICAgcmV0dXJuIEZhbHNlCiAgICBmb3IgZCBpbiBuLmRlcGVuZGVudChudWtlLklOUFVUUyB8IG51a2UuSElEREVOX0lOUFVUUywgZm9yY2VFdmFsdWF0ZT1GYWxzZSk6CiAgICAgICAgaWYgZC5rbm9iKCJlYXN5X2hhemUiKSBpcyBub3QgTm9uZSBhbmQgZC5rbm9iKCJlYXN5X2ZvZyIpIGlzIG5vdCBOb25lOgogICAgICAgICAgICByZXR1cm4gVHJ1ZQogICAgICAgIGlmIGQuQ2xhc3MoKSBpbiBQQVNTX1RIUk9VR0ggYW5kIF9mZWVkc19kZXB0aF9oYXplKGQsIGhvcHMgLSAxKToKICAgICAgICAgICAgcmV0dXJuIFRydWUKICAgIHJldHVybiBGYWxzZQoKCmRlZiBsb29rX3JvbGUobik6CiAgICAiIiInbGlnaHQnIGZvciBhIExhdC1sb25nIG5vZGUsICdoYXplJyB3aGVuIGl0IGZlZWRzIGFuIEV6RGVwdGhIYXplICh0aHJvdWdoIERvdHMpLCBlbHNlICdza3knLiIiIgogICAgdHJ5OgogICAgICAgIGlmIG4ua25vYigib3V0cHV0X21hcHBpbmciKSBpcyBub3QgTm9uZSBhbmQgblsib3V0cHV0X21hcHBpbmciXS52YWx1ZSgpID09ICJMYXQtbG9uZyI6CiAgICAgICAgICAgIHJldHVybiAibGlnaHQiCiAgICAgICAgcmV0dXJuICJoYXplIiBpZiBfZmVlZHNfZGVwdGhfaGF6ZShuLCBST0xFX0hPUFMpIGVsc2UgInNreSIKICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgcmV0dXJuICJza3kiCgoKZGVmIGFwcGx5X2xvb2sobiwgbmFtZT1Ob25lKToKICAgICIiIlNldCB0aGUgcGlja2VkIHN0YXJ0aW5nIGxvb2sncyBrbm9icyBmb3IgdGhpcyBub2RlJ3Mgcm9sZSwgdGhlbiBtYWtlIHRoZW0gdGhlIEVhc3kKICAgIHNsaWRlcnMnIGJhc2UgKGNlbnRyZWQpLiBSZXR1cm5zICdsb29rIChyb2xlKScsIG9yIE5vbmUgZm9yIGFuIHVua25vd24gbG9vay4iIiIKICAgIG5hbWUgPSBuYW1lIG9yIChuWyJlYXN5X2xvb2siXS52YWx1ZSgpIGlmIG4ua25vYigiZWFzeV9sb29rIikgaXMgbm90IE5vbmUgZWxzZSBOb25lKQogICAgaWYgbmFtZSBub3QgaW4gTE9PS1M6CiAgICAgICAgcmV0dXJuIE5vbmUKICAgIHJvbGUgPSBsb29rX3JvbGUobikKICAgIHdpdGggX0J1c3koKToKICAgICAgICBmb3IgaywgdiBpbiBMT09LU1tuYW1lXVtyb2xlXS5pdGVtcygpOgogICAgICAgICAgICBuW2tdLnNldFZhbHVlKHYpCiAgICByZWJhc2UobikKICAgIHJldHVybiAiJXMgKCVzKSIgJSAobmFtZSwgUk9MRV9OQU1FU1tyb2xlXSkKCgpkZWYgb25fa25vYihuLCBrKToKICAgICIiImtub2JDaGFuZ2VkLCBmb3IgYSBrbm9iIHRoZSBzbGlkZXJzIGxvb2sgYWZ0ZXIuIiIiCiAgICBpZiBidXN5KCk6CiAgICAgICAgcmV0dXJuCiAgICBpZiBrIGluIEVBU1lfS05PQlM6CiAgICAgICAgYXBwbHlfZWFzeShuKQogICAgZWxpZiBrIGluIExPT0tfS05PQlM6CiAgICAgICAgIyBUdW5lZCBieSBoYW5kOiB0aGF0IGJlY29tZXMgdGhlIHNsaWRlcnMnIHN0YXJ0aW5nIHBvaW50LgogICAgICAgIHJlYmFzZShuKQo=
  addUserKnob {26 analyze_divider l Analyze}
  addUserKnob {22 analyze t "Looks at the camera, skydome and HDRI and sets the node up for depth hazing this shot: passes, camera height, haze distance (to the horizon), self-lit and where the sun comes from. Shows what it set, with warnings about the sun." -STARTLINE T "\"\"\"Analyze: set EzAtmosScatter up for depth hazing the shot in its inputs.\n\nbuild_gizmo.py embeds this file in the gizmo's \"analyze\" button, so Nuke needs no Python\nmodule at run time. It runs once when pressed and sets plain knob values:\n\n- passes: Depth Haze;\n- camera height: the camera's height above 'ground height', in metres;\n- haze distance: the distance to the HDRI's own horizon line (from how far below level it\n  sits), or else to the horizon seen from the camera height;\n- self-lit with no HDRI; with one, the sun from the HDRI when it has a clear sun.\n\nIt then shows what it set, with warnings for a sun beside or behind the camera, a high\nsun, or a skydome without a camera.\n\nKept to top-level code with plain loops: Nuke runs button scripts with separate locals,\nwhich functions and comprehensions can't see.\n\"\"\"\nimport math\nimport nuke\n\ng = nuke.thisNode()\ndone = \[]\nwarn = \[]\n\n# The camera, through any Dots or NoOps in between.\ncam = g.input(3)\nwhile cam is not None and not cam.knob(\"world_matrix\"):\n    cam = cam.input(0) if cam.inputs() else None\nscale = g\[\"scene_scale\"].value()\n# Nothing in the scene says what its units are, so ask once per node (when it is still at 1),\n# showing the camera height each choice would give.\nif nuke.GUI and abs(scale - 1.0) < 1e-9 and not g\[\"units_confirmed\"].value():\n    units = \[(\"Metres\", 1.0), (\"Decimetres\", 0.1), (\"Centimetres\", 0.01), (\"Millimetres\", 0.001),\n             (\"Feet\", 0.3048), (\"Inches\", 0.0254)]\n    raw = cam\[\"world_matrix\"].getValue(7) - g\[\"ground_height\"].value() if cam is not None else None\n    options = \[]\n    for label, m in units:\n        options.append(label if raw is None else \"%s: camera %.4g m up\" % (label, raw * m))\n    try:\n        pick = nuke.choice(\"EzAtmosScatter analyze\", \"What units is the scene in?\", options, 0)\n    except Exception:\n        pick = None\n    if pick is not None and pick >= 0:\n        scale = units\[pick]\[1]\n        g\[\"scene_scale\"].setValue(scale)\n        g\[\"units_confirmed\"].setValue(True)\n        done.append(\"Units to metres %g: the scene is in %s (you picked it).\" % (scale, units\[pick]\[0].lower()))\nfwd = None\nif cam is not None:\n    wm = cam\[\"world_matrix\"]\n    height = max((wm.getValue(7) - g\[\"ground_height\"].value()) * scale, 1.0)\n    g\[\"camera_height\"].setValue(round(height, 1))\n    done.append(\"Camera height %.0f m (camera %s, units to metres %g).\" % (height, cam.name(), scale))\n    fwd = \[-wm.getValue(2), -wm.getValue(6), -wm.getValue(10)]\nelse:\n    height = g\[\"camera_height\"].value()\n    warn.append(\"No camera connected: kept camera height %.0f m. Connect the shot camera to 'camera'.\" % height)\n\nradius = g\[\"planet_radius\"].value()\nhorizon = math.sqrt((radius + height / 1000.0) ** 2 - radius ** 2)\n\n# The HDRI's own horizon line: the row edge below 0 deg (down to 10 deg) where the image drops most\n# from sky to ground (over 3 rows, by at least 1.5x), from the median brightness of 64 columns.\n# Its dip below 0 deg gives the distance to that horizon, so the depth haze reaches exactly the\n# line the HDRI shows.\nhdri = g.input(0)\ndip = None\nif hdri is not None:\n    w, h = hdri.width(), hdri.height()\n    rows = \[]\n    for r in range(0, max(int(h * 10.0 / 180.0), 4) + 2):\n        y = h * 0.5 - r - 0.5 + 1.0\n        vals = \[]\n        for i in range(64):\n            x = (i + 0.5) * w / 64.0\n            vals.append(0.2126 * hdri.sample(\"red\", x, y) + 0.7152 * hdri.sample(\"green\", x, y) +\n                        0.0722 * hdri.sample(\"blue\", x, y))\n        vals.sort()\n        rows.append(vals\[32])\n    best, best_r = 1.0, None\n    for r in range(len(rows) - 1):\n        drop = (rows\[r] + 1e-4) / (rows\[r + 1] + 1e-4)\n        span = (rows\[max(r - 1, 0)] + 1e-4) / (rows\[min(r + 2, len(rows) - 1)] + 1e-4)\n        if drop > best and span > 1.5:\n            best, best_r = drop, r\n    if best_r is not None:\n        dip = best_r * 180.0 / h\nif dip is not None and dip > 0.0:\n    horizon = radius * math.tan(math.radians(dip))\n    g\[\"haze_distance\"].setValue(round(horizon, 1))\n    done.append(\"Haze distance %.1f km: the HDRI's horizon line, %.2f deg below level.\" % (horizon, dip))\nelse:\n    g\[\"haze_distance\"].setValue(round(horizon, 1))\n    done.append(\"Haze distance %.1f km: the horizon seen from %.0f m%s.\" % (\n        horizon, height, \"\" if hdri is None else \" (no clear horizon line in the HDRI)\"))\ng\[\"passes\"].setValue(\"Depth Haze\")\ndone.append(\"Passes: Depth Haze.\")\n\nsun = None\nif g.input(0) is None:\n    g\[\"self_lit\"].setValue(True)\n    if g\[\"sun_from\"].value() == \"Auto (HDRI)\":\n        g\[\"sun_from\"].setValue(\"Manual\")\n    done.append(\"No HDRI: self-lit on, sun from Manual.\")\nelse:\n    g\[\"self_lit\"].setValue(False)\n    with g:\n        light = nuke.toNode(\"Light\")\n        found = \[]\n        for c in (\"red\", \"green\", \"blue\"):\n            found.append(light.sample(c, 0.5, 0.5))\n        peak = light.sample(\"alpha\", 0.5, 0.5)\n        sky = 0.2126 * light.sample(\"red\", 2.5, 0.5) + 0.7152 * light.sample(\"green\", 2.5, 0.5) + \\\n            0.0722 * light.sample(\"blue\", 2.5, 0.5)\n        clipped = light.sample(\"alpha\", 1.5, 0.5) > 0.5\n    ratio = peak / max(sky, 1e-6)\n    # A clipped sun (LDR or a capped HDRI) stands out less, but its direction is still good.\n    if any(found) and (ratio > 4.0 or (clipped and ratio > 1.5)):\n        g\[\"sun_from\"].setValue(\"Auto (HDRI)\")\n        g\[\"light_from_hdri\"].setValue(True)\n        sun = found\n        if clipped:\n            done.append(\"Clipped sun found in the HDRI: sun from Auto; its brightness is rebuilt, tune 'sun boost'.\")\n        else:\n            done.append(\"Sun found in the HDRI (%.0fx the sky): sun from Auto, light from HDRI.\" % ratio)\n    else:\n        warn.append(\"No clear sun in the HDRI (overcast?): set 'sun from' to Manual or Axis yourself.\")\n\nif g.input(2) is not None:\n    if cam is None:\n        warn.append(\"A skydome is connected but no camera: the dome is seen from its centre.\")\n    else:\n        done.append(\"Skydome connected: the HDRI is re-mapped as the camera sees the dome.\")\n\nif sun is None and g\[\"sun_from\"].value() == \"Manual\":\n    sun = list(g\[\"sun_direction\"].value())\nif sun is not None:\n    ln = math.sqrt(sun\[0] ** 2 + sun\[1] ** 2 + sun\[2] ** 2) or 1.0\n    elev = math.degrees(math.asin(max(-1.0, min(1.0, sun\[1] / ln))))\n    if fwd is not None:\n        az = math.degrees(math.atan2(sun\[0], -sun\[2]) - math.atan2(fwd\[0], -fwd\[2]))\n        az = (az + 180.0) % 360.0 - 180.0\n        done.append(\"Sun %.0f deg up, %.0f deg %s of where the camera looks.\" % (elev, abs(az), \"right\" if az > 0 else \"left\"))\n        if abs(az) > 60.0:\n            warn.append(\"The sun is beside or behind the camera: backlit haze and shafts need it in front.\")\n    if elev > 20.0:\n        warn.append(\"The sun is high (%.0f deg): sunrise and golden hour looks need it under 10 deg.\" % elev)\n\nsummary = \"\\n\".join(done + (\[\"\"] + \[\"Note: \" + w for w in warn] if warn else \[]))\nif nuke.GUI:\n    nuke.message(\"EzAtmosScatter analyze\\n\\n\" + summary)\nelse:\n    print(summary)\n"}
  addUserKnob {7 scene_scale l "units to metres" t "Scene units to metres for analyze, e.g. 0.1 for decimetres, 0.01 for centimetres." R 0.001 100}
@@ -316,7 +316,7 @@ Group {
   xpos 0
   ypos 120
  }
-set N1bf7b900 [stack 0]
+set N929ab900 [stack 0]
  Reformat {
   type "to box"
   box_width {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512))"}}
@@ -328,7 +328,7 @@ set N1bf7b900 [stack 0]
   xpos -180
   ypos 180
  }
-push $N1bf7b900
+push $N929ab900
  Switch {
   inputs 2
   which {{"(parent.downscale==0 ? HDRIInput.width : min(HDRIInput.width, parent.downscale==1 ? 1024 : 512)) < HDRIInput.width"}}
@@ -337,7 +337,7 @@ push $N1bf7b900
   xpos 0
   ypos 240
  }
-set N1bf7be00 [stack 0]
+set N929abe00 [stack 0]
  Dot {
   name LayoutDot8
   xpos 110
@@ -348,14 +348,14 @@ set N1bf7be00 [stack 0]
   xpos 110
   ypos 417
  }
-set N6cb37400 [stack 0]
+set Nd55d7400 [stack 0]
  Dot {
   name LayoutDot10
   xpos 214
   ypos 417
  }
-set N6cb37800 [stack 0]
-push $N6cb37800
+set Nd55d7800 [stack 0]
+push $Nd55d7800
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -373,7 +373,7 @@ push $N6cb37800
   xpos 180
   ypos 468
  }
-push $N1bf7be00
+push $N929abe00
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -382,7 +382,7 @@ push $N1bf7be00
   xpos 0
   ypos 528
  }
-set N1bf7d200 [stack 0]
+set N929ad200 [stack 0]
  Dot {
   name LayoutDot19
   xpos 134
@@ -393,31 +393,31 @@ set N1bf7d200 [stack 0]
   xpos 134
   ypos 2637
  }
-set N6db38000 [stack 0]
+set Nd5608000 [stack 0]
  Dot {
   name LayoutDot22
   xpos 134
   ypos 4296
  }
-push $N6cb37400
+push $Nd55d7400
  Dot {
   name LayoutDot11
   xpos 110
   ypos 705
  }
-set N6cb37c00 [stack 0]
+set Nd55d7c00 [stack 0]
  Dot {
   name LayoutDot12
   xpos 214
   ypos 705
  }
-set N6cb4e000 [stack 0]
+set Nd55ee000 [stack 0]
  Dot {
   name LayoutDot13
   xpos 394
   ypos 705
  }
-set N6cb4e400 [stack 0]
+set Nd55ee400 [stack 0]
  Dot {
   name LayoutDot14
   xpos 574
@@ -457,56 +457,56 @@ set N6cb4e400 [stack 0]
   xpos 626
   ypos 1323
  }
-set N6dba0400 [stack 0]
+set Nd5670400 [stack 0]
  Dot {
   name LayoutDot57
   xpos 626
   ypos 2109
  }
-set N6dba1400 [stack 0]
+set Nd5671400 [stack 0]
  Dot {
   name LayoutDot59
   xpos 916
   ypos 2109
  }
-set N6dba1c00 [stack 0]
+set Nd5671c00 [stack 0]
  Dot {
   name LayoutDot61
   xpos 1276
   ypos 2109
  }
-set N6dbbc400 [stack 0]
+set Nd568c400 [stack 0]
  Dot {
   name LayoutDot62
   xpos 1636
   ypos 2109
  }
-set N6dbbc800 [stack 0]
+set Nd568c800 [stack 0]
  Dot {
   name LayoutDot63
   xpos 1996
   ypos 2109
  }
-set N6dbbcc00 [stack 0]
+set Nd568cc00 [stack 0]
  Dot {
   name LayoutDot64
   xpos 2356
   ypos 2109
  }
-set N6dbbd000 [stack 0]
+set Nd568d000 [stack 0]
  Dot {
   name LayoutDot65
   xpos 2716
   ypos 2109
  }
-push $N6dba0400
+push $Nd5670400
  Dot {
   name LayoutDot54
   xpos 412
   ypos 1323
  }
-set N6dba0800 [stack 0]
-push $N6cb4e000
+set Nd5670800 [stack 0]
+push $Nd55ee000
  Reformat {
   type "to box"
   box_width {{"min(HDRISource.width, 4096)"}}
@@ -518,8 +518,8 @@ push $N6cb4e000
   xpos 180
   ypos 756
  }
-set N1bfb2400 [stack 0]
-push $N1bfb2400
+set N929e2400 [stack 0]
+push $N929e2400
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -536,7 +536,7 @@ push $N1bfb2400
   xpos 180
   ypos 816
  }
-push $N6cb4e400
+push $Nd55ee400
  Switch {
   inputs 2
   which {{"\[exists parent.input2]"}}
@@ -556,7 +556,7 @@ push $N6cb4e400
   xpos 360
   ypos 936
  }
-set N1bfb3000 [stack 0]
+set N929e3000 [stack 0]
  Dot {
   name LayoutDot33
   xpos 446
@@ -567,7 +567,7 @@ set N1bfb3000 [stack 0]
   xpos 446
   ypos 1038
  }
-push $N1bfb3000
+push $N929e3000
  Reformat {
   type "to box"
   box_width 4
@@ -578,7 +578,7 @@ push $N1bfb3000
   xpos 360
   ypos 996
  }
-set N1bfb3800 [stack 0]
+set N929e3800 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -603,20 +603,20 @@ set N1bfb3800 [stack 0]
   xpos 494
   ypos 1293
  }
-set N6db6d000 [stack 0]
+set Nd563d000 [stack 0]
  Dot {
   name LayoutDot41
   xpos 394
   ypos 1293
  }
-set N6db6d400 [stack 0]
-push $N6cb37c00
+set Nd563d400 [stack 0]
+push $Nd55d7c00
  Dot {
   name LayoutDot15
   xpos 110
   ypos 1233
  }
-set N6cb4ec00 [stack 0]
+set Nd55eec00 [stack 0]
  Dot {
   name LayoutDot16
   xpos 214
@@ -632,7 +632,7 @@ set N6cb4ec00 [stack 0]
   xpos 180
   ypos 1374
  }
-set N1bff5800 [stack 0]
+set N92a25800 [stack 0]
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -673,7 +673,7 @@ set N1bff5800 [stack 0]
   xpos 360
   ypos 1434
  }
-push $N6dba0800
+push $Nd5670800
  Dot {
   name LayoutDot55
   xpos 314
@@ -684,13 +684,13 @@ push $N6dba0800
   xpos 314
   ypos 1437
  }
-push $N6db6d400
+push $Nd563d400
  Dot {
   name LayoutDot42
   xpos 290
   ypos 1293
  }
-set N6db6d800 [stack 0]
+set Nd563d800 [stack 0]
  Dot {
   name LayoutDot44
   xpos 266
@@ -701,7 +701,7 @@ set N6db6d800 [stack 0]
   xpos 266
   ypos 1425
  }
-push $N1bff5800
+push $N92a25800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -750,7 +750,7 @@ push $N1bff5800
   xpos 180
   ypos 1494
  }
-push $N1bfb3800
+push $N929e3800
  Dot {
   name LayoutDot35
   xpos 470
@@ -785,7 +785,7 @@ push $N1bfb3800
   xpos 360
   ypos 1554
  }
-push $N6db6d800
+push $Nd563d800
  Dot {
   name LayoutDot43
   xpos 290
@@ -814,19 +814,19 @@ push $N6db6d800
   xpos 1294
   ypos 2019
  }
-set N6dc22000 [stack 0]
+set Nd56f2000 [stack 0]
  Dot {
   name LayoutDot93
   xpos 1654
   ypos 2019
  }
-set N6dc22400 [stack 0]
+set Nd56f2400 [stack 0]
  Dot {
   name LayoutDot94
   xpos 2734
   ypos 2019
  }
-push $N6cb4ec00
+push $Nd55eec00
  Dot {
   name LayoutDot17
   xpos 110
@@ -857,43 +857,43 @@ push $N6cb4ec00
   xpos 266
   ypos 2049
  }
-set N6db39000 [stack 0]
+set Nd5609000 [stack 0]
  Dot {
   name LayoutDot26
   xpos 574
   ypos 2049
  }
-set N6db39800 [stack 0]
+set Nd5609800 [stack 0]
  Dot {
   name LayoutDot27
   xpos 934
   ypos 2049
  }
-set N6db39c00 [stack 0]
+set Nd5609c00 [stack 0]
  Dot {
   name LayoutDot28
   xpos 1312
   ypos 2049
  }
-set N6db54000 [stack 0]
+set Nd5624000 [stack 0]
  Dot {
   name LayoutDot29
   xpos 1672
   ypos 2049
  }
-set N6db54400 [stack 0]
+set Nd5624400 [stack 0]
  Dot {
   name LayoutDot30
   xpos 2014
   ypos 2049
  }
-set N6db54800 [stack 0]
+set Nd5624800 [stack 0]
  Dot {
   name LayoutDot31
   xpos 2374
   ypos 2049
  }
-set N6db54c00 [stack 0]
+set Nd5624c00 [stack 0]
  Dot {
   name LayoutDot32
   xpos 2752
@@ -939,7 +939,7 @@ set N6db54c00 [stack 0]
   xpos 2700
   ypos 2160
  }
-set N6c91c000 [stack 0]
+set Nd53bc000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -964,7 +964,7 @@ set N6c91c000 [stack 0]
   xpos 2880
   ypos 2340
  }
-push $N6c91c000
+push $Nd53bc000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -996,7 +996,7 @@ push $N6c91c000
   xpos 2700
   ypos 2400
  }
-push $N6c91c000
+push $Nd53bc000
  Dot {
   name LayoutDot136
   xpos 2786
@@ -1024,38 +1024,38 @@ push $N6c91c000
   xpos 2966
   ypos 4257
  }
-push $N6dbbd000
-push $N6db6d000
+push $Nd568d000
+push $Nd563d000
  Dot {
   name LayoutDot46
   xpos 494
   ypos 2079
  }
-set N6db88800 [stack 0]
+set Nd5658800 [stack 0]
  Dot {
   name LayoutDot47
   xpos 592
   ypos 2079
  }
-set N6db88c00 [stack 0]
+set Nd5658c00 [stack 0]
  Dot {
   name LayoutDot49
   xpos 952
   ypos 2079
  }
-set N6db89400 [stack 0]
+set Nd5659400 [stack 0]
  Dot {
   name LayoutDot50
   xpos 2032
   ypos 2079
  }
-set N6db89800 [stack 0]
+set Nd5659800 [stack 0]
  Dot {
   name LayoutDot51
   xpos 2392
   ypos 2079
  }
-push $N6db54c00
+push $Nd5624c00
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1096,7 +1096,7 @@ push $N6db54c00
   xpos 2340
   ypos 2160
  }
-set N6c8a9800 [stack 0]
+set Nd5349800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1121,7 +1121,7 @@ set N6c8a9800 [stack 0]
   xpos 2520
   ypos 2340
  }
-push $N6c8a9800
+push $Nd5349800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1153,7 +1153,7 @@ push $N6c8a9800
   xpos 2340
   ypos 2400
  }
-push $N6c8a9800
+push $Nd5349800
  Dot {
   name LayoutDot132
   xpos 2426
@@ -1181,9 +1181,9 @@ push $N6c8a9800
   xpos 2606
   ypos 4197
  }
-push $N6dbbc800
-push $N6dc22400
-push $N6db54400
+push $Nd568c800
+push $Nd56f2400
+push $Nd5624400
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1224,7 +1224,7 @@ push $N6db54400
   xpos 1620
   ypos 2160
  }
-set N6c86f000 [stack 0]
+set Nd530f000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1249,7 +1249,7 @@ set N6c86f000 [stack 0]
   xpos 1800
   ypos 2340
  }
-push $N6c86f000
+push $Nd530f000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1281,7 +1281,7 @@ push $N6c86f000
   xpos 1620
   ypos 2400
  }
-push $N6c86f000
+push $Nd530f000
  Dot {
   name LayoutDot112
   xpos 1706
@@ -1309,37 +1309,37 @@ push $N6c86f000
   xpos 1886
   ypos 2787
  }
-set N6dc59c00 [stack 0]
+set Nd5729c00 [stack 0]
  Dot {
   name LayoutDot117
   xpos 1886
   ypos 3555
  }
-set N6dc6e400 [stack 0]
+set Nd573e400 [stack 0]
  Dot {
   name LayoutDot119
   xpos 1886
   ypos 4137
  }
-push $N6dba1400
+push $Nd5671400
  Dot {
   name LayoutDot58
   xpos 556
   ypos 2109
  }
-set N6dba1800 [stack 0]
+set Nd5671800 [stack 0]
  Dot {
   name LayoutDot60
   xpos 196
   ypos 2109
  }
-push $N6db88800
+push $Nd5658800
  Dot {
   name LayoutDot48
   xpos 232
   ypos 2079
  }
-push $N6db39000
+push $Nd5609000
  Dot {
   name LayoutDot25
   xpos 214
@@ -1385,7 +1385,7 @@ push $N6db39000
   xpos 180
   ypos 2160
  }
-set N6c7fa000 [stack 0]
+set Nd529a000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1410,7 +1410,7 @@ set N6c7fa000 [stack 0]
   xpos 360
   ypos 2340
  }
-push $N6c7fa000
+push $Nd529a000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1442,7 +1442,7 @@ push $N6c7fa000
   xpos 180
   ypos 2400
  }
-push $N6c7fa000
+push $Nd529a000
  Dot {
   name LayoutDot66
   xpos 266
@@ -1470,21 +1470,21 @@ push $N6c7fa000
   xpos 446
   ypos 2667
  }
-set N6dbd4400 [stack 0]
+set Nd56a4400 [stack 0]
  Dot {
   name LayoutDot71
   xpos 446
   ypos 3405
  }
-set N6dbd4c00 [stack 0]
+set Nd56a4c00 [stack 0]
  Dot {
   name LayoutDot73
   xpos 446
   ypos 4077
  }
-push $N6dbbc400
-push $N6dc22000
-push $N6db54000
+push $Nd568c400
+push $Nd56f2000
+push $Nd5624000
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1525,7 +1525,7 @@ push $N6db54000
   xpos 1260
   ypos 2160
  }
-set N6c826800 [stack 0]
+set Nd52c6800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1550,7 +1550,7 @@ set N6c826800 [stack 0]
   xpos 1440
   ypos 2340
  }
-push $N6c826800
+push $Nd52c6800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1582,7 +1582,7 @@ push $N6c826800
   xpos 1260
   ypos 2400
  }
-push $N6c826800
+push $Nd52c6800
  Dot {
   name LayoutDot95
   xpos 1346
@@ -1610,21 +1610,21 @@ push $N6c826800
   xpos 1526
   ypos 2757
  }
-set N6dc23800 [stack 0]
+set Nd56f3800 [stack 0]
  Dot {
   name LayoutDot101
   xpos 1526
   ypos 3525
  }
-set N6dc3a400 [stack 0]
+set Nd570a400 [stack 0]
  Dot {
   name LayoutDot103
   xpos 1526
   ypos 4017
  }
-push $N6dba1c00
-push $N6db89400
-push $N6db39c00
+push $Nd5671c00
+push $Nd5659400
+push $Nd5609c00
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1665,7 +1665,7 @@ push $N6db39c00
   xpos 900
   ypos 2160
  }
-set N6c785800 [stack 0]
+set Nd5225800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1690,7 +1690,7 @@ set N6c785800 [stack 0]
   xpos 1080
   ypos 2340
  }
-push $N6c785800
+push $Nd5225800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1722,7 +1722,7 @@ push $N6c785800
   xpos 900
   ypos 2400
  }
-push $N6c785800
+push $Nd5225800
  Dot {
   name LayoutDot82
   xpos 986
@@ -1750,21 +1750,21 @@ push $N6c785800
   xpos 1166
   ypos 2727
  }
-set N6dc08400 [stack 0]
+set Nd56d8400 [stack 0]
  Dot {
   name LayoutDot87
   xpos 1166
   ypos 3495
  }
-set N6dc08c00 [stack 0]
+set Nd56d8c00 [stack 0]
  Dot {
   name LayoutDot89
   xpos 1166
   ypos 3957
  }
-push $N6dba1800
-push $N6db88c00
-push $N6db39800
+push $Nd5671800
+push $Nd5658c00
+push $Nd5609800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -1805,7 +1805,7 @@ push $N6db39800
   xpos 540
   ypos 2160
  }
-set N1c021000 [stack 0]
+set N92a51000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -1830,7 +1830,7 @@ set N1c021000 [stack 0]
   xpos 720
   ypos 2340
  }
-push $N1c021000
+push $N92a51000
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -1862,7 +1862,7 @@ push $N1c021000
   xpos 540
   ypos 2400
  }
-push $N1c021000
+push $N92a51000
  Dot {
   name LayoutDot74
   xpos 626
@@ -1890,19 +1890,19 @@ push $N1c021000
   xpos 806
   ypos 2697
  }
-set N6dbee400 [stack 0]
+set Nd56be400 [stack 0]
  Dot {
   name LayoutDot79
   xpos 806
   ypos 3465
  }
-set N6dbeec00 [stack 0]
+set Nd56bec00 [stack 0]
  Dot {
   name LayoutDot81
   xpos 806
   ypos 3897
  }
-push $N6dc23800
+push $Nd56f3800
  Dot {
   name LayoutDot99
   xpos 470
@@ -1913,13 +1913,13 @@ push $N6dc23800
   xpos 470
   ypos 2919
  }
-push $N6dc08400
+push $Nd56d8400
  Dot {
   name LayoutDot86
   xpos 412
   ypos 2727
  }
-push $N6dbee400
+push $Nd56be400
  Dot {
   name LayoutDot78
   xpos 394
@@ -1939,7 +1939,7 @@ push $N6dbee400
   xpos 360
   ypos 2928
  }
-set N6c991400 [stack 0]
+set Nd5431400 [stack 0]
  Dot {
   name LayoutDot104
   xpos 494
@@ -1950,20 +1950,20 @@ set N6c991400 [stack 0]
   xpos 494
   ypos 3435
  }
-set N6dc3b400 [stack 0]
+set Nd570b400 [stack 0]
  Dot {
   name LayoutDot107
   xpos 494
   ypos 3837
  }
-push $N6c991400
-push $N6dbd4400
+push $Nd5431400
+push $Nd56a4400
  Dot {
   name LayoutDot70
   xpos 232
   ypos 2667
  }
-push $N6db38000
+push $Nd5608000
  Dot {
   name LayoutDot21
   xpos 214
@@ -1985,7 +1985,7 @@ push $N6db38000
   xpos 180
   ypos 2988
  }
-set N6c991c00 [stack 0]
+set Nd5431c00 [stack 0]
  Dot {
   name LayoutDot108
   xpos 266
@@ -1996,10 +1996,10 @@ set N6c991c00 [stack 0]
   xpos 266
   ypos 3150
  }
-set N6dc58400 [stack 0]
-push $N6dbbcc00
-push $N6db89800
-push $N6db54800
+set Nd5728400 [stack 0]
+push $Nd568cc00
+push $Nd5659800
+push $Nd5624800
  BlinkScript {
   inputs 3
   recompileCount 2
@@ -2040,7 +2040,7 @@ push $N6db54800
   xpos 1980
   ypos 2160
  }
-set N6c94e800 [stack 0]
+set Nd53ee800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {"input.height / 2"}}
   crop false
@@ -2065,7 +2065,7 @@ set N6c94e800 [stack 0]
   xpos 2160
   ypos 2340
  }
-push $N6c94e800
+push $Nd53ee800
  Crop {
   box {{0} {"input.height / 2"} {input.width} {input.height}}
   crop false
@@ -2097,7 +2097,7 @@ push $N6c94e800
   xpos 1980
   ypos 2400
  }
-push $N6c94e800
+push $Nd53ee800
  Dot {
   name LayoutDot120
   xpos 2066
@@ -2130,14 +2130,14 @@ push $N6c94e800
   xpos 574
   ypos 2817
  }
-set N6dc88000 [stack 0]
+set Nd5758000 [stack 0]
  Invert {
   channels rgb
   name HazePreviewOpacity
   xpos 540
   ypos 2868
  }
-push $N6dc59c00
+push $Nd5729c00
  Dot {
   name LayoutDot116
   xpos 754
@@ -2156,7 +2156,7 @@ push $N6dc59c00
   xpos 754
   ypos 3111
  }
-push $N6dc88000
+push $Nd5758000
  Dot {
   name LayoutDot125
   xpos 290
@@ -2167,7 +2167,7 @@ push $N6dc88000
   xpos 290
   ypos 3051
  }
-push $N6c991c00
+push $Nd5431c00
  Merge2 {
   inputs 2
   operation multiply
@@ -2206,43 +2206,43 @@ push $N6c991c00
   xpos 232
   ypos 3375
  }
-push $N6dc6e400
+push $Nd573e400
  Dot {
   name LayoutDot118
   xpos 286
   ypos 3555
  }
-push $N6dbd4c00
+push $Nd56a4c00
  Dot {
   name LayoutDot72
   xpos 196
   ypos 3405
  }
-push $N6dc3a400
+push $Nd570a400
  Dot {
   name LayoutDot102
   xpos 160
   ypos 3525
  }
-push $N6dc08c00
+push $Nd56d8c00
  Dot {
   name LayoutDot88
   xpos 268
   ypos 3495
  }
-push $N6dbeec00
+push $Nd56bec00
  Dot {
   name LayoutDot80
   xpos 178
   ypos 3465
  }
-push $N6dc3b400
+push $Nd570b400
  Dot {
   name LayoutDot106
   xpos 250
   ypos 3435
  }
-push $N6dc58400
+push $Nd5728400
  Dot {
   name LayoutDot110
   xpos 266
@@ -2271,7 +2271,7 @@ push $N6dc58400
   xpos 266
   ypos 3777
  }
-push $N1bf7d200
+push $N929ad200
  Copy {
   inputs 2
   channels rgb
@@ -2398,7 +2398,7 @@ add_layer {atmos_clouds atmos_clouds.red atmos_clouds.green atmos_clouds.blue at
   xpos 0
   ypos 4314
  }
-set N6ca2b400 [stack 0]
+set Nd54cb400 [stack 0]
  Dot {
   name LayoutDot140
   xpos 110
@@ -2429,7 +2429,7 @@ set N6ca2b400 [stack 0]
   xpos 360
   ypos 4542
  }
-push $N1bf7b900
+push $N929ab900
  Dot {
   name LayoutDot4
   xpos 86
@@ -2445,7 +2445,7 @@ push $N1bf7b900
   xpos 574
   ypos 5067
  }
-set N6cb36800 [stack 0]
+set Nd55d6800 [stack 0]
  Dot {
   name LayoutDot7
   xpos 934
@@ -2476,7 +2476,7 @@ set N6cb36800 [stack 0]
   xpos 900
   ypos 5208
  }
-set N6cad3c00 [stack 0]
+set Nd5573c00 [stack 0]
  Dot {
   name LayoutDot162
   xpos 986
@@ -2497,7 +2497,7 @@ set N6cad3c00 [stack 0]
   xpos 446
   ypos 5379
  }
-push $N6cad3c00
+push $Nd5573c00
  Read {
   inputs 0
   file "\[python -execlocal \{import os\ng = nuke.thisGroup()\nready = g.knob('bake_file') is not None and g.knob('bake_folder') is not None\ns = nuke.root().name()\nbase = os.path.splitext(os.path.basename(s))\[0]\np = g\['bake_file'].value().strip() if ready else ''\nif not p:\n    d = (g\['bake_folder'].value().strip() if ready else '') or os.environ.get('EZATMOS_CACHE_DIR', '')\n    d = d or os.path.join(os.path.dirname(s), 'ezatmos_cache')\n    p = d.rstrip('/') + '/' + base + '/' + g.name() + '/' + base + '_' + g.name() + '.####.exr'\np = os.path.expandvars(p)\nif '\[' in p:\n    try:\n        p = nuke.tcl('subst', p)\n    except RuntimeError:\n        p = ''\nret = '' if '\$' in p or not ready else p.replace(chr(92), '/')\}]"
@@ -2512,7 +2512,7 @@ push $N6cad3c00
   xpos 180
   ypos 4542
  }
-push $N6ca2b400
+push $Nd54cb400
  Switch {
   inputs 2
   which {{"parent.use_baked && parent.bake_valid"}}
@@ -2521,7 +2521,7 @@ push $N6ca2b400
   xpos 0
   ypos 4602
  }
-set N6c9f2a00 [stack 0]
+set Nd5492a00 [stack 0]
  Dot {
   name LayoutDot143
   xpos 110
@@ -2548,7 +2548,7 @@ set N6c9f2a00 [stack 0]
   xpos 180
   ypos 4830
  }
-push $N6c9f2a00
+push $Nd5492a00
  Switch {
   inputs 2
   which {{"HDRISource.width < HDRIInput.width"}}
@@ -2557,7 +2557,7 @@ push $N6c9f2a00
   xpos 0
   ypos 4890
  }
-set N6c9f2f00 [stack 0]
+set Nd5492f00 [stack 0]
  Dot {
   name LayoutDot146
   xpos 110
@@ -2573,19 +2573,19 @@ set N6c9f2f00 [stack 0]
   xpos 214
   ypos 5097
  }
-set N6dcd6000 [stack 0]
+set Nd57a6000 [stack 0]
  Dot {
   name LayoutDot149
   xpos 394
   ypos 5097
  }
-set N6dcd6400 [stack 0]
+set Nd57a6400 [stack 0]
  Dot {
   name LayoutDot150
   xpos 754
   ypos 5097
  }
-set N6dcd6800 [stack 0]
+set Nd57a6800 [stack 0]
  Dot {
   name LayoutDot151
   xpos 1114
@@ -2608,7 +2608,7 @@ set N6dcd6800 [stack 0]
   xpos 1166
   ypos 5391
  }
-push $N6cad3c00
+push $Nd5573c00
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
@@ -2622,7 +2622,7 @@ push $N6cad3c00
   xpos 394
   ypos 5271
  }
-push $N6dcd6400
+push $Nd57a6400
  Crop {
   box {{input.width/2} {0} {input.width} {input.height}}
   name RollRightCrop
@@ -2636,7 +2636,7 @@ push $N6dcd6400
   xpos 360
   ypos 5208
  }
-push $N6dcd6000
+push $Nd57a6000
  Crop {
   box {{0} {0} {input.width/2} {input.height}}
   name RollLeftCrop
@@ -2658,7 +2658,7 @@ push $N6dcd6000
   xpos 180
   ypos 5268
  }
-set N6cad2000 [stack 0]
+set Nd5572000 [stack 0]
  STMap {
   inputs 2
   uv rgb
@@ -2677,7 +2677,7 @@ set N6cad2000 [stack 0]
   xpos 394
   ypos 5451
  }
-push $N6cb36800
+push $Nd55d6800
  BlinkScript {
   recompileCount 2
   KernelDescription "3 \"EzAtmosDomeUV\" iterate pixelWise 37e4f8031dadbe05054e12de6d0bd18cd608f8656abb24698d0e1f2da23c61f8 2 \"ref\" Read Point \"dst\" Write Point 5 \"dome_row0\" Float 4 AACAPwAAAAAAAAAAAAAAAA== \"dome_row1\" Float 4 AAAAAAAAgD8AAAAAAAAAAA== \"dome_row2\" Float 4 AAAAAAAAAAAAAIA/AAAAAA== \"eye\" Float 3 AAAAAAAAAAAAAAAAAAAAAA== \"radius\" Float 1 AACAPw== 5 \"domeRow0\" 4 1 Default \"domeRow1\" 4 1 Default \"domeRow2\" 4 1 Default \"eye\" 3 1 Default \"radius\" 1 1 Default 1 \"pi\" Float 1 1 AAAAAA=="
@@ -2694,7 +2694,7 @@ push $N6cb36800
   xpos 540
   ypos 5148
  }
-set N6ca80c00 [stack 0]
+set Nd5520c00 [stack 0]
  Dot {
   name LayoutDot152
   xpos 626
@@ -2710,8 +2710,8 @@ set N6ca80c00 [stack 0]
   xpos 266
   ypos 5370
  }
-push $N6ca80c00
-push $N6dcd6800
+push $Nd5520c00
+push $Nd57a6800
  STMap {
   inputs 2
   uv rgb
@@ -2739,7 +2739,7 @@ push $N6dcd6800
   xpos 290
   ypos 5391
  }
-push $N6ca80c00
+push $Nd5520c00
  Shuffle2 {
   fromInput1 {{0} B}
   fromInput2 {{0} B}
@@ -2763,7 +2763,7 @@ push $N6ca80c00
   xpos 266
   ypos 5310
  }
-push $N6cad2000
+push $Nd5572000
  STMap {
   inputs 2
   uv rgb
@@ -2777,7 +2777,7 @@ push $N6cad2000
   xpos 180
   ypos 5388
  }
-push $N6c9f2f00
+push $Nd5492f00
  Switch {
   inputs 3
   which {{"parent.output_mapping==1 && \[exists parent.input2] ? 1 : parent.output_mapping==2 && \[exists parent.input3] ? 2 : 0"}}
