@@ -15,7 +15,9 @@ colour and brightness from the image, sky light), with depth haze passes.
 
 New in 1.3.0: a **starting look** menu with an **apply look** button in the Easy section.
 **Aerial Sunset** (from high above toward a low sun) sets a thicker, taller haze (haze amount 4,
-haze height 2 km) and a bigger glow, and centres the Easy sliders on it. With EzDepthHaze's Aerial
+haze height 2 km) and a bigger glow, and centres the Easy sliders on it. Wire the node first: a
+node feeding EzDepthHaze (through Dots) gets the thinner haze light (haze amount 2, glow size 0.5)
+and a Lat-long node the lighting values (haze amount 2); the button says which it picked. With EzDepthHaze's Aerial
 Sunset look it is EzMatch's starting point for a sunset aerial: from midday defaults the Easy
 sliders can't reach that look.
 

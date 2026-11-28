@@ -175,13 +175,16 @@ def _add_knobs(group):
         k.append(knob)
     look = nuke.Enumeration_Knob("easy_look", "starting look", ["Aerial Sunset"])
     look.setTooltip("A starting point for a kind of shot. Aerial Sunset: from high above toward a low sun, "
-                    "a thicker, taller haze (haze amount 4, haze height 2 km) and a bigger glow. Pair it with "
+                    "a thicker, taller haze (haze amount 4, haze height 2 km) and a bigger glow. Wire the node first: "
+                    "a node feeding EzDepthHaze gets the thinner haze light (haze amount 2, glow size 0.5), "
+                    "a Lat-long node the lighting values (haze amount 2). Pair it with "
                     "EzDepthHaze's Aerial Sunset look, then let EzMatch's match all fit the Easy sliders.")
     k.append(look)
     apply_look = nuke.PyScript_Knob("apply_easy_look", "apply look",
                                     "_n = nuke.thisNode()\n_eza = {}\n"
                                     "exec(__import__('base64').b64decode(_n['tool_code'].value()).decode(), _eza)\n"
-                                    "_eza['apply_look'](_n)\n")
+                                    "_r = _eza['apply_look'](_n)\n"
+                                    "if _r:\n    nuke.message('Starting look: ' + _r)\n")
     apply_look.setTooltip("Sets the starting look's knobs and centres the Easy sliders on it.")
     k.append(apply_look)
     for name in ("easy_base", "tool_code"):
