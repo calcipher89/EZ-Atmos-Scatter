@@ -10,8 +10,12 @@ Target: Nuke 15.1.
 
 ## Status
 
-v1.3.0. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
+v1.4.0. Step 2 of 4: the EzAtmosScatter gizmo, lit by the HDRI (automatic sun detection, sun
 colour and brightness from the image, sky light), with depth haze passes.
+
+New in 1.4.0: a second starting look, **Aerial Day** (a fair-weather day from high above: haze
+amount 1.5 and haze height 1.5 km on the sky, 1.0 on a node feeding EzDepthHaze or a Lat-long
+lighting node), for EzMatch's 'apply starting look'.
 
 New in 1.3.0: a **starting look** menu with an **apply look** button in the Easy section.
 **Aerial Sunset** (from high above toward a low sun) sets a thicker, taller haze (haze amount 4,
