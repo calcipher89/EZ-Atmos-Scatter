@@ -101,6 +101,27 @@ def apply_easy(n):
         n["aureole"].setValue(min(max(b["aureole"] + e["easy_halo"], 0.0), 1.0))
 
 
+# Starting looks: knob values a look sets before the Easy sliders (and EzMatch) take over.
+# Aerial Sunset: from high above toward a low sun (the Rocky sunset r27 sky): a thicker, taller
+# haze layer, so a camera km over the land still looks through haze, and a bigger glow.
+LOOKS = {
+    "Aerial Sunset": {"haze_amount": 4.0, "haze_height": 2.0, "haze_glow_size": 1.5},
+}
+LOOK_NAMES = sorted(LOOKS)
+
+
+def apply_look(n, name=None):
+    """Set the picked starting look's knobs, then make them the Easy sliders' base (centred)."""
+    name = name or (n["easy_look"].value() if n.knob("easy_look") is not None else None)
+    if name not in LOOKS:
+        return None
+    with _Busy():
+        for k, v in LOOKS[name].items():
+            n[k].setValue(v)
+    rebase(n)
+    return name
+
+
 def on_knob(n, k):
     """knobChanged, for a knob the sliders look after."""
     if busy():

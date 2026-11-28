@@ -24,6 +24,9 @@ class Node(dict):
     def __getitem__(self, k):
         return dict.__getitem__(self, k)
 
+    def knob(self, k):
+        return self.get(k)
+
     def vals(self, *ks):
         return [round(v, 4) if not isinstance(v, list) else [round(c, 4) for c in v]
                 for v in (self[k].v for k in ks)]
@@ -69,6 +72,17 @@ def main():
     n["easy_glow"].v = 10.0
     ns["on_knob"](n, "easy_glow")
     ok &= check("glow clamps to the knob range", n.vals("haze_glow_size"), [4.0])
+    # Starting look: its knobs set, sliders centred on them.
+    n["easy_haze"].v = 2.0
+    for k in ("haze_height",):
+        n[k] = Knob(1.2)
+    n["easy_look"] = Knob("Aerial Sunset")
+    ns["apply_look"](n)
+    ok &= check("Aerial Sunset: haze 4, height 2, glow 1.5, sliders centred",
+                n.vals("haze_amount", "haze_height", "haze_glow_size", "easy_haze"), [4.0, 2.0, 1.5, 1.0])
+    n["easy_haze"].v = 1.5
+    ns["on_knob"](n, "easy_haze")
+    ok &= check("then haze 1.5 multiplies the look's haze", n.vals("haze_amount"), [6.0])
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
 
