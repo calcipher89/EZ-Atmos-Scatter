@@ -106,7 +106,8 @@ def apply_easy(n):
 # haze layer, so a camera km over the land still looks through haze, and a bigger glow.
 # Each look has a row per role, which the node works out from its own wiring (look_role): "sky"
 # draws the sky (or lights EzCloudGen), "haze" feeds EzDepthHaze's atmos input (a thinner haze light
-# and a smaller glow), "light" is a Lat-long node lighting the terrain.
+# and a smaller glow; this wins, also for a Lat-long node), "light" is any other Lat-long node
+# (lighting the terrain).
 LOOKS = {
     "Aerial Sunset": {"sky": {"haze_amount": 4.0, "haze_height": 2.0, "haze_glow_size": 1.5},
                       "haze": {"haze_amount": 2.0, "haze_height": 2.0, "haze_glow_size": 0.5},
@@ -136,11 +137,13 @@ def _feeds_depth_haze(n, hops):
 
 
 def look_role(n):
-    """'light' for a Lat-long node, 'haze' when it feeds an EzDepthHaze (through Dots), else 'sky'."""
+    """'haze' when it feeds an EzDepthHaze (through Dots), else 'light' for a Lat-long node, else 'sky'."""
     try:
+        if _feeds_depth_haze(n, ROLE_HOPS):
+            return "haze"
         if n.knob("output_mapping") is not None and n["output_mapping"].value() == "Lat-long":
             return "light"
-        return "haze" if _feeds_depth_haze(n, ROLE_HOPS) else "sky"
+        return "sky"
     except Exception:
         return "sky"
 

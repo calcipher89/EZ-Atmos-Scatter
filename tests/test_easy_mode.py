@@ -111,9 +111,11 @@ def main():
         return ns["look_role"](m)
 
     ok &= check("roles: dots to EzDepthHaze / lat-long / EzCloudGen / Merge / none / error",
-                [role([Fake("Dot", [Fake("Dot", [hz])])]), role([hz], "Lat-long"), role([cg]),
+                [role([Fake("Dot", [Fake("Dot", [hz])])]), role([cg], "Lat-long"), role([cg]),
                  role([Fake("Merge2", [hz])]), role([]), role([hz], boom=True)],
                 ["haze", "light", "sky", "sky", "sky", "sky"])
+    ok &= check("a Lat-long node feeding EzDepthHaze (and EzCloudGen) is the haze light",
+                [role([hz, cg], "Lat-long")], ["haze"])
     chain = hz
     for _ in range(7):
         chain = Fake("Dot", [chain])
@@ -131,6 +133,7 @@ def main():
     ns["on_knob"](n, "easy_haze")
     ok &= check("haze node: haze 0.93 -> 1.86", n.vals("haze_amount"), [1.86])
     n["output_mapping"].v = "Lat-long"
+    n.outs = []
     n["easy_haze"].v = 1.0
     ns["apply_look"](n, "Aerial Sunset")
     ok &= check("lat-long node: haze 2, glow 1.5", n.vals("haze_amount", "haze_glow_size"), [2.0, 1.5])

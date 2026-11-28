@@ -178,7 +178,7 @@ def _add_knobs(group):
                     "more and taller haze (1.5, 1.5 km). Aerial Sunset: from high above toward a low sun, "
                     "a thicker, taller haze (haze amount 4, haze height 2 km) and a bigger glow. Wire the node first: "
                     "a node feeding EzDepthHaze gets the thinner haze light (haze amount 2, glow size 0.5), "
-                    "a Lat-long node the lighting values (haze amount 2). Pair it with "
+                    "any other Lat-long node the lighting values (haze amount 2). Pair it with "
                     "EzDepthHaze's Aerial Sunset look, then let EzMatch's match all fit the Easy sliders.")
     k.append(look)
     apply_look = nuke.PyScript_Knob("apply_easy_look", "apply look",
